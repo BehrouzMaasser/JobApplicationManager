@@ -1,0 +1,110 @@
+import django.db.models
+from django.core.exceptions import ValidationError
+
+from apps.accounts.models import User
+
+
+# Base Service
+class BaseService:
+
+    @staticmethod
+    def _update_non_m2m_fields(
+            instance: django.db.models.Model,
+            validated_data: dict,
+            fields_to_update: list
+    ) -> None:
+
+        for field in fields_to_update:
+            if field not in validated_data:
+                continue
+            setattr(instance, field, validated_data[field])
+
+    @staticmethod
+    def _update_m2m_fields(
+            instance: django.db.models.Model,
+            validated_data: dict,
+            fields_to_update: list
+    ) -> None:
+
+        for field in fields_to_update:
+            if field not in validated_data:
+                continue
+            getattr(instance, field).set(validated_data.get(field))
+
+    @staticmethod
+    def _add_m2m_fields(
+            instance: django.db.models.Model,
+            validated_data: dict,
+            m2m_fields: list
+    ) -> None:
+
+        for field in m2m_fields:
+            if field in validated_data:
+                getattr(instance, field).add(*validated_data[field])
+
+    @staticmethod
+    def _m2m_ownership_validation(
+            user: User, validated_data: dict, ownership_map: dict
+    ) -> None:
+
+        # Make sure the m2m fields are associated to the user
+        invalid_fields = []
+
+        try:
+            for field_name, ownership in ownership_map.items():
+                if field_name in validated_data:
+                    for data in validated_data[field_name]:
+                        if getattr(data, ownership) != user:
+                            invalid_fields.append(field_name)
+                            break
+        except Exception as e:
+            raise ValidationError(
+                {"Many-To-Many": ["Invalid field instance", str(e)]}
+            )
+
+        if invalid_fields:
+            raise ValidationError(
+                {f"{field}": f"User Don't Have Such {field}" for
+                 field in invalid_fields}
+            )
+
+    @staticmethod
+    def _non_m2m_ownership_validation(
+            user: User, validated_data: dict, ownership_map
+    ) -> None:
+
+        invalid_fields = []
+
+        try:
+            for field_name, ownership in ownership_map.items():
+                if field_name in validated_data:
+                    if getattr(validated_data[field_name], ownership) != user:
+                        invalid_fields.append(field_name)
+                        break
+        except Exception as e:
+            raise ValidationError(
+                {"Field": ["Invalid field instance", str(e)]}
+            )
+
+        if invalid_fields:
+            raise ValueError(
+                {f"{field}": f"User Don't Have Such {field}" for
+                 field in invalid_fields}
+            )
+
+    @staticmethod
+    def _m2m_non_empty_validation(
+            instance: django.db.models.Model, required_fields
+    ) -> None:
+
+        empty_required_fields = []
+
+        for field in required_fields:
+            if not getattr(instance, field).exists():
+                empty_required_fields.append(field)
+
+        if empty_required_fields:
+            raise ValidationError(
+                {f"{field}": "Should not be empty" for
+                 field in empty_required_fields}
+            )

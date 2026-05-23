@@ -1,0 +1,14 @@
+Django>=6.0
+djangorestframework
+psycopg[binary]
+python-dotenv
+drf-spectacular
+
+djangorestframework-simplejwt
+drf-nested-routers
+pytest
+django-phonenumber-field
+phonenumbers
+pytest-django
+
+python-decouple
