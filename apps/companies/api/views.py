@@ -247,6 +247,15 @@ class NestedCompanyNoteViewSet(ModelViewSet):
 
         return Response(self.get_serializer(instance).data)
 
+    def destroy(self, request, *args, **kwargs):
+
+        CompanyNoteService.remove(
+            user=self.request.user,
+            context=self._get_context(self.kwargs["id"]),
+        )
+
+        return Response(status=status.HTTP_200_OK)
+
     def _get_context(self, company_note_id: int | None) -> CompanyChildContext:
 
         return CompanyChildContext(
