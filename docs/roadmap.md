@@ -4,15 +4,16 @@
 - Initial Django setup
 - Environment variable configuration
 - Project restructuring
-
-## In Progress
 - Document upload flow
 - Storage architecture
+- REST API
+
+## In Progress
+- Writing tests for REST API
 
 ## Planned
 - Authentication
 - Search functionality
 - Document categorization
-- REST API
 - Docker deployment
 - CI/CD
