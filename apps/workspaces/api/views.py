@@ -58,7 +58,7 @@ class WorkspaceViewSet(ModelViewSet):
         instance = WorkspaceService.update(
             user=request.user,
             workspace_id=self.kwargs['id'],
-            new_validated_data=serializer.validated_data
+            validated_data=serializer.validated_data
         )
 
         return Response(DisplayWorkspaceSerializer(instance).data)

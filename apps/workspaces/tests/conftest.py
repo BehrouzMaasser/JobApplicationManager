@@ -1,6 +1,7 @@
 import pytest
 
 from django.contrib.auth import get_user_model
+from rest_framework.test import APIClient
 
 from apps.workspaces.models import Workspace
 
@@ -52,3 +53,22 @@ def workspace_user2(db, other_user):
         name="Test Workspace",
         owner=other_user
     )
+
+
+@pytest.fixture
+def api_client():
+
+    return APIClient()
+
+
+@pytest.fixture
+def authenticated_client(api_client, user):
+
+    api_client.force_authenticate(user=user)
+    return api_client
+
+
+@pytest.fixture
+def base_api_url_path():
+
+    return "/api/v1/"
