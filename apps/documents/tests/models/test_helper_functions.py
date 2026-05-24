@@ -27,7 +27,7 @@ def test_document_upload_path_structure(doc1_user1):
     doc1_user1.document_type.owner.documents_directory = "some-directory"
     path = document_upload_path(doc1_user1, "My Document 1.txt")
 
-    assert path.startswith("documents/docs/some-directory/doc-type-1")
+    assert path.startswith("docs/some-directory/doc-type-1")
     assert path.endswith(".txt")
     assert "Document 1" not in path
     assert "My Document 1" not in path
