@@ -1,3 +1,5 @@
+from django.core.files.uploadedfile import SimpleUploadedFile
+
 from apps.applications.tests.conftest import *
 
 from apps.documents.models import DocumentType, Document
@@ -20,6 +22,22 @@ class FakeFile:
 
         for i in range(0, len(self.content), self.chunk_size):
             yield self.content[i:i + self.chunk_size]
+
+
+@pytest.fixture
+def api_upload_file1():
+
+    return SimpleUploadedFile(
+        "test1.txt", b"test1", content_type="text/plain"
+    )
+
+
+@pytest.fixture
+def api_upload_file2():
+
+    return SimpleUploadedFile(
+        "test2.txt", b"test2", content_type="text/plain"
+    )
 
 
 @pytest.fixture
@@ -62,6 +80,26 @@ def doc1_user1_valid_data(document_type_user1, fake_file1):
         "name": "Document 1",
         "document_type": document_type_user1,
         "file": fake_file1
+    }
+
+
+@pytest.fixture
+def doc1_user1_api_valid_data(document_type_user1, api_upload_file1):
+
+    return {
+        "name": "Document 1",
+        "document_type": document_type_user1.id,
+        "file": api_upload_file1
+    }
+
+
+@pytest.fixture
+def doc1_user1_api_updated_valid_data(document_type2_user1, api_upload_file2):
+
+    return {
+        "name": "Document 1 Edited",
+        "document_type": document_type2_user1.id,
+        "file": api_upload_file2
     }
 
 

@@ -79,7 +79,7 @@ class DocumentTypeViewSet(viewsets.ModelViewSet):
             document_type_id=self.kwargs['id']
         )
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_200_OK)
 
 
 class DocumentViewSet(viewsets.ModelViewSet):
@@ -145,7 +145,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
             document_id=self.kwargs['id']
         )
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_200_OK)
 
     def _get_queryset_filters(self):
 
