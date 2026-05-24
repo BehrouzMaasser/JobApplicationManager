@@ -16,7 +16,8 @@ def document_upload_path(instance, filename):
 
     :param instance: Document instance
     :param filename: Document file name
-    :return: PATH: docs/<owner-documents-directory-path>/<document-type>/<unique-filename>
+    :return:
+        media/docs/<owner-document-directory>/<document-type>/<unique-filename>
     """
     document_type = slugify(instance.document_type.name)
     file_name_extension = filename.split('.')
@@ -27,7 +28,6 @@ def document_upload_path(instance, filename):
     unique_name = f"{uuid.uuid4()}.{file_name_extension[1]}"
 
     return os.path.join(
-        "documents",
         "docs",
         str(instance.owner.documents_directory),
         document_type,
