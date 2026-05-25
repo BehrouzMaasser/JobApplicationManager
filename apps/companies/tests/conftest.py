@@ -288,16 +288,6 @@ def job_requirement2_user1(db, user):
         description="Description2",
     )
 
-
-@pytest.fixture
-def job_requirement_user2(db, other_user):
-
-    return JobRequirement.objects.create(
-        user=other_user,
-        title="Title1",
-        description="Description1",
-    )
-
 # Employment Type Fixtures:
 
 @pytest.fixture
