@@ -12,6 +12,7 @@
 - Writing tests for REST API
 
 ## Planned
+- Add front-end
 - Authentication
 - Search functionality
 - Document categorization
