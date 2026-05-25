@@ -628,7 +628,7 @@ class NestedJobPositionViewSet(ModelViewSet):
         instance = JobPositionService.update(
             user=request.user,
             context=context,
-            validated_new_data=serializer.validated_data,
+            validated_data=serializer.validated_data,
         )
 
         return Response(self.get_serializer(instance).data)
@@ -643,10 +643,19 @@ class NestedJobPositionViewSet(ModelViewSet):
         instance = JobPositionService.update(
             user=request.user,
             context=context,
-            validated_new_data=serializer.validated_data,
+            validated_data=serializer.validated_data,
         )
 
         return Response(self.get_serializer(instance).data)
+
+    def destroy(self, request, *args, **kwargs):
+
+        JobPositionService.remove(
+            user=request.user,
+            context=self._get_context(self.kwargs["id"]),
+        )
+
+        return Response(status=status.HTTP_200_OK)
 
     def _get_context(self, job_position_id: int | None) -> CompanyChildContext:
 
