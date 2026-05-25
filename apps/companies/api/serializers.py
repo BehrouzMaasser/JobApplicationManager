@@ -148,13 +148,14 @@ class JobBenefitSerializer(serializers.ModelSerializer):
 class JobTaskSerializer(serializers.ModelSerializer):
 
     title = serializers.CharField(
-        max_length=50,
+        max_length=25,
         required=True,
         allow_null=False,
         allow_blank=False,
     )
 
     description = serializers.CharField(
+        max_length=60,
         required=False,
         allow_null=False,
         allow_blank=False,
