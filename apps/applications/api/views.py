@@ -101,7 +101,7 @@ class JobApplicationNestedViewSet(viewsets.ModelViewSet):
         instance = JobApplicationService.update(
             user=self.request.user,
             context=self._get_context(self.kwargs['id']),
-            validated_new_data=serializer.validated_data)
+            validated_data=serializer.validated_data)
 
         return Response(self.get_serializer(instance).data)
 
@@ -113,7 +113,7 @@ class JobApplicationNestedViewSet(viewsets.ModelViewSet):
         instance = JobApplicationService.update(
             user=self.request.user,
             context=self._get_context(self.kwargs['id']),
-            validated_new_data=serializer.validated_data)
+            validated_data=serializer.validated_data)
 
         return Response(self.get_serializer(instance).data)
 
