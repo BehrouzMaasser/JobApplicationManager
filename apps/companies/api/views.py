@@ -520,6 +520,7 @@ class JobRequirementViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         instance = JobRequirementService.create(
+            user=self.request.user,
             validated_data=serializer.validated_data,
         )
 
@@ -531,6 +532,7 @@ class JobRequirementViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         instance = JobRequirementService.update(
+            user=self.request.user,
             job_requirement_id=self.kwargs["id"],
             validated_data=serializer.validated_data,
         )
@@ -543,6 +545,7 @@ class JobRequirementViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         instance = JobRequirementService.update(
+            user=self.request.user,
             job_requirement_id=self.kwargs["id"],
             validated_data=serializer.validated_data,
         )
