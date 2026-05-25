@@ -99,6 +99,14 @@ def job_application1_valid_data(status1, email1_co1_ws1_user1):
         "emails": [email1_co1_ws1_user1],
     }
 
+@pytest.fixture
+def job_application1_api_valid_data(status1, email1_co1_ws1_user1):
+
+    return {
+        "status": status1.id,
+        "emails": [email1_co1_ws1_user1.id],
+    }
+
 
 @pytest.fixture
 def job_application1_valid_data_updated(
@@ -110,6 +118,19 @@ def job_application1_valid_data_updated(
     return {
         "status": status2,
         "emails": [email1_co1_ws1_user1, email2_co1_ws1_user1],
+    }
+
+
+@pytest.fixture
+def job_application1_api_valid_data_updated(
+        status2,
+        email1_co1_ws1_user1,
+        email2_co1_ws1_user1,
+):
+
+    return {
+        "status": status2.id,
+        "emails": [email1_co1_ws1_user1.id, email2_co1_ws1_user1.id],
     }
 
 
