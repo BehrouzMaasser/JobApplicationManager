@@ -123,6 +123,13 @@ class JobBenefitSerializer(serializers.ModelSerializer):
         allow_blank=False,
     )
 
+    description = serializers.CharField(
+        max_length=60,
+        required=False,
+        allow_null=False,
+        allow_blank=False,
+    )
+
     class Meta:
 
         model = JobBenefit
@@ -130,6 +137,7 @@ class JobBenefitSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "name",
+            "description",
         ]
 
         read_only_fields = [
