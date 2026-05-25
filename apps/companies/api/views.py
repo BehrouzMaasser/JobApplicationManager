@@ -402,6 +402,7 @@ class JobBenefitViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         instance = JobBenefitService.create(
+            user=self.request.user,
             validated_data=serializer.validated_data,
         )
 
@@ -413,6 +414,7 @@ class JobBenefitViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         instance = JobBenefitService.update(
+            user=self.request.user,
             job_benefit_id=self.kwargs["id"],
             validated_data=serializer.validated_data,
         )
@@ -421,7 +423,16 @@ class JobBenefitViewSet(ModelViewSet):
 
     def partial_update(self, request, *args, **kwargs):
 
-        return self.update(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        instance = JobBenefitService.update(
+            user=self.request.user,
+            job_benefit_id=self.kwargs["id"],
+            validated_data=serializer.validated_data,
+        )
+
+        return Response(self.get_serializer(instance).data)
 
     def destroy(self, request, *args, **kwargs):
 
