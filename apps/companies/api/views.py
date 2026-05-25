@@ -461,6 +461,7 @@ class JobTaskViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         instance = JobTaskService.create(
+            user=self.request.user,
             validated_data=serializer.validated_data,
         )
 
@@ -472,6 +473,7 @@ class JobTaskViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         instance = JobTaskService.update(
+            user=self.request.user,
             job_task_id=self.kwargs["id"],
             validated_data=serializer.validated_data,
         )
@@ -484,6 +486,7 @@ class JobTaskViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         instance = JobTaskService.update(
+            user=self.request.user,
             job_task_id=self.kwargs["id"],
             validated_data=serializer.validated_data,
         )
