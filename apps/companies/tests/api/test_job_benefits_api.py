@@ -179,7 +179,8 @@ class TestJobBenefitAPI:
         job_benefit_user1.refresh_from_db()
 
         # Description should be changed
-        assert job_benefit_user1.description == partial_update_api_data["description"]
+        assert (job_benefit_user1.description ==
+                partial_update_api_data["description"])
 
         # Name should be unchanged
         assert job_benefit_user1.name == old_name
