@@ -12,7 +12,9 @@
 - Writing tests for REST API
 
 ## Planned
-- Add front-end
+- Clean the tests
+- Resolve Test Warnings
+- Create HTML views for the app
 - Authentication
 - Search functionality
 - Document categorization
