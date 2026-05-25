@@ -292,16 +292,16 @@ class JobPositionSerializer(serializers.ModelSerializer):
                 "required": True, "allow_null": False, "allow_blank": False
             },
             "date_posted": {
-                "required": False, "allow_null": True, "allow_blank": False
+                "required": False, "allow_null": True,
             },
             "description": {
                 "required": True, "allow_null": False, "allow_blank": False
             },
             "min_salary": {
-                "required": False, "allow_null": True, "allow_blank": False
+                "required": False, "allow_null": True,
             },
             "max_salary": {
-                "required": False, "allow_null": True, "allow_blank": False
+                "required": False, "allow_null": True,
             },
             "job_position_ad_url": {
                 "required": False, "allow_null": True, "allow_blank": False
