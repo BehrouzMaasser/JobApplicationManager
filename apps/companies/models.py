@@ -66,6 +66,7 @@ class CompanyNote(models.Model):
             models.Index(fields=["company"]),
             models.Index(fields=["company", "title"]),
         ]
+        ordering = ("company", "title")
 
     def __str__(self):
 
@@ -93,6 +94,7 @@ class CompanyEmail(models.Model):
             models.Index(fields=["company", "title"]),
             models.Index(fields=["company", "email"]),
         ]
+        ordering = ("company", "title")
 
     def __str__(self):
 
@@ -157,6 +159,7 @@ class JobBenefit(models.Model):
                 name="unique_job_benefit_per_user"
             )
         ]
+        ordering = ("user", "name")
 
     def __str__(self):
         return self.name
@@ -191,6 +194,7 @@ class JobTask(models.Model):
         indexes = [
             models.Index(fields=["title"]),
         ]
+        ordering = ("user", "title")
 
     def __str__(self):
 
@@ -223,6 +227,7 @@ class JobRequirement(models.Model):
                 name="unique_job_requirement_per_user"
             )
         ]
+        ordering = ("user", "title")
 
     def __str__(self):
 
