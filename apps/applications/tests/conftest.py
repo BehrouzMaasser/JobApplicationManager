@@ -197,6 +197,15 @@ def app_note1_valid_data():
 
 
 @pytest.fixture
+def app_note1_valid_data_updated():
+
+    return {
+        "title": "Job Application Title Test 1 Edited",
+        "content": "Test Content 1 Edited"
+    }
+
+
+@pytest.fixture
 def app_note1(db, job_application1):
 
     return JobApplicationNote.objects.create(
