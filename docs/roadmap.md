@@ -7,13 +7,13 @@
 - Document upload flow
 - Storage architecture
 - REST API
-
-## In Progress
 - Writing tests for REST API
 
-## Planned
+## In Progress
 - Clean the tests
 - Resolve Test Warnings
+
+## Planned
 - Create HTML views for the app
 - Authentication
 - Search functionality
