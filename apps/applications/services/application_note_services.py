@@ -54,13 +54,8 @@ class JobApplicationNoteService(JobApplicationService):
 
         # Cleaning and saving the instance
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError(
-                {"Job Application": ["Invalid Data Given", str(e)]}
-            )
+        instance.full_clean()
+        instance.save()
 
         # ----------------------*****---------------------
 
@@ -94,19 +89,15 @@ class JobApplicationNoteService(JobApplicationService):
 
         # Cleaning and saving the instance
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError(
-                {"Job Application": ["Invalid Data Given", str(e)]}
-            )
+        instance.full_clean()
+        instance.save()
 
         # ----------------------*****---------------------
 
         return instance
 
     @staticmethod
+    @transaction.atomic
     def remove(*, user: User, context: JobApplicationChildContext) -> None:
 
         # Domain Correctness Validation:
@@ -140,5 +131,5 @@ class JobApplicationNoteService(JobApplicationService):
             return job_application.job_application_notes.get(pk=context.id)
         except JobApplicationNote.DoesNotExist:
             raise ValidationError(
-                {"Job Application Note": "Job Application Note Not Found"}
+                {"Job Application Note": ["Object Not Found"]}
             )

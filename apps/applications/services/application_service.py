@@ -1,6 +1,7 @@
-from django.core.exceptions import ValidationError
-from django.db import transaction, IntegrityError
-from django.db.models import QuerySet
+from typing import Iterable
+
+from django.db import transaction
+from rest_framework.exceptions import ValidationError, PermissionDenied
 
 # Models
 from apps.accounts.models import User
@@ -24,9 +25,7 @@ from apps.companies.services.job_position_service import JobPositionService
 
 class JobApplicationService(JobPositionService):
 
-    REQUIRED_M2M_FIELDS = {
-        "emails",
-    }
+    REQUIRED_M2M_FIELDS = set()
 
     NON_M2M_FIELDS = {
         "status",
@@ -40,6 +39,7 @@ class JobApplicationService(JobPositionService):
 
     M2M_FIELDS = {
         *REQUIRED_M2M_FIELDS,
+        "emails",
         "documents"
     }
 
@@ -76,16 +76,18 @@ class JobApplicationService(JobPositionService):
         )
 
         # Many-to-many fields ownership validations
-        JobApplicationService._validate_emails_ownership(
-            user=user,
-            emails=validated_data.get("emails", []),
-            job_position=job_position
-        )
+        if validated_data.get("emails"):
+            JobApplicationService._validate_emails_ownership(
+                user=user,
+                emails=validated_data["emails"],
+                job_position=job_position
+            )
 
-        JobApplicationService._validate_documents_ownership(
-            user=user,
-            documents=validated_data.get("documents", []),
-        )
+        if validated_data.get("documents"):
+            JobApplicationService._validate_documents_ownership(
+                user=user,
+                documents=validated_data["documents"],
+            )
 
         instance = JobApplication(
             owner=user,
@@ -99,35 +101,16 @@ class JobApplicationService(JobPositionService):
 
         # Cleaning and saving the instance
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError(
-                {"Job Application": ["Invalid Data Given", str(e)]}
-            )
+        instance.full_clean()
+        instance.save()
 
         # ----------------------*****---------------------
 
-        # Add the many-to-many relations, raise error and delete the instance if
-        # something went wrong
-        try:
-            JobApplicationService._add_m2m_fields(
-                instance=instance,
-                validated_data=validated_data,
-                m2m_fields=JobApplicationService.M2M_FIELDS
-            )
-        except Exception as e:
-            raise ValidationError(
-                {"Job Application": ["Invalid Data Given", str(e)]}
-            )
-
-        # ----------------------*****---------------------
-
-        # Post many-to-many validation
-        JobApplicationService._m2m_non_empty_validation(
+        # Add the many-to-many relations, raise error something went wrong
+        JobApplicationService._add_m2m_fields(
             instance=instance,
-            required_fields=JobApplicationService.REQUIRED_M2M_FIELDS
+            validated_data=validated_data,
+            m2m_fields=JobApplicationService.M2M_FIELDS
         )
 
         # ----------------------*****---------------------
@@ -164,41 +147,26 @@ class JobApplicationService(JobPositionService):
 
         # ----------------------*****---------------------
 
-        # Updating Fields
-        try:
-            # NON-Many-to-many fields
-            JobApplicationService._update_non_m2m_fields(
-                instance=instance,
-                validated_data=validated_data,
-                fields_to_update=JobApplicationService.NON_M2M_FIELDS
-            )
-            # Many-to-many fields
-            JobApplicationService._update_m2m_fields(
-                instance=instance,
-                validated_data=validated_data,
-                fields_to_update=JobApplicationService.M2M_FIELDS
-            )
-        except Exception as e:
-            raise ValidationError({
-                "Job Application": ["Invalid Data Given", str(e)]}
-            )
+        # Updating Scalar fields
+        JobApplicationService._update_non_m2m_fields(
+            instance=instance,
+            validated_data=validated_data,
+            fields_to_update=JobApplicationService.NON_M2M_FIELDS
+        )
 
         # ----------------------*****---------------------
 
         # Cleaning and saving the instance
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except (ValidationError, IntegrityError):
-            raise ValidationError({"Job Application": "Invalid Data Given"})
+        instance.full_clean()
+        instance.save()
 
         # ----------------------*****---------------------
-
-        # Post many-to-many validation
-        JobApplicationService._m2m_non_empty_validation(
+        # Updating Many-to-many fields
+        JobApplicationService._update_m2m_fields(
             instance=instance,
-            required_fields=JobApplicationService.REQUIRED_M2M_FIELDS
+            validated_data=validated_data,
+            fields_to_update=JobApplicationService.M2M_FIELDS
         )
 
         # ----------------------*****---------------------
@@ -206,11 +174,12 @@ class JobApplicationService(JobPositionService):
         return instance
 
     @staticmethod
+    @transaction.atomic
     def remove(*, user: User, context: JobApplicationContext) -> None:
 
         # Domain Correctness Validation:
 
-        # Check if Context follows business rules and Get the cleaned Job Application
+        # Check if Context follows business rules and Get the Job Application
 
         instance = JobApplicationService._resolve_job_application(
             user=user,
@@ -224,28 +193,37 @@ class JobApplicationService(JobPositionService):
     @staticmethod
     def _validate_emails_ownership(
         *, user: User,
-        emails: QuerySet[CompanyEmail],
+        emails: Iterable[CompanyEmail],
         job_position: JobPosition
     ):
 
         # Check if Emails follow the business rules:
 
         # Each Application Email belongs to User
-        if any([user != email.company.workspace.owner for email in emails]):
-            raise ValidationError({"Invalid Email": "Such Email Do Not Exist"})
+        if any(user != email.company.workspace.owner for email in emails):
+            raise PermissionDenied(
+                {"Invalid Email": "Email Does Not Belong To User"}
+            )
 
         # Each Email belongs to the company of JobApplication's JobPosition
-        if any([job_position.company != email.company for email in emails]):
-            raise ValidationError({"Invalid Email": "Such Email Do Not Exist"})
+        if any(job_position.company != email.company for email in emails):
+            raise PermissionDenied(
+                {
+                    "Invalid Email":
+                        ["Email must belong to the job application's company"]
+                }
+            )
 
     @staticmethod
-    def _validate_documents_ownership(*, user: User, documents: QuerySet[Document]):
+    def _validate_documents_ownership(*, user: User, documents: Iterable[Document]):
 
         # Check if Documents follow the business rules:
 
         # Each Application Document belongs to User
-        if any([user != document.owner for document in documents]):
-            raise ValidationError("Permission Denied")
+        if any(user != document.owner for document in documents):
+            raise PermissionDenied(
+                {"Invalid Document": "Document Does Not Belong To User"}
+            )
 
     @staticmethod
     def _resolve_job_application(
@@ -272,5 +250,5 @@ class JobApplicationService(JobPositionService):
             )
         except JobApplication.DoesNotExist:
             raise ValidationError(
-                {"Job Application": "Job Application does not exist"}
+                {"Job Application": ["Object Not Found"]}
             )

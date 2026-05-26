@@ -95,8 +95,7 @@ class JobApplicationNestedViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        serializer = self._validated_serializer()
 
         instance = JobApplicationService.update(
             user=self.request.user,
@@ -107,8 +106,7 @@ class JobApplicationNestedViewSet(viewsets.ModelViewSet):
 
     def partial_update(self, request, *args, **kwargs):
 
-        serializer = self.get_serializer(data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
+        serializer = self._validated_serializer(partial=True)
 
         instance = JobApplicationService.update(
             user=self.request.user,
@@ -141,6 +139,14 @@ class JobApplicationNestedViewSet(viewsets.ModelViewSet):
             company_id=self.kwargs['company_id'],
             job_position_id=self.kwargs['job_position_id'],
         )
+
+    def _validated_serializer(self, partial=False):
+        serializer = self.get_serializer(
+            data=self.request.data,
+            partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
+        return serializer
 
 
 class JobApplicationNoteViewSet(
@@ -206,8 +212,7 @@ class JobApplicationNoteNestedViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        serializer = self._validated_serializer()
 
         instance = JobApplicationNoteService.update(
             user=self.request.user,
@@ -218,8 +223,7 @@ class JobApplicationNoteNestedViewSet(viewsets.ModelViewSet):
 
     def partial_update(self, request, *args, **kwargs):
 
-        serializer = self.get_serializer(data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
+        serializer = self._validated_serializer(partial=True)
 
         instance = JobApplicationNoteService.update(
             user=self.request.user,
@@ -254,3 +258,11 @@ class JobApplicationNoteNestedViewSet(viewsets.ModelViewSet):
             job_position_id=self.kwargs['job_position_id'],
             job_application_id=self.kwargs['job_application_id'],
         )
+
+    def _validated_serializer(self, partial=False):
+        serializer = self.get_serializer(
+            data=self.request.data,
+            partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
+        return serializer

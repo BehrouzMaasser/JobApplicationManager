@@ -14,16 +14,14 @@ class JobApplicationSerializer(serializers.ModelSerializer):
     emails = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=CompanyEmail.objects.all(),
-        required=True,
-        allow_null=False,
-        allow_empty=False,
+        required=False,
+        allow_empty=True,
     )
 
     documents = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Document.objects.all(),
         required=False,
-        allow_null=False,
         allow_empty=True,
     )
 
@@ -62,6 +60,7 @@ class JobApplicationSerializer(serializers.ModelSerializer):
 class JobApplicationNoteSerializer(serializers.ModelSerializer):
 
     title = serializers.CharField(
+        max_length=60,
         required=True,
         allow_blank=False,
         allow_null=False,

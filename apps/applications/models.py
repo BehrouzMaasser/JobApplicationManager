@@ -17,6 +17,7 @@ class ApplicationStatus(models.Model):
 
     label = models.CharField(max_length=20, default="Pending")
     order = models.PositiveSmallIntegerField(unique=True, default=1)
+    is_final = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -32,11 +33,6 @@ class ApplicationStatus(models.Model):
     def __str__(self):
 
         return self.label
-
-    @property
-    def is_final(self):
-
-        return self.label in ["Rejected", "Claimed", "Refused"]
 
 
 class JobApplication(models.Model):
@@ -59,11 +55,15 @@ class JobApplication(models.Model):
         related_name="job_applications"
     )
 
-    status = models.ForeignKey(ApplicationStatus, on_delete=models.PROTECT)
+    status = models.ForeignKey(
+        ApplicationStatus, on_delete=models.PROTECT, db_index=True
+    )
 
-    date_applied = models.DateTimeField(null=True, blank=True)
+    date_applied = models.DateTimeField(null=True, blank=True, db_index=True)
 
-    emails = models.ManyToManyField(CompanyEmail, related_name="job_applications")
+    emails = models.ManyToManyField(
+        CompanyEmail, related_name="job_applications", blank=True
+    )
 
     documents = models.ManyToManyField(
         Document, related_name="job_applications",  blank=True
@@ -93,22 +93,10 @@ class JobApplication(models.Model):
         return (f"{self.job_position.company.name} - {self.job_position} - "
                 f"{self.status}")
 
-    def clean_date_applied(self):
-
-        if self.date_applied and self.date_applied > timezone.now():
-            raise ValidationError(
-                {"date_applied": "Date applied should not be in the future!"}
-            )
-
-        if not self.date_applied:
-            self.date_applied = None
-
-        return self.date_applied
-
     def clean(self):
 
         # Making sure the fields to validate are created
-        if [self.owner_id, self.workspace_id, self.job_position_id].count(None):
+        if not all([self.owner_id, self.workspace_id, self.job_position_id]):
             return
         if self.owner != self.workspace.owner:
             raise ValidationError(
@@ -125,7 +113,7 @@ class JobApplication(models.Model):
                 }
             )
 
-        if self.clean_date_applied() and self.job_position.date_posted:
+        if self._validate_date_applied() and self.job_position.date_posted:
             if self.date_applied < self.job_position.date_posted:
                 raise ValidationError(
                     {
@@ -133,6 +121,18 @@ class JobApplication(models.Model):
                                         " after the job position's release date!"
                     }
                 )
+
+    def _validate_date_applied(self):
+
+        if not self.date_applied:
+            return False
+
+        if self.date_applied and self.date_applied > timezone.now():
+            raise ValidationError(
+                {"date_applied": "Date applied should not be in the future!"}
+            )
+
+        return True
 
 
 class JobApplicationNote(models.Model):
@@ -143,7 +143,7 @@ class JobApplicationNote(models.Model):
         related_name="job_application_notes"
     )
 
-    title = models.TextField()
+    title = models.TextField(max_length=60)
     content = models.TextField()
 
     class Meta:
