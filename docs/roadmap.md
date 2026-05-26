@@ -10,9 +10,12 @@
 - Writing tests for REST API
 
 ## In Progress
+- Renaming some files to keep the similarity
+- Verify models integrity
+- Tightening services contracts and structure
+- Resolve test warnings and errors
 - Clean the project files
 - Clean the tests
-- Resolve Test Warnings
 - Modifying README
 
 ## Planned
