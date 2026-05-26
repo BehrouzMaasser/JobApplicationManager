@@ -12,6 +12,7 @@
 
 ## In Progress
 - Renaming some files to keep the similarity
+- Redefining Applications app tests
 - Verify models integrity
 - Tightening services contracts and structure
 - Resolve test warnings and errors
