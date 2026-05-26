@@ -8,6 +8,7 @@
 - Storage architecture
 - REST API
 - Writing tests for REST API
+- Applications app is evaluated, models, services and API views are corrected
 
 ## In Progress
 - Renaming some files to keep the similarity
