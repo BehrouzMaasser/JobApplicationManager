@@ -235,13 +235,18 @@ class JobApplicationService(JobPositionService):
         # Check if context follows business rules to create a Job Application Note:
 
         # Context should follow business rules of job position at first place
-        job_position = JobApplicationService._resolve_job_position(
-            user=user, context=CompanyChildContext(
-                id=context.job_position_id,
-                workspace_id=context.workspace_id,
-                company_id=context.company_id,
+        try:
+            job_position = JobApplicationService._resolve_job_position(
+                user=user, context=CompanyChildContext(
+                    id=context.job_position_id,
+                    workspace_id=context.workspace_id,
+                    company_id=context.company_id,
+                )
             )
-        )
+        except ValidationError:
+            raise PermissionDenied(
+                {"Job Application": ["Access To Job Position Denied"]}
+            )
 
         # Job Application should belong to the job position above
         try:

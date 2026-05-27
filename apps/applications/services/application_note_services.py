@@ -1,4 +1,4 @@
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.db import transaction
 
 from apps.accounts.models import User
@@ -117,15 +117,21 @@ class JobApplicationNoteService(JobApplicationService):
             user: User, context: JobApplicationChildContext
     ) -> JobApplicationNote:
 
-        job_application = JobApplicationNoteService._resolve_job_application(
-            user=user,
-            context=JobApplicationContext(
-                id=context.job_application_id,
-                workspace_id=context.workspace_id,
-                company_id=context.company_id,
-                job_position_id=context.job_position_id,
+        try:
+
+            job_application = JobApplicationNoteService._resolve_job_application(
+                user=user,
+                context=JobApplicationContext(
+                    id=context.job_application_id,
+                    workspace_id=context.workspace_id,
+                    company_id=context.company_id,
+                    job_position_id=context.job_position_id,
+                )
             )
-        )
+        except ValidationError:
+            raise PermissionDenied(
+                {"Job Application Note": ["Access To Job Application Denied"]}
+            )
 
         try:
             return job_application.job_application_notes.get(pk=context.id)
