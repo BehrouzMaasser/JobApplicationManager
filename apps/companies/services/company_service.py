@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.db import transaction, IntegrityError
 
 # Contexts
@@ -123,10 +123,13 @@ class CompanyService(WorkspaceService):
             *, user: User, workspace_id: UUID, company_id: str
     ) -> Company:
 
-        workspace = CompanyService._resolve_workspace(
-            user=user,
-            workspace_id=workspace_id
-        )
+        try:
+            workspace = CompanyService._resolve_workspace(
+                user=user,
+                workspace_id=workspace_id
+            )
+        except ValidationError:
+            raise PermissionDenied({"Company": ["Access To Workspace Denied"]})
 
         try:
             return workspace.companies.get(pk=company_id)

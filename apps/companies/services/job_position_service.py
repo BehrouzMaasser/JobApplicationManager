@@ -1,4 +1,4 @@
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.db import transaction
 
 # Models
@@ -220,11 +220,14 @@ class JobPositionService(CompanyService):
             context: CompanyChildContext
     ) -> JobPosition:
 
-        company = JobPositionService._resolve_company(
-            user=user,
-            workspace_id=context.workspace_id,
-            company_id=context.company_id
-        )
+        try:
+            company = JobPositionService._resolve_company(
+                user=user,
+                workspace_id=context.workspace_id,
+                company_id=context.company_id
+            )
+        except ValidationError:
+            raise PermissionDenied({"Job Position": ["Access To Company Denied"]})
 
         # Retrieve the existing Job Position and return it
         try:

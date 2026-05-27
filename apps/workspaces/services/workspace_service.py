@@ -2,7 +2,7 @@ from uuid import UUID
 
 # Models
 
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 from django.db import transaction
 
 from apps.accounts.models import User
@@ -81,4 +81,4 @@ class WorkspaceService(BaseService):
                 workspace_id=workspace_id
             )
         except Workspace.DoesNotExist:
-            raise ValidationError({"Workspace": "Workspace does not exist!"})
+            raise ValidationError({"Workspace": "Workspace Not Found"})
