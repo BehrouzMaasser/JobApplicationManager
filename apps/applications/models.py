@@ -134,6 +134,13 @@ class JobApplication(models.Model):
 
         return True
 
+    def save(self, *args, **kwargs):
+
+        if not self.date_applied:
+            self.date_applied = None
+
+        super().save(*args, **kwargs)
+
 
 class JobApplicationNote(models.Model):
 
