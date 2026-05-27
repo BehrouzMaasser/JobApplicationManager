@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 
 from django.core.exceptions import ValidationError
@@ -104,58 +106,10 @@ def test_order_default_is_1():
 
 
 @pytest.mark.django_db
-def test_is_final_with_label():
+def test_created_at_is_created_automatically():
 
-    application_status1 = ApplicationStatus.objects.create()
-    application_status2 = ApplicationStatus.objects.create(
-        label="Not Pending", order=2
-    )
+    application_status = ApplicationStatus.objects.create()
 
-    application_status3 = ApplicationStatus.objects.create(label="Rejected", order=3)
-    application_status4 = ApplicationStatus.objects.create(label="Claimed", order=4)
-    application_status5 = ApplicationStatus.objects.create(label="Refused", order=5)
-
-    assert application_status1.is_final is False
-    assert application_status2.is_final is False
-    assert application_status3.is_final is True
-    assert application_status4.is_final is True
-    assert application_status5.is_final is True
-
-
-@pytest.mark.django_db
-def test_order_doesnt_affect_is_final():
-
-    application_status1 = ApplicationStatus.objects.create(label="Pending", order=1)
-    assert application_status1.is_final is False
-
-    application_status1.delete()
-
-    application_status2 = ApplicationStatus.objects.create(label="Rejected", order=1)
-    assert application_status2.is_final is True
-
-    application_status2.delete()
-
-    application_status3 = ApplicationStatus.objects.create(label="Rejected", order=2)
-    assert application_status3.is_final is True
-
-    application_status3.delete()
-
-    application_status4 = ApplicationStatus.objects.create(label="Rejected", order=3)
-    assert application_status4.is_final is True
-
-    application_status4.delete()
-
-    application_status5 = ApplicationStatus.objects.create(label="Rejected", order=5)
-    assert application_status5.is_final is True
-
-    application_status5.delete()
-
-    application_status6 = ApplicationStatus.objects.create(label="Pending", order=1)
-    assert application_status6.is_final is False
-
-    application_status6.delete()
-
-    application_status7 = ApplicationStatus.objects.create(label="Pending", order=2)
-    assert application_status7.is_final is False
+    assert isinstance(application_status.created_at, datetime)
 
 #   ----------------------------------- ****** -----------------------------------

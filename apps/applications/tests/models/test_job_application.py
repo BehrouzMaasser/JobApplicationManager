@@ -15,14 +15,13 @@ from apps.applications.models import JobApplication
 
 @pytest.mark.django_db
 def test_job_application_requires_owner(
-        workspace_user1,
         job_position1_co2_ws1_user1,
         status1
 ):
 
     job_application = JobApplication(
         owner=None,
-        workspace=workspace_user1,
+        workspace=job_position1_co2_ws1_user1.company.workspace,
         job_position=job_position1_co2_ws1_user1,
         status=status1
     )
@@ -31,7 +30,7 @@ def test_job_application_requires_owner(
         job_application.full_clean()
 
     job_application = JobApplication(
-        workspace=workspace_user1,
+        workspace=job_position1_co2_ws1_user1.company.workspace,
         job_position=job_position1_co2_ws1_user1,
         status=status1
     )
@@ -42,13 +41,12 @@ def test_job_application_requires_owner(
 
 @pytest.mark.django_db
 def test_job_application_requires_workspace(
-        user,
         job_position1_co2_ws1_user1,
         status1
 ):
 
     job_application = JobApplication(
-        owner=user,
+        owner=job_position1_co2_ws1_user1.company.workspace.owner,
         workspace=None,
         job_position=job_position1_co2_ws1_user1,
         status=status1
@@ -58,7 +56,7 @@ def test_job_application_requires_workspace(
         job_application.full_clean()
 
     job_application = JobApplication(
-        owner=user,
+        owner=job_position1_co2_ws1_user1.company.workspace.owner,
         job_position=job_position1_co2_ws1_user1,
         status=status1
     )
@@ -69,13 +67,12 @@ def test_job_application_requires_workspace(
 
 @pytest.mark.django_db
 def test_job_application_requires_job_position(
-        user,
         workspace_user1,
         status1
 ):
 
     job_application = JobApplication(
-        owner=user,
+        owner=workspace_user1.owner,
         workspace=workspace_user1,
         job_position=None,
         status=status1
@@ -85,7 +82,7 @@ def test_job_application_requires_job_position(
         job_application.full_clean()
 
     job_application = JobApplication(
-        owner=user,
+        owner=workspace_user1.owner,
         workspace=workspace_user1,
         status=status1
     )
@@ -95,7 +92,7 @@ def test_job_application_requires_job_position(
 
 
 @pytest.mark.django_db
-def test_job_application_date_applied_should_be_after_job_position_posted_date(
+def test_job_application_date_applied_should_not_be_before_job_position_posted_date(
         job_position1_co2_ws1_user1,
         status1
 ):
@@ -136,22 +133,21 @@ def test_job_application_date_applied_in_future_raises_error(
 
 @pytest.mark.django_db
 def test_job_application_is_unique_for_each_job_position_in_workspace_belong_to_user(
-        workspace_user1,
         job_position1_co2_ws1_user1,
         status1
 ):
 
     JobApplication.objects.create(
-        owner=workspace_user1.owner,
-        workspace=workspace_user1,
+        owner=job_position1_co2_ws1_user1.company.workspace.owner,
+        workspace=job_position1_co2_ws1_user1.company.workspace,
         job_position=job_position1_co2_ws1_user1,
         status=status1
     )
 
     with pytest.raises(IntegrityError):
         JobApplication.objects.create(
-            owner=workspace_user1.owner,
-            workspace=workspace_user1,
+            owner=job_position1_co2_ws1_user1.company.workspace.owner,
+            workspace=job_position1_co2_ws1_user1.company.workspace,
             job_position=job_position1_co2_ws1_user1,
             status=status1
         )
@@ -163,8 +159,6 @@ def test_job_application_is_unique_for_each_job_position_in_workspace_belong_to_
 # Valid Creation:
 @pytest.mark.django_db
 def test_valid_job_application(
-        user,
-        workspace_user1,
         job_position1_co2_ws1_user1,
         status1
 ):
@@ -179,10 +173,15 @@ def test_valid_job_application(
     job_application.full_clean()
     job_application.save()
 
-    assert job_application.owner == user
-    assert job_application.workspace == workspace_user1
-    assert job_application.job_position == job_position1_co2_ws1_user1
-    assert job_application.status == status1
+    assert job_application.id is not None
+    assert (job_application.owner ==
+            job_position1_co2_ws1_user1.company.workspace.owner)
+
+    assert (job_application.workspace.id ==
+            job_position1_co2_ws1_user1.company.workspace.id)
+
+    assert job_application.job_position.id == job_position1_co2_ws1_user1.id
+    assert job_application.status.id == status1.id
 
 
 @pytest.mark.django_db
@@ -219,7 +218,6 @@ def test_date_applied_is_optional(
     job_application2.save()
 
     assert job_application2.date_applied is None
-    assert job_application2.date_applied != ""
 
     job_application2.delete()
 

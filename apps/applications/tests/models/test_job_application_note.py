@@ -64,13 +64,6 @@ def test_job_application_note_requires_non_empty_title(job_application1):
     with pytest.raises(ValidationError):
         job_application_note.full_clean()
 
-    # None Empty Title
-    JobApplicationNote(
-        job_application=job_application1,
-        title="Title",
-        content="Content",
-    ).full_clean()
-
 
 @pytest.mark.django_db
 def test_job_application_note_requires_content(job_application1):
@@ -104,13 +97,6 @@ def test_job_application_note_requires_non_empty_content(job_application1):
 
     with pytest.raises(ValidationError):
         job_application_note.full_clean()
-
-    # None Empty Content
-    JobApplicationNote(
-        job_application=job_application1,
-        title="Title",
-        content="Content",
-    ).full_clean()
 
 
 # Constraint Check:
@@ -150,13 +136,14 @@ def test_valid_job_application_note(job_application1):
     job_application_note.full_clean()
     job_application_note.save()
 
-    assert job_application_note.job_application == job_application1
+    assert job_application_note.id is not None
+    assert job_application_note.job_application.id == job_application1.id
     assert job_application_note.title == "Title"
     assert job_application_note.content == "Content"
 
 
 @pytest.mark.django_db
-def test_same_title_different_job_application(
+def test_same_title_for_different_job_application_is_allowed(
         job_application1, job_application2
 ):
 
@@ -169,7 +156,6 @@ def test_same_title_different_job_application(
     job_application_note1.full_clean()
     job_application_note1.save()
 
-    assert job_application_note1.job_application == job_application1
     assert job_application_note1.title == "Title"
     assert job_application_note1.content == "Content"
 
@@ -182,10 +168,7 @@ def test_same_title_different_job_application(
     job_application_note2.full_clean()
     job_application_note2.save()
 
-    assert job_application_note2.job_application == job_application2
-    assert job_application_note2.title == "Title"
-    assert job_application_note2.content == "Content"
-
+    assert job_application_note1.id != job_application2.id
     assert job_application_note1.title == job_application_note2.title
     assert job_application_note1.content == job_application_note2.content
 

@@ -4,13 +4,15 @@ import pytest
 
 from unittest.mock import patch
 
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError as DBValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 
 from apps.applications.services.application_note_services import (
     JobApplicationNoteService
 )
-from apps.applications.services.contexts.application_context import \
+from apps.applications.services.contexts.application_context import (
     JobApplicationChildContext
+)
 
 
 #   ----------------------------------- ****** -----------------------------------
@@ -19,7 +21,7 @@ from apps.applications.services.contexts.application_context import \
 # Creation:
 
 @pytest.mark.django_db
-def test_create_application_note_successfully_returns_application_note(
+def test_create_successfully_returns_application_note(
         app_note1_context_with_no_id, app_note1_valid_data, user
 ):
 
@@ -50,7 +52,7 @@ def test_create_application_note_successfully_returns_application_note(
 
 
 @pytest.mark.django_db
-def test_create_application_note_calls_resolve_job_application(
+def test_create_calls_resolve_job_application(
         user, app_note1_valid_data, app_note1_context_with_no_id
 ):
 
@@ -70,7 +72,7 @@ def test_create_application_note_calls_resolve_job_application(
 
 
 @pytest.mark.django_db
-def test_create_application_note_calls_full_clean(
+def test_create_calls_full_clean(
         user, app_note1_valid_data, app_note1_context_with_no_id
 ):
 
@@ -78,7 +80,7 @@ def test_create_application_note_calls_full_clean(
     invalid_data = copy.deepcopy(app_note1_valid_data)
     invalid_data["title"] = ""
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(DBValidationError):
         JobApplicationNoteService.create(
             user=user,
             context=app_note1_context_with_no_id,
@@ -129,7 +131,7 @@ def test_update_application_note_calls_full_clean(
     invalid_data = copy.deepcopy(app_note1_valid_data)
     invalid_data["title"] = ""
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(DBValidationError):
         JobApplicationNoteService.update(
             user=app_note1.job_application.owner,
             context=app_note1_context_with_id,
@@ -255,7 +257,7 @@ def test_access_to_someone_else_application_note_raises_error(
 ):
 
     # Job Position don't belong to user
-    with pytest.raises(ValidationError):
+    with pytest.raises(PermissionDenied):
         JobApplicationNoteService._resolve_job_application_note(
             user=other_user,
             context=app_note1_context_with_id,
@@ -267,7 +269,7 @@ def test_access_application_note_of_another_job_application_raises_error(
         job_application2, app_note1
 ):
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(PermissionDenied):
         JobApplicationNoteService._resolve_job_application_note(
             user=app_note1.job_application.owner,
             context=JobApplicationChildContext(

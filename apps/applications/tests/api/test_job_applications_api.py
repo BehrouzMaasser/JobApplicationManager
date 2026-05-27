@@ -103,7 +103,8 @@ class TestJobApplicationAPI:
         assert (response.data["status"] ==
                 job_application1_api_valid_data["status"])
 
-        assert response.data["emails"] == job_application1_api_valid_data["emails"]
+        assert (response.data["emails"] ==
+                job_application1_api_valid_data.get("emails", []))
 
         assert (response.data["documents"] ==
                 job_application1_api_valid_data.get("documents", []))

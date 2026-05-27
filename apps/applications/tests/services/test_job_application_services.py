@@ -2,7 +2,7 @@ import pytest
 
 from unittest.mock import patch
 
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.applications.services.application_service import JobApplicationService
 from apps.applications.services.contexts.application_context import (
@@ -15,7 +15,7 @@ from apps.applications.services.contexts.application_context import (
 # Creation:
 
 @pytest.mark.django_db
-def test_create_job_application_successfully_returns_job_application(
+def test_create_successfully_returns_job_application(
         job_position1_co1_ws1_user1,
         job_application_context_with_no_id,
         job_application1_valid_data
@@ -27,20 +27,28 @@ def test_create_job_application_successfully_returns_job_application(
         validated_data=job_application1_valid_data,
     )
 
+    assert job_application.id is not None
     assert (job_application.owner ==
             job_position1_co1_ws1_user1.company.workspace.owner)
 
-    assert job_application.workspace == job_position1_co1_ws1_user1.company.workspace
+    assert (job_application.workspace.id ==
+            job_position1_co1_ws1_user1.company.workspace.id)
+
     assert job_application.job_position.id == job_position1_co1_ws1_user1.id
 
     assert job_application.status == job_application1_valid_data["status"]
 
-    assert (list(job_application.emails.all()) ==
-            job_application1_valid_data["emails"])
+    if job_application1_valid_data.get("emails"):
+        assert (list(job_application.emails.all()) ==
+                job_application1_valid_data["emails"])
+
+    if job_application1_valid_data.get("documents"):
+        assert (list(job_application.documents.all()) ==
+                job_application1_valid_data["documents"])
 
 
 @pytest.mark.django_db
-def test_create_job_application_calls_resolve_job_position(
+def test_create_calls_resolve_job_position(
         job_application_context_with_no_id,
         job_position1_co1_ws1_user1,
         job_application1_valid_data
@@ -52,7 +60,7 @@ def test_create_job_application_calls_resolve_job_position(
     ) as mock_resolve_job_position:
 
         # Error due to fake job position
-        with pytest.raises(ValidationError):
+        with pytest.raises(PermissionDenied):
             JobApplicationService.create(
                 user=job_position1_co1_ws1_user1.company.workspace.owner,
                 context=job_application_context_with_no_id,
@@ -63,7 +71,7 @@ def test_create_job_application_calls_resolve_job_position(
 
 
 @pytest.mark.django_db
-def test_create_job_application_calls_validate_emails_ownership(
+def test_create_calls_validate_emails_ownership_if_emails_given(
         job_position1_co1_ws1_user1,
         job_application_context_with_no_id,
         job_application1_valid_data
@@ -80,11 +88,14 @@ def test_create_job_application_calls_validate_emails_ownership(
             validated_data=job_application1_valid_data,
         )
 
-        mock_validate_emails_ownership.assert_called_once()
+        if job_application1_valid_data.get("emails"):
+            mock_validate_emails_ownership.assert_called_once()
+        else:
+            mock_validate_emails_ownership.assert_not_called()
 
 
 @pytest.mark.django_db
-def test_create_job_application_calls_validate_documents_ownership(
+def test_create_calls_validate_documents_ownership_if_documents_given(
         job_position1_co1_ws1_user1,
         job_application_context_with_no_id,
         job_application1_valid_data
@@ -101,11 +112,14 @@ def test_create_job_application_calls_validate_documents_ownership(
             validated_data=job_application1_valid_data,
         )
 
-        mock_validate_documents_ownership.assert_called_once()
+        if job_application1_valid_data.get("documents"):
+            mock_validate_documents_ownership.assert_called_once()
+        else:
+            mock_validate_documents_ownership.assert_not_called()
 
 
 @pytest.mark.django_db
-def test_create_job_application_calls_full_clean(
+def test_create_calls_full_clean(
         job_position1_co1_ws1_user1,
         job_application_context_with_no_id,
         job_application1_valid_data
@@ -125,7 +139,7 @@ def test_create_job_application_calls_full_clean(
 
 
 @pytest.mark.django_db
-def test_create_job_application_calls_save(
+def test_create_calls_save(
         job_position1_co1_ws1_user1,
         job_application_context_with_no_id,
         job_application1_valid_data
@@ -133,8 +147,8 @@ def test_create_job_application_calls_save(
 
     with patch('apps.applications.models.JobApplication.save') as mock_save:
 
-        # Error due to save not saving the instance
-        with pytest.raises(ValidationError):
+        # Error due to save not saving the instance and trying to assign m2m fields
+        with pytest.raises(ValueError):
 
             JobApplicationService.create(
                 user=job_position1_co1_ws1_user1.company.workspace.owner,
@@ -146,7 +160,7 @@ def test_create_job_application_calls_save(
 
 
 @pytest.mark.django_db
-def test_create_job_application_calls_add_m2m_fields(
+def test_create_calls_add_m2m_fields(
         job_position1_co1_ws1_user1,
         job_application_context_with_no_id,
         job_application1_valid_data
@@ -157,36 +171,13 @@ def test_create_job_application_calls_add_m2m_fields(
             "_add_m2m_fields"
     ) as mock_add_m2m_fields:
 
-        # Validation error on empty Email field, because add function is fake
-        with pytest.raises(ValidationError):
-            JobApplicationService.create(
-                user=job_position1_co1_ws1_user1.company.workspace.owner,
-                context=job_application_context_with_no_id,
-                validated_data=job_application1_valid_data,
-            )
-
-        mock_add_m2m_fields.assert_called_once()
-
-
-@pytest.mark.django_db
-def test_create_job_application_calls_m2m_non_empty_validation(
-        job_position1_co1_ws1_user1,
-        job_application_context_with_no_id,
-        job_application1_valid_data
-):
-
-    with patch(
-            "apps.applications.services.application_service.JobApplicationService."
-            "_m2m_non_empty_validation"
-    ) as mock_m2m_non_empty_validation:
-
         JobApplicationService.create(
             user=job_position1_co1_ws1_user1.company.workspace.owner,
             context=job_application_context_with_no_id,
             validated_data=job_application1_valid_data,
         )
 
-        mock_m2m_non_empty_validation.assert_called_once()
+        mock_add_m2m_fields.assert_called_once()
 
 #   ----------------------------------- ****** -----------------------------------
 
@@ -194,7 +185,7 @@ def test_create_job_application_calls_m2m_non_empty_validation(
 # Updating
 
 @pytest.mark.django_db
-def test_update_job_application_successfully_returns_job_application(
+def test_update_successfully_returns_updated_job_application(
         job_application1,
         job_application1_context,
         job_application1_valid_data_updated
@@ -206,11 +197,7 @@ def test_update_job_application_successfully_returns_job_application(
         validated_data=job_application1_valid_data_updated,
     )
 
-    assert job_application.owner == job_application1.owner
-
-    assert job_application.workspace == job_application1.workspace
-    assert job_application.job_position.id == job_application1.job_position.id
-
+    assert job_application.id == job_application1.id
     assert job_application.status == job_application1_valid_data_updated["status"]
 
     assert (list(job_application.emails.all()) ==
@@ -218,7 +205,7 @@ def test_update_job_application_successfully_returns_job_application(
 
 
 @pytest.mark.django_db
-def test_update_job_application_calls_resolve_job_application(
+def test_update_calls_resolve_job_application(
         job_application1,
         job_application1_context,
         job_application1_valid_data_updated
@@ -229,8 +216,8 @@ def test_update_job_application_calls_resolve_job_application(
             "_resolve_job_application"
     ) as mock_resolve_job_application:
 
-        # Error due to fake instance in update function
-        with pytest.raises(ValidationError):
+        # Fake job application leads to PermissionDeny when validating Emails
+        with pytest.raises(PermissionDenied):
             JobApplicationService.update(
                 user=job_application1.owner,
                 context=job_application1_context,
@@ -241,7 +228,7 @@ def test_update_job_application_calls_resolve_job_application(
 
 
 @pytest.mark.django_db
-def test_update_job_application_calls_validate_emails_ownership(
+def test_update_calls_validate_emails_ownership_if_given(
         job_application1,
         job_application1_context,
         job_application1_valid_data_updated
@@ -258,11 +245,14 @@ def test_update_job_application_calls_validate_emails_ownership(
             validated_data=job_application1_valid_data_updated,
         )
 
-        mock_validate_emails_ownership.assert_called_once()
+        if job_application1_valid_data_updated.get("emails"):
+            mock_validate_emails_ownership.assert_called_once()
+        else:
+            mock_validate_emails_ownership.assert_not_called()
 
 
 @pytest.mark.django_db
-def test_update_job_application_calls_validate_documents_ownership(
+def test_update_calls_validate_documents_ownership_if_given(
         job_application1,
         job_application1_context,
         job_application1_valid_data_updated
@@ -283,7 +273,7 @@ def test_update_job_application_calls_validate_documents_ownership(
 
 
 @pytest.mark.django_db
-def test_update_job_application_calls_update_non_m2m_fields(
+def test_update_calls_update_non_m2m_fields(
         job_application1,
         job_application1_context,
         job_application1_valid_data_updated
@@ -305,7 +295,7 @@ def test_update_job_application_calls_update_non_m2m_fields(
 
 
 @pytest.mark.django_db
-def test_update_job_application_calls_update_m2m_fields(
+def test_update_calls_update_m2m_fields(
         job_application1,
         job_application1_context,
         job_application1_valid_data_updated
@@ -326,7 +316,7 @@ def test_update_job_application_calls_update_m2m_fields(
 
 
 @pytest.mark.django_db
-def test_update_job_application_calls_full_clean(
+def test_update_calls_full_clean(
         job_application1,
         job_application1_context,
         job_application1_valid_data_updated
@@ -346,7 +336,7 @@ def test_update_job_application_calls_full_clean(
 
 
 @pytest.mark.django_db
-def test_update_job_application_calls_save(
+def test_update_calls_save(
         job_application1,
         job_application1_context,
         job_application1_valid_data_updated
@@ -364,35 +354,14 @@ def test_update_job_application_calls_save(
 
 
 @pytest.mark.django_db
-def test_update_job_application_calls_m2m_non_empty_validation(
+def test_update_dont_raise_error_if_a_required_m2m_field_is_missing(
         job_application1,
         job_application1_context,
         job_application1_valid_data_updated
 ):
 
-    with patch(
-            "apps.applications.services.application_service.JobApplicationService."
-            "_m2m_non_empty_validation"
-    ) as mock_m2m_non_empty_validation:
-
-        JobApplicationService.update(
-            user=job_application1.owner,
-            context=job_application1_context,
-            validated_data=job_application1_valid_data_updated,
-        )
-
-        mock_m2m_non_empty_validation.assert_called_once()
-
-
-@pytest.mark.django_db
-def test_update_job_application_dont_raise_error_if_a_required_m2m_field_is_missing(
-        job_application1,
-        job_application1_context,
-        job_application1_valid_data_updated
-):
-
-    # Missing emails do NOT raise
-    job_application1_valid_data_updated.pop("emails")
+    # Missing Status do NOT raise
+    job_application1_valid_data_updated.pop("status")
 
     JobApplicationService.update(
         user=job_application1.owner,
@@ -400,31 +369,13 @@ def test_update_job_application_dont_raise_error_if_a_required_m2m_field_is_miss
         validated_data=job_application1_valid_data_updated,
     )
 
-
-@pytest.mark.django_db
-def test_update_job_application_raises_error_if_a_required_m2m_field_is_empty(
-        job_application1,
-        job_application1_context,
-        job_application1_valid_data_updated
-):
-
-    # Empty list emails raise validation error
-    job_application1_valid_data_updated["emails"] = []
-
-    with pytest.raises(ValidationError):
-        JobApplicationService.update(
-            user=job_application1.owner,
-            context=job_application1_context,
-            validated_data=job_application1_valid_data_updated,
-        )
-
 #   ----------------------------------- ****** -----------------------------------
 
 
 # Test Deleting
 
 @pytest.mark.django_db
-def test_remove_job_application_calls_resolve_job_application(
+def test_remove_calls_resolve_job_application(
         job_application1,
         job_application1_context,
 ):

@@ -99,12 +99,12 @@ def job_application1_valid_data(status1, email1_co1_ws1_user1):
         "emails": [email1_co1_ws1_user1],
     }
 
+
 @pytest.fixture
 def job_application1_api_valid_data(status1, email1_co1_ws1_user1):
 
     return {
         "status": status1.id,
-        "emails": [email1_co1_ws1_user1.id],
     }
 
 
