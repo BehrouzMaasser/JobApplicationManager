@@ -5,7 +5,7 @@ import pytest
 from unittest.mock import patch
 
 from django.core.exceptions import ValidationError as DBValidationError
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.exceptions import PermissionDenied
 
 from apps.applications.services.application_note_service import (
     JobApplicationNoteService
@@ -57,7 +57,7 @@ def test_create_calls_resolve_job_application(
 ):
 
     with patch(
-            'apps.applications.services.application_note_services.'
+            'apps.applications.services.application_note_service.'
             'JobApplicationService._resolve_job_application',
     ) as mock_resolve_job_application:
 
@@ -175,7 +175,7 @@ def test_update_application_note_calls_resolve_application_note(
 ):
 
     with patch(
-            "apps.applications.services.application_note_services."
+            "apps.applications.services.application_note_service."
             "JobApplicationNoteService._resolve_job_application_note"
     ) as mock_resolve_application_note:
 
@@ -194,7 +194,7 @@ def test_update_application_note_calls_update_non_m2m_fields(
 ):
 
     with patch(
-            "apps.applications.services.application_note_services."
+            "apps.applications.services.application_note_service."
             "JobApplicationNoteService._update_non_m2m_fields"
     ) as mock_update_non_m2m_fields:
 
@@ -217,7 +217,7 @@ def test_remove_application_note_calls_resolve_application_note(
 ):
 
     with patch(
-            "apps.applications.services.application_note_services."
+            "apps.applications.services.application_note_service."
             "JobApplicationNoteService._resolve_job_application_note"
     ) as mock_resolve_application_note:
 
@@ -239,7 +239,7 @@ def test_retrieve_application_note_calls_resolve_job_application(
 ):
 
     with patch(
-            "apps.applications.services.application_note_services."
+            "apps.applications.services.application_note_service."
             "JobApplicationNoteService._resolve_job_application"
     ) as mock_resolve_job_application:
 
