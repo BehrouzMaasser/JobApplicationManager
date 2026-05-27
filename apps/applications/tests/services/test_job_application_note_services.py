@@ -7,7 +7,7 @@ from unittest.mock import patch
 from django.core.exceptions import ValidationError as DBValidationError
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
-from apps.applications.services.application_note_services import (
+from apps.applications.services.application_note_service import (
     JobApplicationNoteService
 )
 from apps.applications.services.contexts.application_context import (

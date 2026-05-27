@@ -23,7 +23,7 @@ from apps.applications.services.contexts.application_context import (
 )
 
 # Services
-from apps.applications.services.application_note_services import (
+from apps.applications.services.application_note_service import (
     JobApplicationNoteService,
 )
 
