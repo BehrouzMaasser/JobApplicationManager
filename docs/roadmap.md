@@ -24,6 +24,7 @@
 - Write tests for basic_services
 - Review Selectors and write tests for them
 - Write tests for Serializers
+- Write tests for accounts app
 - Create HTML views for the app
 - Authentication
 - Search functionality
