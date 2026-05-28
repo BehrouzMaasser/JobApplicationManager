@@ -9,16 +9,17 @@
 - REST API
 - Writing tests for REST API
 - Applications app is evaluated, models, services and API views are corrected
+- Applications app tests refind
+- Models' integrity verified
+- Tests cleaned
+- Services contracts and structure is fixed
 
 ## In Progress
 - Renaming some files to keep the similarity
-- Redefining Applications app tests
-- Verify models integrity
-- Tightening services contracts and structure
 - Resolve test warnings and errors
 - Clean the project files
-- Clean the tests
 - Modifying README
+- Write tests for basic_services
 
 ## Planned
 - Write tests for Serializers
