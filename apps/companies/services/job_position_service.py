@@ -106,23 +106,17 @@ class JobPositionService(CompanyService):
 
         # Cleaning and saving the instance
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError({"Job Position": ["Invalid Data Given", str(e)]})
+        instance.full_clean()
+        instance.save()
 
         # ----------------------*****---------------------
 
         # Add the many-to-many relations
-        try:
-            JobPositionService._add_m2m_fields(
-                instance=instance,
-                m2m_fields=JobPositionService.M2M_FIELDS,
-                validated_data=validated_data
-            )
-        except Exception as e:
-            raise ValidationError({"Job Position": ["Invalid Data Given", str(e)]})
+        JobPositionService._add_m2m_fields(
+            instance=instance,
+            m2m_fields=JobPositionService.M2M_FIELDS,
+            validated_data=validated_data
+        )
 
         # ----------------------*****---------------------
 
@@ -160,34 +154,28 @@ class JobPositionService(CompanyService):
 
         # ----------------------*****---------------------
 
-        # Updating Fields
-        try:
-            # NON-Many-to-many fields
-            JobPositionService._update_non_m2m_fields(
-                instance=instance,
-                validated_data=validated_data,
-                fields_to_update=JobPositionService.NON_M2M_FIELDS
-            )
-            # Many-to-many fields
-            JobPositionService._update_m2m_fields(
-                instance=instance,
-                validated_data=validated_data,
-                fields_to_update=JobPositionService.M2M_FIELDS
-            )
-        except Exception as e:
-            raise ValidationError({"Job Position": ["Invalid Data Given", str(e)]})
+        # Updating Scalar fields
+        JobPositionService._update_non_m2m_fields(
+            instance=instance,
+            validated_data=validated_data,
+            fields_to_update=JobPositionService.NON_M2M_FIELDS
+        )
 
         # ----------------------*****---------------------
 
         # Cleaning and saving the instance
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError({"Job Position": ["Invalid Data Given", str(e)]})
+        instance.full_clean()
+        instance.save()
 
         # ----------------------*****---------------------
+
+        # Updating Many-to-many fields
+        JobPositionService._update_m2m_fields(
+            instance=instance,
+            validated_data=validated_data,
+            fields_to_update=JobPositionService.M2M_FIELDS
+        )
 
         # Post many-to-many validation
         JobPositionService._m2m_non_empty_validation(

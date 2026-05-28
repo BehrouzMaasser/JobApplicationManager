@@ -1,4 +1,5 @@
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
+
 from django.db import transaction
 
 from apps.accounts.models import User
@@ -30,11 +31,8 @@ class JobBenefitService(BaseService):
 
         # Cleaning and saving the instance
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError({"Job Benefit": ["Invalid Data Given", str(e)]})
+        instance.full_clean()
+        instance.save()
 
         # ----------------------*****---------------------
 
@@ -66,11 +64,8 @@ class JobBenefitService(BaseService):
 
         # Cleaning and saving the instance
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError({"Job Benefit": ["Invalid Data Given", str(e)]})
+        instance.full_clean()
+        instance.save()
 
         # ----------------------*****---------------------
 
@@ -96,4 +91,4 @@ class JobBenefitService(BaseService):
         try:
             return JobBenefit.objects.get(user=user, pk=job_benefit_id)
         except JobBenefit.DoesNotExist:
-            raise ValidationError("JobBenefit does not exist")
+            raise ValidationError({"Job Benefit": ["Job Benefit does not exist"]})

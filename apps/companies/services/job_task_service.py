@@ -1,4 +1,4 @@
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 from django.db import transaction
 
 from apps.accounts.models import User
@@ -27,11 +27,8 @@ class JobTaskService(BaseService):
 
         # Cleaning and saving the instance
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError({"Job Task": ["Invalid Data Given", str(e)]})
+        instance.full_clean()
+        instance.save()
 
         # ----------------------*****---------------------
 
@@ -60,11 +57,8 @@ class JobTaskService(BaseService):
 
         # Cleaning and saving the instance
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError({"Job Task": ["Invalid Data Given", str(e)]})
+        instance.full_clean()
+        instance.save()
 
         # ----------------------*****---------------------
 
@@ -89,4 +83,4 @@ class JobTaskService(BaseService):
         try:
             return JobTask.objects.get(user=user, pk=job_task_id)
         except JobTask.DoesNotExist:
-            raise ValidationError("Job task does not exist")
+            raise ValidationError({"Job Task": ["Job task does not exist"]})

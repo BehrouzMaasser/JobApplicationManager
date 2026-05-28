@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 
 from apps.companies.services.job_requirement_service import JobRequirementService
 

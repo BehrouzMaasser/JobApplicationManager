@@ -1,5 +1,5 @@
-from django.core.exceptions import ValidationError
-from django.db import transaction, IntegrityError
+from django.db import transaction
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 # Models
 from apps.accounts.models import User
@@ -46,11 +46,8 @@ class CompanyEmailService(CompanyService):
 
         # Cleaning and saving the instance
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError({"email": ["Invalid Data Given", str(e)]})
+        instance.full_clean()
+        instance.save()
 
         # ----------------------*****---------------------
 
@@ -86,11 +83,8 @@ class CompanyEmailService(CompanyService):
 
         # Cleaning and saving the instance
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except (ValidationError, IntegrityError):
-            raise ValidationError({"email": "Invalid Data Given"})
+        instance.full_clean()
+        instance.save()
 
         # ----------------------*****---------------------
 
@@ -117,13 +111,17 @@ class CompanyEmailService(CompanyService):
             user: User,
             context: CompanyChildContext,
     ):
-        company = CompanyEmailService._resolve_company(
-            user=user,
-            workspace_id=context.workspace_id,
-            company_id=context.company_id
-        )
+
+        try:
+            company = CompanyEmailService._resolve_company(
+                user=user,
+                workspace_id=context.workspace_id,
+                company_id=context.company_id
+            )
+        except ValidationError:
+            raise PermissionDenied({"Company Email": ["Access To Company Denied"]})
 
         try:
             return company.company_emails.get(pk=context.id)
         except CompanyEmail.DoesNotExist:
-            raise ValidationError({"email": "Email not found"})
+            raise ValidationError({"Company Email": ["Email not found"]})

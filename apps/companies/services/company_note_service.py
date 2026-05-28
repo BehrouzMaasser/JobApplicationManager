@@ -1,5 +1,5 @@
-from django.core.exceptions import ValidationError
-from django.db import transaction, IntegrityError
+from django.db import transaction
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 # Models
 from apps.accounts.models import User
@@ -52,11 +52,8 @@ class CompanyNoteService(CompanyService):
 
         # Cleaning and saving the instance
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError({"company_note": ["Invalid Data Given", str(e)]})
+        instance.full_clean()
+        instance.save()
 
         # ----------------------*****---------------------
 
@@ -92,11 +89,8 @@ class CompanyNoteService(CompanyService):
 
         # Cleaning and saving the instance
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except (ValidationError, IntegrityError):
-            raise ValidationError({"company_note": "Invalid Data Given"})
+        instance.full_clean()
+        instance.save()
 
         # ----------------------*****---------------------
 
@@ -122,13 +116,16 @@ class CompanyNoteService(CompanyService):
             user: User, context: CompanyChildContext
     ) -> CompanyNote:
 
-        company = CompanyNoteService._resolve_company(
-            user=user,
-            workspace_id=context.workspace_id,
-            company_id=context.company_id
-        )
+        try:
+            company = CompanyNoteService._resolve_company(
+                user=user,
+                workspace_id=context.workspace_id,
+                company_id=context.company_id
+            )
+        except ValidationError:
+            raise PermissionDenied({"Company Note": ["Access To Company Denied"]})
 
         try:
             return company.company_notes.get(pk=context.id)
         except CompanyNote.DoesNotExist:
-            raise ValidationError({"company_note": "Company Note does not exist"})
+            raise ValidationError({"Company Note": ["Company Note does not exist"]})

@@ -2,7 +2,7 @@ import pytest
 
 from unittest.mock import patch
 
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied
 
 from apps.companies.services.company_service import CompanyService
 
@@ -254,7 +254,7 @@ def test_access_to_someone_else_company_raise_error(
 ):
 
     # Company belong to another user
-    with pytest.raises(ValidationError):
+    with pytest.raises(PermissionDenied):
         CompanyService._resolve_company(
             user=other_user,
             workspace_id=co1_ws1_user1_context_with_id.workspace_id,
@@ -267,7 +267,7 @@ def test_get_company_from_another_workspace_raises_validation_error(
         co1_ws2_user1, co1_ws1_user1
 ):
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(PermissionDenied):
         CompanyService._resolve_company(
             user=co1_ws1_user1.workspace.owner,
             workspace_id=co1_ws1_user1.workspace.id,

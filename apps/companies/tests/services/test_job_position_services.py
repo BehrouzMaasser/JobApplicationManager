@@ -4,7 +4,7 @@ import pytest
 
 from unittest.mock import patch
 
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 
 from apps.companies.services.contexts.company_context import CompanyChildContext
 from apps.companies.services.job_position_service import JobPositionService
@@ -127,7 +127,8 @@ def test_create_job_position_calls_save(
 
     with patch('apps.companies.models.JobPosition.save') as mock_save:
 
-        with pytest.raises(ValidationError):
+        # Error due to the instance not being saved then attempting to set m2m fields
+        with pytest.raises(ValueError):
             JobPositionService.create(
                 user=workspace_user1.owner,
                 context=co1_child_context_ws1_user1_no_id,
@@ -538,7 +539,7 @@ def test_retrieve_someone_else_job_position_raise_error(
 ):
 
     # Job Position don't belong to user
-    with pytest.raises(ValidationError):
+    with pytest.raises(PermissionDenied):
         JobPositionService._resolve_job_position(
             user=other_user,
             context=job_position1_context,

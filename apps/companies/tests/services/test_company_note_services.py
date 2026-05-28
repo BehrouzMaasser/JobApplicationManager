@@ -2,7 +2,7 @@ import pytest
 
 from unittest.mock import patch
 
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 
 from apps.companies.services.company_note_service import CompanyNoteService
 from apps.companies.services.contexts.company_context import CompanyChildContext
@@ -305,11 +305,11 @@ def test_access_note_from_another_company_raises_error(
 
 
 @pytest.mark.django_db
-def test_access_note_od_another_user_raises_error(
+def test_access_note_of_another_user_raises_error(
         other_user, co_note1_co1_ws1_user1_context_with_id
 ):
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(PermissionDenied):
         CompanyNoteService._resolve_company_note(
             user=other_user,
             context=co_note1_co1_ws1_user1_context_with_id

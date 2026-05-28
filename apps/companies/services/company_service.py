@@ -1,7 +1,8 @@
 from uuid import UUID
 
 from rest_framework.exceptions import ValidationError, PermissionDenied
-from django.db import transaction, IntegrityError
+
+from django.db import transaction
 
 # Contexts
 from apps.companies.services.contexts.company_context import CompanyContext
@@ -51,11 +52,8 @@ class CompanyService(WorkspaceService):
 
         # Model verification and saving the instance
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError({"Company": ["Invalid Company Data", str(e)]})
+        instance.full_clean()
+        instance.save()
 
         # ----------------------*****---------------------
 
@@ -92,11 +90,8 @@ class CompanyService(WorkspaceService):
 
         # Cleaning and saving the instance
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except (ValidationError, IntegrityError):
-            raise ValidationError({"Company": "Invalid Company Data"})
+        instance.full_clean()
+        instance.save()
 
         # ----------------------*****---------------------
 

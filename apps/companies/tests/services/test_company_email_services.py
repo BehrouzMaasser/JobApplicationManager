@@ -2,7 +2,7 @@ import pytest
 
 from unittest.mock import patch
 
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 
 from apps.companies.services.company_email_service import CompanyEmailService
 from apps.companies.services.contexts.company_context import CompanyChildContext
@@ -281,7 +281,7 @@ def test_access_to_email_of_another_user_raises_error(
         co_email1_co1_ws1_user1_context_with_id
 ):
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(PermissionDenied):
         CompanyEmailService._resolve_company_email(
             user=other_user,
             context=co_email1_co1_ws1_user1_context_with_id
