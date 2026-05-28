@@ -13,15 +13,16 @@
 - Models' integrity verified
 - Tests cleaned
 - Services contracts and structure is fixed
+- Renamed some files to keep the similarity
+- Resolved test warnings and errors
 
 ## In Progress
-- Renaming some files to keep the similarity
-- Resolve test warnings and errors
 - Clean the project files
 - Modifying README
-- Write tests for basic_services
 
 ## Planned
+- Write tests for basic_services
+- Review Selectors and write tests for them
 - Write tests for Serializers
 - Create HTML views for the app
 - Authentication
