@@ -28,11 +28,8 @@ class WorkspaceService(BaseService):
             name=validated_data.get("name")
         )
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError({"Workspace": ["Invalid Dat Given", str(e)]})
+        instance.full_clean()
+        instance.save()
 
         return instance
 
@@ -55,15 +52,13 @@ class WorkspaceService(BaseService):
             fields_to_update=WorkspaceService.UPDATABLE_FIELDS
         )
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError({"Workspace": ["Invalid Dat Given", str(e)]})
+        instance.full_clean()
+        instance.save()
 
         return instance
 
     @staticmethod
+    @transaction.atomic
     def remove(*, user: User, workspace_id: UUID) -> None:
 
         instance = WorkspaceService._resolve_workspace(

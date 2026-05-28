@@ -2,7 +2,8 @@ from unittest.mock import patch
 
 import pytest
 
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
+from django.core.exceptions import ValidationError as DBValidationError
 
 from apps.workspaces.services.workspace_service import WorkspaceService
 
@@ -12,7 +13,7 @@ from apps.workspaces.services.workspace_service import WorkspaceService
 # Test Creating
 
 @pytest.mark.django_db
-def test_create_workspace_successfully_returns_workspace(
+def test_create_successfully_returns_workspace(
         user, workspace1_user1_valid_data
 ):
 
@@ -27,7 +28,7 @@ def test_create_workspace_successfully_returns_workspace(
 
 
 @pytest.mark.django_db
-def test_create_workspace_calls_full_clean(user, workspace1_user1_valid_data):
+def test_create_calls_full_clean(user, workspace1_user1_valid_data):
 
     with patch("apps.workspaces.models.Workspace.full_clean") as mock_full_clean:
         WorkspaceService.create(
@@ -38,7 +39,7 @@ def test_create_workspace_calls_full_clean(user, workspace1_user1_valid_data):
 
 
 @pytest.mark.django_db
-def test_create_workspace_calls_save(user, workspace1_user1_valid_data):
+def test_create_calls_save(user, workspace1_user1_valid_data):
 
     with patch("apps.workspaces.models.Workspace.save") as mock_save:
 
@@ -54,7 +55,7 @@ def test_create_workspace_calls_save(user, workspace1_user1_valid_data):
 # Test Updating
 
 @pytest.mark.django_db
-def test_update_workspace_successfully_returns_updated_workspace(
+def test_update_successfully_returns_updated_workspace(
         user, workspace1_user1_updated_valid_data, workspace_user1
 ):
 
@@ -70,7 +71,7 @@ def test_update_workspace_successfully_returns_updated_workspace(
 
 
 @pytest.mark.django_db
-def test_update_workspace_calls_full_clean(
+def test_update_calls_full_clean(
         user, workspace1_user1_updated_valid_data, workspace_user1
 ):
 
@@ -85,7 +86,7 @@ def test_update_workspace_calls_full_clean(
 
 
 @pytest.mark.django_db
-def test_update_workspace_calls_save(
+def test_update_calls_save(
         user,
         workspace1_user1_updated_valid_data,
         workspace_user1
@@ -103,7 +104,7 @@ def test_update_workspace_calls_save(
 
 
 @pytest.mark.django_db
-def test_update_workspace_calls_resolve_workspace(
+def test_update_calls_resolve_workspace(
         user, workspace1_user1_updated_valid_data, workspace_user1
 ):
 
@@ -126,7 +127,7 @@ def test_update_workspace_calls_resolve_workspace(
 # Test Deleting
 
 @pytest.mark.django_db
-def test_remove_workspace_calls_resolve_workspace(user, workspace_user1):
+def test_remove_calls_resolve_workspace(user, workspace_user1):
 
     with patch(
             "apps.workspaces.services.workspace_service.WorkspaceService."
@@ -146,7 +147,7 @@ def test_remove_workspace_calls_resolve_workspace(user, workspace_user1):
 # Test retrieving workspace
 
 @pytest.mark.django_db
-def test_resolve_workspace_successfully_returns_workspace(user, workspace_user1):
+def test_resolve_successfully_returns_workspace(user, workspace_user1):
 
     workspace = WorkspaceService._resolve_workspace(
         user=user,
@@ -159,7 +160,7 @@ def test_resolve_workspace_successfully_returns_workspace(user, workspace_user1)
 
 
 @pytest.mark.django_db
-def test_access_to_a_workspace_of_another_user_raises_error(
+def test_access_to_workspace_of_another_user_raises_error(
         user, other_user, workspace_user1
 ):
 
@@ -173,7 +174,7 @@ def test_access_to_a_workspace_of_another_user_raises_error(
 @pytest.mark.django_db
 def test_resolve_workspace_with_invalid_workspace_id_raises_error(user):
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(DBValidationError):
         WorkspaceService.remove(
             user=user,
             workspace_id="someInvalidIDWhichIsNotUUID",
