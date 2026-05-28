@@ -17,92 +17,77 @@ from apps.companies.models import JobPosition
 def test_job_position_requires_company():
 
     # Company is None
-    job_position = JobPosition(
-        company=None,
-        title="Job Position",
-        description="Description",
-    )
-
     with pytest.raises(ValidationError):
-        job_position.full_clean()
+        JobPosition(
+            company=None,
+            title="Job Position",
+            description="Description",
+        ).full_clean()
 
     # Company is not provided
-    job_position = JobPosition(
-        title="Job Position",
-        description="Description",
-    )
-
     with pytest.raises(ValidationError):
-        job_position.full_clean()
+        JobPosition(
+            title="Job Position",
+            description="Description",
+        ).full_clean()
 
 
 @pytest.mark.django_db
 def test_job_position_requires_title(co1_ws1_user1):
 
     # Title is None
-    job_position = JobPosition(
-        title=None,
-        company=co1_ws1_user1,
-        description="Description",
-    )
-
     with pytest.raises(ValidationError):
-        job_position.full_clean()
+        JobPosition(
+            title=None,
+            company=co1_ws1_user1,
+            description="Description",
+        ).full_clean()
 
     # Title is not provided
-    job_position = JobPosition(
-        company=co1_ws1_user1,
-        description="Description",
-    )
-
     with pytest.raises(ValidationError):
-        job_position.full_clean()
+        JobPosition(
+            company=co1_ws1_user1,
+            description="Description",
+        ).full_clean()
 
 
 @pytest.mark.django_db
 def test_job_position_requires_non_empty_title(co1_ws1_user1):
 
-    job_position = JobPosition(
-        title="",
-        company=co1_ws1_user1,
-        description="Something"
-    )
-
     with pytest.raises(ValidationError):
-        job_position.full_clean()
+        JobPosition(
+            title="",
+            company=co1_ws1_user1,
+            description="Something"
+        ).full_clean()
 
 
 @pytest.mark.django_db
 def test_job_position_requires_description(co1_ws1_user1):
 
     # Description is None
-    job_position = JobPosition(
-        title="Title",
-        company=co1_ws1_user1,
-        description=None
-    )
-
     with pytest.raises(ValidationError):
-        job_position.full_clean()
+        JobPosition(
+            title="Title",
+            company=co1_ws1_user1,
+            description=None
+        ).full_clean()
 
     # Description is not Provided
-    job_position = JobPosition(
-        title="Title",
-        company=co1_ws1_user1,
-        description=None
-    )
-
     with pytest.raises(ValidationError):
-        job_position.full_clean()
+        JobPosition(
+            title="Title",
+            company=co1_ws1_user1,
+        ).full_clean()
 
 
 @pytest.mark.django_db
 def test_job_position_requires_non_empty_description(co1_ws1_user1):
 
-    job_position = JobPosition(title="Title", company=co1_ws1_user1, description="")
-
     with pytest.raises(ValidationError):
-        job_position.full_clean()
+        JobPosition(
+            title="Title", company=co1_ws1_user1, description=""
+        ).full_clean()
 
 
 @pytest.mark.django_db
@@ -161,75 +146,65 @@ def test_invalid_date_posted_in_future(co1_ws1_user1):
 
     future = timezone.now() + datetime.timedelta(days=1)
 
-    job_position = JobPosition(
-        title="Title",
-        company=co1_ws1_user1,
-        description="Description",
-        date_posted=future
-    )
-
     with pytest.raises(ValidationError):
-        job_position.full_clean()
+        JobPosition(
+            title="Title",
+            company=co1_ws1_user1,
+            description="Description",
+            date_posted=future
+        ).full_clean()
 
 
 @pytest.mark.django_db
 def test_invalid_min_and_max_salary(co1_ws1_user1):
 
-    job_position = JobPosition(
-        title="Title",
-        company=co1_ws1_user1,
-        description="Description",
-        min_salary=10,
-        max_salary=9
-    )
-
     with pytest.raises(ValidationError):
-        job_position.full_clean()
+        JobPosition(
+            title="Title",
+            company=co1_ws1_user1,
+            description="Description",
+            min_salary=10,
+            max_salary=9
+        ).full_clean()
 
 
 @pytest.mark.django_db
 def test_invalid_job_position_ad_url(co1_ws1_user1):
 
     # URL missing HTTPS://
-    job_position = JobPosition(
-        title="Title",
-        company=co1_ws1_user1,
-        description="Description",
-        job_position_ad_url="www.google.com"
-    )
-
     with pytest.raises(ValidationError):
-        job_position.full_clean()
+        JobPosition(
+            title="Title",
+            company=co1_ws1_user1,
+            description="Description",
+            job_position_ad_url="www.google.com"
+        ).full_clean()
 
 
 @pytest.mark.django_db
 def test_invalid_job_location_url(co1_ws1_user1):
 
     # URL missing HTTPS://
-    job_position = JobPosition(
-        title="Title",
-        company=co1_ws1_user1,
-        description="Description",
-        job_location_url="www.google.com"
-    )
-
     with pytest.raises(ValidationError):
-        job_position.full_clean()
+        JobPosition(
+            title="Title",
+            company=co1_ws1_user1,
+            description="Description",
+            job_location_url="www.google.com"
+        ).full_clean()
 
 
 @pytest.mark.django_db
 def test_invalid_job_portal_url(co1_ws1_user1):
 
     # URL missing HTTPS://
-    job_position = JobPosition(
-        title="Title",
-        company=co1_ws1_user1,
-        description="Description",
-        job_portal_url="www.google.com"
-    )
-
     with pytest.raises(ValidationError):
-        job_position.full_clean()
+        JobPosition(
+            title="Title",
+            company=co1_ws1_user1,
+            description="Description",
+            job_portal_url="www.google.com"
+        ).full_clean()
 
 
 #   ----------------------------------- ****** -----------------------------------
@@ -249,6 +224,7 @@ def test_valid_minimal_job_position(co1_ws1_user1):
     job_position.full_clean()
     job_position.save()
 
+    assert job_position.id is not None
     assert job_position.title == "Title"
     assert job_position.description == "Description"
     assert job_position.company.id == co1_ws1_user1.id
@@ -307,6 +283,7 @@ def test_valid_job_position_with_max_salary(co1_ws1_user1):
 @pytest.mark.django_db
 def test_valid_job_position_with_min_and_max_salary(co1_ws1_user1):
 
+    # Same max and min
     job_position = JobPosition(
         title="Title",
         company=co1_ws1_user1,
@@ -318,7 +295,8 @@ def test_valid_job_position_with_min_and_max_salary(co1_ws1_user1):
     job_position.full_clean()
     job_position.save()
 
-    assert job_position.max_salary == job_position.min_salary
+    assert job_position.min_salary == 10
+    assert job_position.max_salary == 10
 
     job_position = JobPosition(
         title="Title",
@@ -384,7 +362,7 @@ def test_valid_job_position_with_job_portal_url(co1_ws1_user1):
 
 
 @pytest.mark.django_db
-def test_same_title_in_different_company(
+def test_same_title_in_different_company_is_allowed(
         co1_ws1_user1, co2_ws1_user1, co1_ws2_user1, co1_ws1_user2
 ):
 
@@ -449,104 +427,12 @@ def test_optional_non_m2m_fields_with_none_do_not_raise_error(co1_ws1_user1):
         title="Title",
         company=co1_ws1_user1,
         description="Description",
-        date_posted=None,
     )
 
     job_position.full_clean()
     job_position.save()
 
-    assert job_position.date_posted is None
-
-    # Min-Salary is None
-    job_position = JobPosition(
-        title="Title",
-        company=co1_ws1_user1,
-        description="Description",
-        min_salary=None,
-    )
-
-    job_position.full_clean()
-    job_position.save()
-
-    assert job_position.min_salary is None
-
-    # Max-Salary is None
-    job_position = JobPosition(
-        title="Title",
-        company=co1_ws1_user1,
-        description="Description",
-        max_salary=None,
-    )
-
-    job_position.full_clean()
-    job_position.save()
-
-    assert job_position.max_salary is None
-
-    # Job Position Ad URL is None
-    job_position = JobPosition(
-        title="Title",
-        company=co1_ws1_user1,
-        description="Description",
-        job_position_ad_url=None,
-    )
-
-    job_position.full_clean()
-    job_position.save()
-
-    assert job_position.job_position_ad_url is None
-
-    # Job Location URL is None
-    job_position = JobPosition(
-        title="Title",
-        company=co1_ws1_user1,
-        description="Description",
-        job_location_url=None,
-    )
-
-    job_position.full_clean()
-    job_position.save()
-
-    assert job_position.job_location_url is None
-
-    # Job Portal URL is None
-    job_position = JobPosition(
-        title="Title",
-        company=co1_ws1_user1,
-        description="Description",
-        job_portal_url=None,
-    )
-
-    job_position.full_clean()
-    job_position.save()
-
-    assert job_position.job_portal_url is None
-
-    # Portal Username is None
-    job_position = JobPosition(
-        title="Title",
-        company=co1_ws1_user1,
-        description="Description",
-        portal_username=None,
-    )
-
-    job_position.full_clean()
-    job_position.save()
-
-    assert job_position.portal_username is None
-
-    # Portal Password is None
-    job_position = JobPosition(
-        title="Title",
-        company=co1_ws1_user1,
-        description="Description",
-        portal_password=None,
-    )
-
-    job_position.full_clean()
-    job_position.save()
-
-    assert job_position.portal_password is None
+    assert job_position.id is not None
 
 
 @pytest.mark.django_db

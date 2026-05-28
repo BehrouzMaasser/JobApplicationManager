@@ -13,25 +13,19 @@ from apps.companies.models import JobSite
 def test_job_site_require_name():
 
     # Name is None
-    job_site = JobSite(name=None)
-
     with pytest.raises(ValidationError):
-        job_site.full_clean()
+        JobSite(name=None).full_clean()
 
     # Name is not provided
-    job_site = JobSite()
-
     with pytest.raises(ValidationError):
-        job_site.full_clean()
+        JobSite().full_clean()
 
 
 @pytest.mark.django_db
 def test_job_site_require_non_empty_name():
 
-    job_site = JobSite(name="")
-
     with pytest.raises(ValidationError):
-        job_site.full_clean()
+        JobSite(name="").full_clean()
 
 
 #   ----------------------------------- ****** -----------------------------------
@@ -60,6 +54,7 @@ def test_job_site_valid():
     job_site.full_clean()
     job_site.save()
 
+    assert job_site.id is not None
     assert job_site.name == "In-Site"
 
 

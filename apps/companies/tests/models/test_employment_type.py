@@ -13,25 +13,19 @@ from apps.companies.models import EmploymentType
 def test_employment_type_require_name():
 
     # Name is None
-    employment_type = EmploymentType(name=None)
-
     with pytest.raises(ValidationError):
-        employment_type.full_clean()
+        EmploymentType(name=None).full_clean()
 
     # Name is not provided
-    employment_type = EmploymentType()
-
     with pytest.raises(ValidationError):
-        employment_type.full_clean()
+        EmploymentType().full_clean()
 
 
 @pytest.mark.django_db
 def test_employment_type_require_non_empty_name():
 
-    employment_type = EmploymentType(name="")
-
     with pytest.raises(ValidationError):
-        employment_type.full_clean()
+        EmploymentType(name="").full_clean()
 
 
 #   ----------------------------------- ****** -----------------------------------

@@ -14,51 +14,39 @@ from apps.companies.models import JobTask
 def test_job_task_require_user():
 
     # User is None
-    job_task = JobTask(user=None, title="Title", description="Some description")
-
     with pytest.raises(ValidationError):
-        job_task.full_clean()
+        JobTask(user=None, title="Title", description="Some description").full_clean()
 
     # User is not provided
-    job_task = JobTask(title="Title", description="Some description")
-
     with pytest.raises(ValidationError):
-        job_task.full_clean()
+        JobTask(title="Title", description="Some description").full_clean()
 
     # User is not created in database
-    job_task = JobTask(
-        user=User(email="email@gmail.com"),
-        title="Title",
-        description="Some description"
-    )
-
     with pytest.raises(ValidationError):
-        job_task.full_clean()
+        JobTask(
+            user=User(email="email@gmail.com"),
+            title="Title",
+            description="Some description"
+        ).full_clean()
 
 
 @pytest.mark.django_db
 def test_job_task_require_title(user):
 
     # Title is None
-    job_task = JobTask(user=user, title=None, description="Some description")
-
     with pytest.raises(ValidationError):
-        job_task.full_clean()
+        JobTask(user=user, title=None, description="Some description").full_clean()
 
     # Title is not provided
-    job_task = JobTask(user=user, description="Some description")
-
     with pytest.raises(ValidationError):
-        job_task.full_clean()
+        JobTask(user=user, description="Some description").full_clean()
 
 
 @pytest.mark.django_db
 def test_job_task_require_non_empty_title():
 
-    job_task = JobTask(title="", description="Some description")
-
     with pytest.raises(ValidationError):
-        job_task.full_clean()
+        JobTask(title="", description="Some description").full_clean()
 
 
 #   ----------------------------------- ****** -----------------------------------
@@ -100,7 +88,7 @@ def test_job_task_title_and_description_is_lower_unique_per_user(user):
 # Valid Creation:
 
 @pytest.mark.django_db
-def test_job_task_valid_optional_description(user):
+def test_job_task_description_is_optional(user):
 
     # Description is not provided
     job_task = JobTask(
@@ -111,6 +99,7 @@ def test_job_task_valid_optional_description(user):
     job_task.full_clean()
     job_task.save()
 
+    assert job_task.id is not None
     assert job_task.title == "Job Task Title"
     assert job_task.description == ""
 
@@ -124,7 +113,25 @@ def test_job_task_valid_optional_description(user):
     job_task.full_clean()
     job_task.save()
 
+    assert job_task.id is not None
     assert job_task.title == "Job Task Title2"
+    assert job_task.description == ""
+
+
+@pytest.mark.django_db
+def test_job_task_description_is_set_to_empty_if_not_given_or_is_none(user):
+
+    # Description is not provided
+    job_task = JobTask(
+        user=user,
+        title="Job Task Title",
+    )
+
+    job_task.full_clean()
+    job_task.save()
+
+    assert job_task.id is not None
+    assert job_task.title == "Job Task Title"
     assert job_task.description == ""
 
 
@@ -140,6 +147,7 @@ def test_job_task_valid_with_description(user):
     job_task.full_clean()
     job_task.save()
 
+    assert job_task.id is not None
     assert job_task.title == "Job Task Title"
     assert job_task.description == "Some description"
 

@@ -14,61 +14,49 @@ from apps.companies.models import JobRequirement
 def test_job_requirement_require_user():
 
     # User is None
-    job_requirement = JobRequirement(
-        user=None, title="Title", description="Some description"
-    )
-
     with pytest.raises(ValidationError):
-        job_requirement.full_clean()
+        JobRequirement(
+            user=None, title="Title", description="Some description"
+        ).full_clean()
 
     # User is not provided
-    job_requirement = JobRequirement(
-        title="Title", description="Some description"
-    )
-
     with pytest.raises(ValidationError):
-        job_requirement.full_clean()
+        JobRequirement(
+            title="Title", description="Some description"
+        ).full_clean()
 
     # User is not created in database
-    job_requirement = JobRequirement(
-        user=User(email="email@gmail.com"),
-        title="Title",
-        description="Some description"
-    )
-
     with pytest.raises(ValidationError):
-        job_requirement.full_clean()
+        JobRequirement(
+            user=User(email="email@gmail.com"),
+            title="Title",
+            description="Some description"
+        ).full_clean()
 
 
 @pytest.mark.django_db
 def test_job_requirement_require_title(user):
 
     # Title is None
-    job_requirement = JobRequirement(
-        user=user, title=None, description="Some description"
-    )
-
     with pytest.raises(ValidationError):
-        job_requirement.full_clean()
+        JobRequirement(
+            user=user, title=None, description="Some description"
+        ).full_clean()
 
     # Title is not provided
-    job_requirement = JobRequirement(
-        user=user, description="Some description"
-    )
-
     with pytest.raises(ValidationError):
-        job_requirement.full_clean()
+        JobRequirement(
+            user=user, description="Some description"
+        ).full_clean()
 
 
 @pytest.mark.django_db
 def test_job_requirement_require_non_empty_title(user):
 
-    job_requirement = JobRequirement(
-        user=user, title="", description="Some description"
-    )
-
     with pytest.raises(ValidationError):
-        job_requirement.full_clean()
+        JobRequirement(
+            user=user, title="", description="Some description"
+        ).full_clean()
 
 
 #   ----------------------------------- ****** -----------------------------------
@@ -108,11 +96,10 @@ def test_job_requirement_title_and_description_is_lower_unique_per_user(user):
 
 #   ----------------------------------- ****** -----------------------------------
 
-
 # Valid Creation:
 
 @pytest.mark.django_db
-def test_job_requirement_valid_optional_description(user):
+def test_job_requirement_description_is_optional(user):
 
     # Description is not provided
     job_requirement = JobRequirement(
@@ -123,8 +110,7 @@ def test_job_requirement_valid_optional_description(user):
     job_requirement.full_clean()
     job_requirement.save()
 
-    assert job_requirement.title == "Title1"
-    assert job_requirement.description == ""
+    assert job_requirement.id is not None
 
     # Description is None
     job_requirement = JobRequirement(
@@ -136,12 +122,11 @@ def test_job_requirement_valid_optional_description(user):
     job_requirement.full_clean()
     job_requirement.save()
 
-    assert job_requirement.title == "Title2"
-    assert job_requirement.description == ""
+    assert job_requirement.id is not None
 
 
 @pytest.mark.django_db
-def test_job_requirement_valid_with_description(user):
+def test_job_requirement_with_description(user):
 
     job_requirement = JobRequirement(
         user=user,
@@ -152,8 +137,34 @@ def test_job_requirement_valid_with_description(user):
     job_requirement.full_clean()
     job_requirement.save()
 
+    assert job_requirement.id is not None
     assert job_requirement.title == "Job Requirement Title"
     assert job_requirement.description == "Some description"
+
+
+@pytest.mark.django_db
+def test_description_is_set_to_empty_string_if_not_given_or_none(user):
+
+    job_requirement = JobRequirement(
+        user=user,
+        title="Job Requirement Title 1",
+    )
+
+    job_requirement.full_clean()
+    job_requirement.save()
+
+    assert job_requirement.description == ""
+
+    job_requirement = JobRequirement(
+        user=user,
+        title="Job Requirement Title 2",
+        description=None
+    )
+
+    job_requirement.full_clean()
+    job_requirement.save()
+
+    assert job_requirement.description == ""
 
 
 #   ----------------------------------- ****** -----------------------------------
