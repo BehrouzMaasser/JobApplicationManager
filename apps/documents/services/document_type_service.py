@@ -1,5 +1,6 @@
+from rest_framework.exceptions import ValidationError
+
 # Models
-from django.core.exceptions import ValidationError
 
 from apps.accounts.models import User
 from apps.documents.models import DocumentType
@@ -29,11 +30,8 @@ class DocumentTypeService(BaseService):
         )
 
         # Full clean and save
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError({'Document Type': ["Invalid Data Given", str(e)]})
+        instance.full_clean()
+        instance.save()
 
         return instance
 
@@ -53,11 +51,8 @@ class DocumentTypeService(BaseService):
         )
 
         # Full clean and save
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError({'Document Type': ["Invalid Data Given", str(e)]})
+        instance.full_clean()
+        instance.save()
 
         return instance
 
@@ -76,4 +71,6 @@ class DocumentTypeService(BaseService):
         try:
             return user.document_types.get(pk=document_type_id)
         except DocumentType.DoesNotExist:
-            raise ValidationError({'Document Type': "Document Type Does Not Exist"})
+            raise ValidationError(
+                {'Document Type': ["Document Type Not Found"]}
+            )

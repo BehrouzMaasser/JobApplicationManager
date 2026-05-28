@@ -11,12 +11,17 @@ from apps.documents.tests.conftest import FakeFile
 # Invalid file name
 
 @pytest.mark.django_db
-def test_document_upload_path_with_invalid_file_extension(doc1_user1):
+def test_document_upload_path_without_exactly_one_dot_in_file_name_will_raise_error(
+        doc1_user1
+):
 
     doc1_user1.document_type.owner.documents_directory = "some-directory"
 
     with pytest.raises(ValidationError):
         document_upload_path(doc1_user1, "My Document 1.txt.pdf")
+
+    with pytest.raises(ValidationError):
+        document_upload_path(doc1_user1, "My Document 1 txt")
 
 
 # Valid file name

@@ -54,8 +54,6 @@ def test_document_owner_should_be_the_owner_of_the_document_type(
         user, document_type_user2
 ):
 
-    assert document_type_user2.owner != user
-
     doc = Document(
         owner=user,
         name="Document 1",
@@ -79,13 +77,17 @@ def test_valid_document(document_type_user1):
     doc.full_clean()
     doc.save()
 
+    assert doc.id is not None
     assert doc.name == 'Document 1'
     assert doc.owner == document_type_user1.owner
     assert doc.document_type == document_type_user1
+    assert doc.file_hash is not None
 
 
 @pytest.mark.django_db
-def test_same_document_name_different_user(document_type_user1, document_type_user2):
+def test_same_document_name_different_user_is_allowed(
+        document_type_user1, document_type_user2
+):
 
     doc1 = Document(
         owner=document_type_user1.owner,
@@ -105,12 +107,17 @@ def test_same_document_name_different_user(document_type_user1, document_type_us
     doc2.full_clean()
     doc2.save()
 
+    assert doc1.id is not None
+    assert doc2.id is not None
+
     assert doc1.name == doc2.name
     assert doc1.owner != doc2.owner
 
 
 @pytest.mark.django_db
-def test_duplicated_file_will_point_to_the_existing_file_instead_of_saving_a_copy_for_user(document_type_user1):
+def test_duplicate_file_will_use_the_existing_file_hash_instead_of_saving_a_copy(
+        document_type_user1
+):
 
     doc1 = Document(
         owner=document_type_user1.owner,

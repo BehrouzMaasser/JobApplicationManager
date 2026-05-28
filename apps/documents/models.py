@@ -36,6 +36,7 @@ def document_upload_path(instance, filename):
 
 
 def calculate_file_hash(file_obj):
+
     sha256 = hashlib.sha256()
 
     for chunk in file_obj.chunks():
@@ -48,6 +49,7 @@ def calculate_file_hash(file_obj):
 
 
 class DocumentType(models.Model):
+
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -67,6 +69,7 @@ class DocumentType(models.Model):
         ]
 
     def __str__(self):
+
         return f"{self.name} {self.owner}"
 
     def save(self, *args, **kwargs):
@@ -78,6 +81,7 @@ class DocumentType(models.Model):
 
 
 class Document(models.Model):
+
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="documents"
     )
@@ -102,34 +106,39 @@ class Document(models.Model):
         ]
 
     def __str__(self):
+
         return f"{self.name} {self.owner}"
 
     def clean(self):
+
         if [self.owner_id, self.document_type_id, self.file.name].count(None):
             return
         if self.owner_id != self.document_type.owner_id:
             raise ValidationError(
                 {
-                    "owner": "Owner of the document and document type should be the"
-                             " same",
-                    "document_type": "Owner of the document and document type should"
-                                     " be the same",
+                    "owner": [
+                        "Owner of the document and document type should be the same"
+                    ],
+                    "document_type": [
+                        "Owner of the document and document type should be the same"
+                    ],
                 }
             )
 
     def save(self, *args, **kwargs):
+
         if not self.file_hash:
             self.file_hash = calculate_file_hash(self.file)
 
             # Check if identical file already exists for this user
-            existing = Document.objects.filter(
+            existing_file_hash = Document.objects.filter(
                 owner=self.owner,
                 file_hash=self.file_hash
             ).first()
 
-            if existing:
+            if existing_file_hash:
                 # Reuse existing file instead of saving new one
-                self.file = existing.file
-                self.file_hash = existing.file_hash
+                self.file = existing_file_hash.file
+                self.file_hash = existing_file_hash.file_hash
 
         super().save(*args, **kwargs)

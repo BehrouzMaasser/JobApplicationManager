@@ -1,5 +1,6 @@
+from rest_framework.exceptions import ValidationError
+
 # Models
-from django.core.exceptions import ValidationError
 
 from apps.accounts.models import User
 from apps.documents.models import Document
@@ -30,11 +31,8 @@ class DocumentService(BaseService):
 
         # Full clean and save
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError({'Document': ["Invalid Data Given", str(e)]})
+        instance.full_clean()
+        instance.save()
 
         return instance
 
@@ -52,11 +50,8 @@ class DocumentService(BaseService):
             fields_to_update=DocumentService.UPDATABLE_FIELDS
         )
 
-        try:
-            instance.full_clean()
-            instance.save()
-        except Exception as e:
-            raise ValidationError({'Document': ["Invalid Data Given", str(e)]})
+        instance.full_clean()
+        instance.save()
 
         return instance
 
@@ -75,4 +70,4 @@ class DocumentService(BaseService):
         try:
             return user.documents.get(pk=document_id)
         except Document.DoesNotExist:
-            raise ValidationError({'Document': "Document Does Not Exist"})
+            raise ValidationError({'Document': "Document Not Found"})

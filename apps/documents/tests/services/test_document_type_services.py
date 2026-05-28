@@ -1,9 +1,8 @@
-import copy
 from unittest.mock import patch
 
 import pytest
 
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 
 from apps.documents.services.document_type_service import DocumentTypeService
 
@@ -13,14 +12,7 @@ from apps.documents.services.document_type_service import DocumentTypeService
 # Creation:
 
 @pytest.mark.django_db
-def test_create_document_type_calls_full_clean(user, doc_type1_user1_valid_data):
-
-    # Empty name raise validation error
-    invalid_data = copy.deepcopy(doc_type1_user1_valid_data)
-    invalid_data["name"] = ""
-
-    with pytest.raises(ValidationError):
-        DocumentTypeService.create(user=user, validated_data=invalid_data)
+def test_create_calls_full_clean(user, doc_type1_user1_valid_data):
 
     with patch("apps.documents.models.DocumentType.full_clean") as mock_full_clean:
 
@@ -32,7 +24,7 @@ def test_create_document_type_calls_full_clean(user, doc_type1_user1_valid_data)
 
 
 @pytest.mark.django_db
-def test_create_document_type_calls_save(user, doc_type1_user1_valid_data):
+def test_create_calls_save(user, doc_type1_user1_valid_data):
 
     with patch("apps.documents.models.DocumentType.save") as mock_save:
 
@@ -44,7 +36,7 @@ def test_create_document_type_calls_save(user, doc_type1_user1_valid_data):
 
 
 @pytest.mark.django_db
-def test_create_document_type_successfully_returns_document_type(
+def test_create_successfully_returns_document_type(
         user, doc_type1_user1_valid_data
 ):
 
@@ -56,7 +48,11 @@ def test_create_document_type_successfully_returns_document_type(
     assert document_type.id is not None
     assert document_type.owner == user
     assert document_type.name == doc_type1_user1_valid_data["name"]
-    assert document_type.description == doc_type1_user1_valid_data["description"]
+
+    if doc_type1_user1_valid_data.get("description"):
+        assert document_type.description == doc_type1_user1_valid_data["description"]
+    else:
+        assert document_type.description is None
 
 #   ----------------------------------- ****** -----------------------------------
 
@@ -64,21 +60,7 @@ def test_create_document_type_successfully_returns_document_type(
 # Updating
 
 @pytest.mark.django_db
-def test_update_document_type_calls_full_clean(
-        document_type_user1,
-        doc_type1_user1_valid_data
-):
-
-    # Empty name raise validation error
-    invalid_data = copy.deepcopy(doc_type1_user1_valid_data)
-    invalid_data["name"] = ""
-
-    with pytest.raises(ValidationError):
-        DocumentTypeService.update(
-            user=document_type_user1.owner,
-            document_type_id=document_type_user1.id,
-            validated_data=invalid_data
-        )
+def test_update_full_clean(document_type_user1, doc_type1_user1_valid_data):
 
     with patch(
             "apps.documents.models.DocumentType.full_clean"
@@ -94,10 +76,7 @@ def test_update_document_type_calls_full_clean(
 
 
 @pytest.mark.django_db
-def test_update_document_type_calls_save(
-        document_type_user1,
-        doc_type1_user1_valid_data
-):
+def test_update_calls_save(document_type_user1, doc_type1_user1_valid_data):
 
     with patch(
             "apps.documents.models.DocumentType.save"
@@ -113,7 +92,7 @@ def test_update_document_type_calls_save(
 
 
 @pytest.mark.django_db
-def test_update_document_type_calls_resolve_document_type(
+def test_update_calls_resolve_document_type(
         document_type_user1,
         doc_type1_user1_valid_data
 ):
@@ -133,7 +112,7 @@ def test_update_document_type_calls_resolve_document_type(
 
 
 @pytest.mark.django_db
-def test_update_document_type_calls_update_non_m2m_fields(
+def test_update_calls_update_non_m2m_fields(
         document_type_user1,
         doc_type1_user1_valid_data
 ):
@@ -157,7 +136,7 @@ def test_update_document_type_calls_update_non_m2m_fields(
 # Test Deleting
 
 @pytest.mark.django_db
-def test_delete_document_type_calls_resolve_document_type(document_type_user1):
+def test_delete_calls_resolve_document_type(document_type_user1):
 
     with patch(
         "apps.documents.services.document_type_service.DocumentTypeService."

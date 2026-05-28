@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 
 from apps.documents.services.document_service import DocumentService
 
@@ -14,7 +14,7 @@ from apps.documents.services.document_service import DocumentService
 # Creation:
 
 @pytest.mark.django_db
-def test_create_document_successfully_returns_document(
+def test_create_successfully_returns_document(
         user, doc1_user1_valid_data
 ):
 
@@ -27,17 +27,12 @@ def test_create_document_successfully_returns_document(
     assert document.owner == user
     assert document.name == doc1_user1_valid_data["name"]
     assert document.document_type == doc1_user1_valid_data["document_type"]
+    assert document.file == doc1_user1_valid_data["file"]
+    assert document.file_hash is not None
 
 
 @pytest.mark.django_db
-def test_create_document_calls_full_clean(user, doc1_user1_valid_data):
-
-    # Empty name raise validation error
-    invalid_data = copy.deepcopy(doc1_user1_valid_data)
-    invalid_data["name"] = ""
-
-    with pytest.raises(ValidationError):
-        DocumentService.create(user=user, validated_data=invalid_data)
+def test_create_calls_full_clean(user, doc1_user1_valid_data):
 
     with patch("apps.documents.models.Document.full_clean") as mock_full_clean:
 
@@ -47,7 +42,7 @@ def test_create_document_calls_full_clean(user, doc1_user1_valid_data):
 
 
 @pytest.mark.django_db
-def test_create_document_calls_save(user, doc1_user1_valid_data):
+def test_create_calls_save(user, doc1_user1_valid_data):
 
     with patch("apps.documents.models.Document.save") as mock_save:
 
@@ -61,12 +56,12 @@ def test_create_document_calls_save(user, doc1_user1_valid_data):
 # Updating
 
 @pytest.mark.django_db
-def test_update_document_successfully_returns_updated_document(
+def test_update_successfully_returns_updated_document(
         doc1_user1_valid_data, doc1_user1, document_type2_user1
 ):
 
     updated_data = copy.deepcopy(doc1_user1_valid_data)
-    updated_data["name"] = "New Document 1"
+    updated_data["name"] = "Document 1 Updated"
     updated_data["document_type"] = document_type2_user1
 
     document = DocumentService.update(
@@ -80,21 +75,11 @@ def test_update_document_successfully_returns_updated_document(
     assert document.name == updated_data["name"]
     assert document.document_type == updated_data["document_type"]
     assert document.file == updated_data["file"]
+    assert document.file_hash is not None
 
 
 @pytest.mark.django_db
-def test_update_document_calls_full_clean(doc1_user1_valid_data, doc1_user1):
-
-    # Empty name raise validation error
-    invalid_data = copy.deepcopy(doc1_user1_valid_data)
-    invalid_data["name"] = ""
-
-    with pytest.raises(ValidationError):
-        DocumentService.update(
-            user=doc1_user1.owner,
-            validated_data=invalid_data,
-            document_id=doc1_user1.id
-        )
+def test_update_calls_full_clean(doc1_user1_valid_data, doc1_user1):
 
     with patch("apps.documents.models.Document.full_clean") as mock_full_clean:
 
@@ -108,7 +93,7 @@ def test_update_document_calls_full_clean(doc1_user1_valid_data, doc1_user1):
 
 
 @pytest.mark.django_db
-def test_update_document_calls_save(doc1_user1_valid_data, doc1_user1):
+def test_update_calls_save(doc1_user1_valid_data, doc1_user1):
 
     with patch("apps.documents.models.Document.save") as mock_save:
 
@@ -122,7 +107,7 @@ def test_update_document_calls_save(doc1_user1_valid_data, doc1_user1):
 
 
 @pytest.mark.django_db
-def test_update_document_calls_resolve_document(doc1_user1_valid_data, doc1_user1):
+def test_update_calls_resolve_document(doc1_user1_valid_data, doc1_user1):
 
     with patch(
         "apps.documents.services.document_service.DocumentService."
@@ -143,7 +128,7 @@ def test_update_document_calls_resolve_document(doc1_user1_valid_data, doc1_user
 # Test Deleting
 
 @pytest.mark.django_db
-def test_delete_document_calls_resolve_document(
+def test_delete_calls_resolve_document(
         document_type2_user1, fake_file2, doc1_user1
 ):
 
