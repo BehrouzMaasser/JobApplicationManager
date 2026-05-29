@@ -135,7 +135,7 @@ def job_application1_api_valid_data_updated(
 
 
 @pytest.fixture
-def job_application1(db, job_position1_co1_ws1_user1, status1, email1_co1_ws1_user1):
+def job_application1(db, job_position1_co1_ws1_user1, status1):
 
     app = JobApplication.objects.create(
         owner=job_position1_co1_ws1_user1.company.workspace.owner,
@@ -143,8 +143,6 @@ def job_application1(db, job_position1_co1_ws1_user1, status1, email1_co1_ws1_us
         job_position=job_position1_co1_ws1_user1,
         status=status1,
     )
-
-    app.emails.set([email1_co1_ws1_user1])
 
     return app
 
@@ -172,7 +170,7 @@ def job_application_context_with_no_id(db, job_position1_co1_ws1_user1):
 
 
 @pytest.fixture
-def job_application2(db, job_position1_co2_ws1_user1, status1, email1_co1_ws1_user1):
+def job_application2(db, job_position1_co2_ws1_user1, status1):
 
     app = JobApplication.objects.create(
         owner=job_position1_co2_ws1_user1.company.workspace.owner,
@@ -180,8 +178,6 @@ def job_application2(db, job_position1_co2_ws1_user1, status1, email1_co1_ws1_us
         job_position=job_position1_co2_ws1_user1,
         status=status1,
     )
-
-    app.emails.set([email1_co1_ws1_user1])
 
     return app
 
