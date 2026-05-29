@@ -50,45 +50,18 @@ class BaseService:
         # Make sure the m2m fields are associated to the user
         invalid_fields = []
 
-        try:
-            for field_name, ownership in ownership_map.items():
-                if field_name in validated_data:
-                    for data in validated_data[field_name]:
+        for field_name, ownership in ownership_map.items():
+            if field_name in validated_data:
+                for data in validated_data[field_name]:
+                    try:
                         if getattr(data, ownership) != user:
                             invalid_fields.append(field_name)
-                            break
-        except Exception as e:
-            raise ValidationError(
-                {"Many-To-Many": ["Invalid field instance", str(e)]}
-            )
+                    except AttributeError:
+                        continue
 
         if invalid_fields:
             raise ValidationError(
-                {f"{field}": f"User Don't Have Such {field}" for
-                 field in invalid_fields}
-            )
-
-    @staticmethod
-    def _non_m2m_ownership_validation(
-            user: User, validated_data: dict, ownership_map
-    ) -> None:
-
-        invalid_fields = []
-
-        try:
-            for field_name, ownership in ownership_map.items():
-                if field_name in validated_data:
-                    if getattr(validated_data[field_name], ownership) != user:
-                        invalid_fields.append(field_name)
-                        break
-        except Exception as e:
-            raise ValidationError(
-                {"Field": ["Invalid field instance", str(e)]}
-            )
-
-        if invalid_fields:
-            raise ValueError(
-                {f"{field}": f"User Don't Have Such {field}" for
+                {f"{field}": f"User Don't Own {field}" for
                  field in invalid_fields}
             )
 
