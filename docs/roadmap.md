@@ -19,9 +19,9 @@
 ## In Progress
 - Clean the project files
 - Modifying README
+- Write tests for basic_services
 
 ## Planned
-- Write tests for basic_services
 - Review Selectors and write tests for them
 - Write tests for Serializers
 - Write tests for accounts app
