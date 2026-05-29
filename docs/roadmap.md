@@ -15,11 +15,11 @@
 - Services contracts and structure is fixed
 - Renamed some files to keep the similarity
 - Resolved test warnings and errors
+- Wrote tests for basic_services
 
 ## In Progress
 - Clean the project files
 - Modifying README
-- Write tests for basic_services
 
 ## Planned
 - Review Selectors and write tests for them
