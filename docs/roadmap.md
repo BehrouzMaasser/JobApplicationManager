@@ -20,10 +20,10 @@
 ## In Progress
 - Clean the project files
 - Modifying README
+- Write tests for Serializers
 
 ## Planned
 - Review Selectors and write tests for them
-- Write tests for Serializers
 - Write tests for accounts app
 - Create HTML views for the app
 - Authentication
