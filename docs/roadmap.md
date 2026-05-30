@@ -16,14 +16,14 @@
 - Renamed some files to keep the similarity
 - Resolved test warnings and errors
 - Wrote tests for basic_services
+- Wrote tests for Serializers
 
 ## In Progress
 - Clean the project files
 - Modifying README
-- Write tests for Serializers
+- Review Selectors and write tests for them
 
 ## Planned
-- Review Selectors and write tests for them
 - Write tests for accounts app
 - Create HTML views for the app
 - Authentication
