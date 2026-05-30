@@ -11,11 +11,11 @@ class CompanySelector:
     @dataclass
     class QueryFilter:
 
-        workspace_id: str | None
+        workspace_id: str | None = None
         id: int | None = None
 
     @staticmethod
-    def list(*, user: User, filters: None | QueryFilter) -> QuerySet[Company]:
+    def list(*, user: User, filters: None | QueryFilter = None) -> QuerySet[Company]:
 
         queryset = Company.objects.filter(workspace__owner=user)
 

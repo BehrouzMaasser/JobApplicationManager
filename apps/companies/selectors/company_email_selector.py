@@ -11,12 +11,12 @@ class CompanyEmailSelector:
     @dataclass
     class QueryFilter:
 
-        workspace_id: str | None
-        company_id: int | None
+        workspace_id: str | None = None
+        company_id: int | None = None
         id: int | None = None
 
     @staticmethod
-    def list(*, user: User, filters: None | QueryFilter) -> QuerySet[Company]:
+    def list(*, user: User, filters: None | QueryFilter = None) -> QuerySet[Company]:
 
         queryset = CompanyEmail.objects.filter(company__workspace__owner=user)
 
@@ -27,7 +27,7 @@ class CompanyEmailSelector:
             queryset = queryset.filter(company__workspace__workspace_id=workspace_id)
 
         if company_id := filters.company_id:
-            queryset = queryset.filter(copmany__pk=company_id)
+            queryset = queryset.filter(company__pk=company_id)
 
         if filters.id:
             queryset = queryset.filter(id=filters.id)

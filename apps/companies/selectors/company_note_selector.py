@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from django.db.models import QuerySet
 
 from apps.accounts.models import User
-from apps.companies.models import Company, CompanyNote
+from apps.companies.models import CompanyNote
 
 
 class CompanyNoteSelector:
@@ -11,12 +11,14 @@ class CompanyNoteSelector:
     @dataclass
     class QueryFilter:
 
-        workspace_id: str | None
-        company_id: int | None
+        workspace_id: str | None = None
+        company_id: int | None = None
         id: int | None = None
 
     @staticmethod
-    def list(*, user: User, filters: None | QueryFilter) -> QuerySet[Company]:
+    def list(
+            *, user: User, filters: None | QueryFilter = None
+    ) -> QuerySet[CompanyNote]:
 
         queryset = CompanyNote.objects.filter(company__workspace__owner=user)
 
@@ -27,7 +29,7 @@ class CompanyNoteSelector:
             queryset = queryset.filter(company__workspace__workspace_id=workspace_id)
 
         if company_id := filters.company_id:
-            queryset = queryset.filter(copmany__pk=company_id)
+            queryset = queryset.filter(company__pk=company_id)
 
         if filters.id:
             queryset = queryset.filter(id=filters.id)

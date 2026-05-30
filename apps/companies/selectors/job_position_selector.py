@@ -10,12 +10,14 @@ class JobPositionSelector:
 
     @dataclass
     class QueryFilter:
-        workspace_id: str | None
-        company_id: int | None
+        workspace_id: str | None = None
+        company_id: str | None = None
         id: int | None = None
 
     @staticmethod
-    def list(*, user: User, filters: None | QueryFilter) -> QuerySet[JobPosition]:
+    def list(
+            *, user: User, filters: None | QueryFilter = None
+    ) -> QuerySet[JobPosition]:
 
         queryset = JobPosition.objects.filter(company__workspace__owner=user)
 
