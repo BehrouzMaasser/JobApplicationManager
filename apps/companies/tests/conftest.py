@@ -114,10 +114,30 @@ def co_note1_co1_ws1_user1(db, co1_ws1_user1):
 
 
 @pytest.fixture
+def co_note1_co1_ws1_user2(db, co1_ws1_user2):
+
+    return CompanyNote.objects.create(
+        company=co1_ws1_user2,
+        title="Title1",
+        content="Content1",
+    )
+
+
+@pytest.fixture
 def co_note1_co2_ws1_user1(db, co2_ws1_user1):
 
     return CompanyNote.objects.create(
         company=co2_ws1_user1,
+        title="Title1",
+        content="Content1",
+    )
+
+
+@pytest.fixture
+def co_note1_co1_ws2_user1(db, co1_ws2_user1):
+
+    return CompanyNote.objects.create(
+        company=co1_ws2_user1,
         title="Title1",
         content="Content1",
     )
@@ -140,6 +160,26 @@ def co_email1_co1_ws1_user1(db, co1_ws1_user1):
 
     return CompanyEmail.objects.create(
         company=co1_ws1_user1,
+        title="Title1",
+        email="email1@gmail.com",
+    )
+
+
+@pytest.fixture
+def co_email1_co1_ws1_user2(db, co1_ws1_user2):
+
+    return CompanyEmail.objects.create(
+        company=co1_ws1_user2,
+        title="Title1",
+        email="email1@gmail.com",
+    )
+
+
+@pytest.fixture
+def co_email1_co1_ws2_user1(db, co1_ws2_user1):
+
+    return CompanyEmail.objects.create(
+        company=co1_ws2_user1,
         title="Title1",
         email="email1@gmail.com",
     )
@@ -280,6 +320,16 @@ def job_requirement_user1(db, user):
 
 
 @pytest.fixture
+def job_requirement_user2(db, other_user):
+
+    return JobRequirement.objects.create(
+        user=other_user,
+        title="Title1",
+        description="Description1",
+    )
+
+
+@pytest.fixture
 def job_requirement2_user1(db, user):
 
     return JobRequirement.objects.create(
@@ -287,6 +337,7 @@ def job_requirement2_user1(db, user):
         title="Title2",
         description="Description2",
     )
+
 
 # Employment Type Fixtures:
 
@@ -351,6 +402,30 @@ def job_position1_user1(
 
 
 @pytest.fixture
+def job_position1_user2(
+        db,
+        co1_ws1_user2,
+        empl_type1,
+        job_requirement_user2,
+        job_task_user2,
+        job_site1,
+):
+
+    job_position = JobPosition.objects.create(
+        company=co1_ws1_user2,
+        title="Title1",
+        description="Description1",
+    )
+
+    job_position.employment_types.set([empl_type1.id])
+    job_position.job_sites.set([job_site1.id])
+    job_position.tasks.set([job_task_user2.id])
+    job_position.requirements.set([job_requirement_user2.id])
+
+    return job_position
+
+
+@pytest.fixture
 def job_pos1_co2_ws1_user1(
         db,
         co2_ws1_user1,
@@ -362,6 +437,30 @@ def job_pos1_co2_ws1_user1(
 
     job_position = JobPosition.objects.create(
         company=co2_ws1_user1,
+        title="Title1",
+        description="Description1",
+    )
+
+    job_position.employment_types.set([empl_type1.id])
+    job_position.job_sites.set([job_site1.id])
+    job_position.tasks.set([job_task_user1.id])
+    job_position.requirements.set([job_requirement_user1.id])
+
+    return job_position
+
+
+@pytest.fixture
+def job_pos1_co1_ws2_user1(
+        db,
+        co1_ws2_user1,
+        empl_type1,
+        job_requirement_user1,
+        job_task_user1,
+        job_site1,
+):
+
+    job_position = JobPosition.objects.create(
+        company=co1_ws2_user1,
         title="Title1",
         description="Description1",
     )
