@@ -18,14 +18,14 @@
 - Wrote tests for basic_services
 - Wrote tests for Serializers
 - Reviewed Selectors and wrote tests for them
+- Reviewed accounts app and write tests for them
 
 ## In Progress
 - Clean the project files
 - Modifying README
-- Review accounts app and write tests for it if necessary
+- Create HTML views for the app
 
 ## Planned
-- Create HTML views for the app
 - Authentication
 - Search functionality
 - Document categorization
