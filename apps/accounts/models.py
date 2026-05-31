@@ -21,12 +21,14 @@ class UserManager(BaseUserManager):
             raise ValueError("Users must have an email address")
         if not password:
             raise ValueError("Users must have password")
-        email = self.normalize_email(email)
+
+        email = self.normalize_email(email).lower()
+
         user = self.model(email=email, **extra_fields)
+
         user.set_password(password)
 
         user.full_clean()
-
         user.save(using=self._db)
 
         return user
@@ -36,6 +38,11 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
         extra_fields.setdefault("is_active", True)
+
+        if extra_fields.get("is_staff"):
+            raise ValueError("Ordinary User must NOT have is_staff=True")
+        if extra_fields.get("is_superuser"):
+            raise ValueError("Ordinary User must NOT have is_superuser=True")
 
         return self._create_user(email, password, **extra_fields)
 
@@ -47,6 +54,7 @@ class UserManager(BaseUserManager):
 
         if not extra_fields.get("is_staff"):
             raise ValueError("Superuser must have is_staff=True.")
+
         if not extra_fields.get("is_superuser"):
             raise ValueError("Superuser must have is_superuser=True.")
 
@@ -54,13 +62,14 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
+    """Custom user model using email as unique identifier."""
 
     username = None
 
     email = models.EmailField(max_length=130, unique=True)
 
-    first_name = models.CharField(max_length=50, blank=True, null=True)
-    last_name = models.CharField(max_length=50, blank=True, null=True)
+    first_name = models.CharField(max_length=50, blank=True)
+    last_name = models.CharField(max_length=50, blank=True)
 
     phone_number = PhoneNumberField(blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
@@ -75,6 +84,9 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
 
     objects = UserManager()
+
+    class Meta:
+        ordering = ('created_at', 'last_name')
 
     def __str__(self):
 
