@@ -44,6 +44,26 @@ def job_position1_co1_ws1_user1(db, co1_ws1_user1):
 
 
 @pytest.fixture
+def job_position1_co1_ws1_user2(db, co1_ws1_user2):
+
+    return JobPosition.objects.create(
+        title="Title 1",
+        company=co1_ws1_user2,
+        description="Description 1",
+    )
+
+
+@pytest.fixture
+def job_position1_co1_ws2_user1(db, co1_ws2_user1):
+
+    return JobPosition.objects.create(
+        title="Title 1",
+        company=co1_ws2_user1,
+        description="Description 1",
+    )
+
+
+@pytest.fixture
 def job_position2_co1_ws1_user1(db, co1_ws1_user1):
 
     return JobPosition.objects.create(
@@ -148,6 +168,58 @@ def job_application1(db, job_position1_co1_ws1_user1, status1):
 
 
 @pytest.fixture
+def job_app1_pos1_co1_ws2_user1(db, job_position1_co1_ws2_user1, status1):
+
+    app = JobApplication.objects.create(
+        owner=job_position1_co1_ws2_user1.company.workspace.owner,
+        workspace=job_position1_co1_ws2_user1.company.workspace,
+        job_position=job_position1_co1_ws2_user1,
+        status=status1,
+    )
+
+    return app
+
+
+@pytest.fixture
+def job_app1_pos1_co2_ws1_user1(db, job_position1_co2_ws1_user1, status1):
+
+    app = JobApplication.objects.create(
+        owner=job_position1_co2_ws1_user1.company.workspace.owner,
+        workspace=job_position1_co2_ws1_user1.company.workspace,
+        job_position=job_position1_co2_ws1_user1,
+        status=status1,
+    )
+
+    return app
+
+
+@pytest.fixture
+def job_app1_pos2_co1_ws1_user1(db, job_position2_co1_ws1_user1, status1):
+
+    app = JobApplication.objects.create(
+        owner=job_position2_co1_ws1_user1.company.workspace.owner,
+        workspace=job_position2_co1_ws1_user1.company.workspace,
+        job_position=job_position2_co1_ws1_user1,
+        status=status1,
+    )
+
+    return app
+
+
+@pytest.fixture
+def job_app1_pos1_co1_ws1_user2(db, job_position1_co1_ws1_user2, status1):
+
+    app = JobApplication.objects.create(
+        owner=job_position1_co1_ws1_user2.company.workspace.owner,
+        workspace=job_position1_co1_ws1_user2.company.workspace,
+        job_position=job_position1_co1_ws1_user2,
+        status=status1,
+    )
+
+    return app
+
+
+@pytest.fixture
 def job_application1_context(db, job_application1):
 
     return JobApplicationContext(
@@ -206,6 +278,26 @@ def app_note1(db, job_application1):
 
     return JobApplicationNote.objects.create(
         job_application=job_application1,
+        title="Title 1",
+        content="Content",
+    )
+
+
+@pytest.fixture
+def app_note2(db, job_app1_pos1_co1_ws2_user1):
+
+    return JobApplicationNote.objects.create(
+        job_application=job_app1_pos1_co1_ws2_user1,
+        title="Title 1",
+        content="Content",
+    )
+
+
+@pytest.fixture
+def app_note1_user2(db, job_app1_pos1_co1_ws1_user2):
+
+    return JobApplicationNote.objects.create(
+        job_application=job_app1_pos1_co1_ws1_user2,
         title="Title 1",
         content="Content",
     )
