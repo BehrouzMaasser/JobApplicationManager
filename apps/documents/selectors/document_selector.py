@@ -10,10 +10,13 @@ class DocumentSelector:
     @dataclass
     class QueryFilter:
 
-        document_type_id: int
+        document_type_id: int | None = None
+        id: int | None = None
 
     @staticmethod
-    def list(*, user: User, filters: None | QueryFilter) -> QuerySet[Document]:
+    def list(
+            *, user: User, filters: None | QueryFilter = None
+    ) -> QuerySet[Document]:
 
         queryset = Document.objects.filter(owner=user)
 
@@ -21,6 +24,9 @@ class DocumentSelector:
             return queryset
 
         if filters.document_type_id:
-            queryset.filter(document_type=filters.document_type_id)
+            queryset = queryset.filter(document_type__pk=filters.document_type_id)
 
-        return Document.objects.filter(owner=user)
+        if filters.id:
+            queryset = queryset.filter(pk=filters.id)
+
+        return queryset
