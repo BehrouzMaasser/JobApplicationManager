@@ -115,6 +115,28 @@ def doc1_user1(document_type_user1, fake_file1):
 
 
 @pytest.fixture
+def doc2_user1(document_type2_user1, fake_file1):
+
+    return Document.objects.create(
+        name="Document 2",
+        owner=document_type2_user1.owner,
+        document_type=document_type2_user1,
+        file=fake_file1,
+    )
+
+
+@pytest.fixture
+def doc1_user2(document_type_user2, fake_file1):
+
+    return Document.objects.create(
+        name="Document 1",
+        owner=document_type_user2.owner,
+        document_type=document_type_user2,
+        file=fake_file1,
+    )
+
+
+@pytest.fixture
 def fake_file1():
 
     return FakeFile("Some File".encode("utf-8"), 1)
