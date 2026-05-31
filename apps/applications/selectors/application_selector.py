@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 
 from django.db.models import QuerySet
 
@@ -10,15 +11,17 @@ class JobApplicationSelector:
 
     @dataclass
     class QueryFilter:
-        workspace_id: str | None
-        company_id: int | None
-        job_position_id: int | None
+        workspace_id: str | None = None
+        company_id: int | None = None
+        job_position_id: int | None = None
         id: int | None = None
         status_id: int | None = None
-        date_applied: str | None = None
+        date_applied: datetime | None = None
 
     @staticmethod
-    def list(*, user: User, filters: None | QueryFilter) -> QuerySet[JobApplication]:
+    def list(
+            *, user: User, filters: None | QueryFilter = None
+    ) -> QuerySet[JobApplication]:
 
         queryset = JobApplication.objects.filter(owner=user)
 

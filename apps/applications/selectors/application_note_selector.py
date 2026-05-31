@@ -10,17 +10,17 @@ class JobApplicationNoteSelector:
 
     @dataclass
     class QueryFilter:
-        workspace_id: str | None
-        company_id: int | None
-        job_position_id: int | None
-        job_application_id: int | None
+        workspace_id: str | None = None
+        company_id: int | None = None
+        job_position_id: int | None = None
+        job_application_id: int | None = None
         id: int | None = None
 
     @staticmethod
     def list(
             *,
             user: User,
-            filters: None | QueryFilter
+            filters: None | QueryFilter = None
     ) -> QuerySet[JobApplicationNote]:
 
         queryset = JobApplicationNote.objects.filter(job_application__owner=user)
