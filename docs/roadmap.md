@@ -17,14 +17,14 @@
 - Resolved test warnings and errors
 - Wrote tests for basic_services
 - Wrote tests for Serializers
+- Reviewed Selectors and wrote tests for them
 
 ## In Progress
 - Clean the project files
 - Modifying README
-- Review Selectors and write tests for them
+- Review accounts app and write tests for it if necessary
 
 ## Planned
-- Write tests for accounts app
 - Create HTML views for the app
 - Authentication
 - Search functionality
