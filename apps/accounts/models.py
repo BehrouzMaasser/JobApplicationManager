@@ -40,9 +40,9 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_active", True)
 
         if extra_fields.get("is_staff"):
-            raise ValueError("Ordinary User must NOT have is_staff=True")
+            raise ValueError("User must NOT have is_staff=True")
         if extra_fields.get("is_superuser"):
-            raise ValueError("Ordinary User must NOT have is_superuser=True")
+            raise ValueError("User must NOT have is_superuser=True")
 
         return self._create_user(email, password, **extra_fields)
 
