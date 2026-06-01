@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ workspace.name }}</title>
+</head>
+<body>
+<h1>{{ workspace.name }}</h1>
+
+<p>Workspace details page</p>
+
+<a href="{% url 'workspace-edit' workspace.pk %}">Edit</a>
+|
+<a href="{% url 'workspace-delete' workspace.pk %}">Delete</a>
+|
+<a href="{% url 'workspace-list-web' %}">
+    Back to Workspaces
+</a>
+</body>
+</html>
