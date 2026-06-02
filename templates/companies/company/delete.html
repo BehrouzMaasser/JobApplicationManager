@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Delete Company</title>
+</head>
+<body>
+<h1>Delete Company</h1>
+
+<p>Are you sure you want to delete "{{ object.name }}"?</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Yes, Delete</button>
+</form>
+
+<a href="{% url 'company-list-web' workspace_id %}">
+    Cancel
+</a>
+</body>
+</html>

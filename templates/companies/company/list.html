@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Companies</title>
+</head>
+<body>
+<h1>Your Companies</h1>
+
+<a href="{% url 'company-create' workspace_id %}">+ Create Company</a>
+<a href="{% url 'workspace-detail-web' workspace_id %}">
+    Back to workspace
+</a>
+<hr>
+
+{% if companies %}
+    {% for company in companies %}
+        <div>
+            <h3>{{ company.name }}</h3>
+
+            <a href="{% url 'company-detail-web' company.pk %}">Open</a>
+            |
+            <a href="{% url 'company-edit' company.pk %}">Edit</a>
+            |
+            <a href="{% url 'company-delete' company.pk %}">Delete</a>
+        </div>
+        <hr>
+    {% endfor %}
+{% else %}
+    <p>No companies yet.</p>
+    <a href="{% url 'company-create' workspace_id %}">
+        Create your first company
+    </a>
+{% endif %}
+</body>
+</html>

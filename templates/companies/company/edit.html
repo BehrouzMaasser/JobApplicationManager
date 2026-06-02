@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Company</title>
+</head>
+<body>
+<h1>Edit Company</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit">Save Changes</button>
+</form>
+
+<a href="{% url 'company-list-web' workspace_id %}">
+    Back
+</a>
+</body>
+</html>

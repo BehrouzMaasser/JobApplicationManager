@@ -43,7 +43,7 @@ class SignupView(View):
 
         login(request, user)
 
-        return redirect("workspace-list")
+        return redirect("workspace-list-web")
 
 
 class LoginView(View):
