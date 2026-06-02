@@ -1,5 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import (
     ListView,
     CreateView,
@@ -56,6 +56,13 @@ class WorkspaceDetailView(LoginRequiredMixin, DetailView):
 
         return Workspace.objects.filter(owner=self.request.user)
 
+    def get_object(self, queryset=None):
+
+        return WorkspaceService._resolve_workspace(
+            user=self.request.user,
+            workspace_id=self.kwargs["workspace_id"]
+        )
+
 
 class WorkspaceUpdateView(LoginRequiredMixin, UpdateView):
 
@@ -66,6 +73,13 @@ class WorkspaceUpdateView(LoginRequiredMixin, UpdateView):
     def get_queryset(self):
 
         return Workspace.objects.filter(owner=self.request.user)
+
+    def get_object(self, queryset=None):
+
+        return WorkspaceService._resolve_workspace(
+            user=self.request.user,
+            workspace_id=self.kwargs["workspace_id"]
+        )
 
     def form_valid(self, form):
 
@@ -81,7 +95,7 @@ class WorkspaceUpdateView(LoginRequiredMixin, UpdateView):
 
         return reverse(
             "workspace-detail-web",
-            kwargs={"pk": self.object.pk}
+            kwargs={"workspace_id": self.object.workspace_id}
         )
 
     def form_invalid(self, form):
@@ -94,10 +108,18 @@ class WorkspaceDeleteView(LoginRequiredMixin, DeleteView):
     model = Workspace
     template_name = "workspaces/delete.html"
     success_url = reverse_lazy("workspace-list-web")
+    pk_url_kwarg = "workspace_id"
 
     def get_queryset(self):
 
         return Workspace.objects.filter(owner=self.request.user)
+
+    def get_object(self, queryset=None):
+
+        return WorkspaceService._resolve_workspace(
+            user=self.request.user,
+            workspace_id=self.kwargs["workspace_id"]
+        )
 
     def post(self, request, *args, **kwargs):
 

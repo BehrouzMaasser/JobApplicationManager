@@ -16,11 +16,11 @@
         <div>
             <h3>{{ workspace.name }}</h3>
 
-            <a href="{% url 'workspace-detail-web' workspace.pk %}">Open</a>
+            <a href="{% url 'workspace-detail-web' workspace.workspace_id %}">Open</a>
             |
-            <a href="{% url 'workspace-edit' workspace.pk %}">Edit</a>
+            <a href="{% url 'workspace-edit' workspace.workspace_id %}">Edit</a>
             |
-            <a href="{% url 'workspace-delete' workspace.pk %}">Delete</a>
+            <a href="{% url 'workspace-delete' workspace.workspace_id %}">Delete</a>
         </div>
         <hr>
     {% endfor %}
