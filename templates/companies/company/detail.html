@@ -11,10 +11,14 @@
 
 <p>Website:</p>
 <p><a href="{{ company.website }}">{{ company.website }}</a></p>
-<p>Emails:</p>
-{% if company.emails.all %}
+<p>
+    Emails:
+    <a href="{% url 'company-email-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">Create Email</a>
+    <a href="{% url 'company-email-list-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">See All Emails</a>
+</p>
+{% if company.company_emails.all %}
     <ul>
-        {% for email in company.emails.all %}
+        {% for email in company.company_emails.all %}
             <li><a>{{ email.title }}: {{ email.email }}</a></li>
         {% endfor %}
     </ul>
