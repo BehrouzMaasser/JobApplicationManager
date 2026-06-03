@@ -5,15 +5,27 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views import View
 from django.contrib import messages
-from django.views.generic import ListView, CreateView, DetailView, UpdateView, \
-    DeleteView
 
-from apps.companies.models import JobBenefit, JobTask
+from django.views.generic import (
+    ListView,
+    CreateView,
+    DetailView,
+    UpdateView,
+    DeleteView
+)
+
+# Models
+from apps.companies.models import JobBenefit, JobTask, JobRequirement
+
+# Selectors
 from apps.companies.selectors.job_benefit_selector import JobBenefitSelector
+from apps.companies.selectors.job_requirement_selector import JobRequirementSelector
 from apps.companies.selectors.job_task_selector import JobTaskSelector
+
+# Services
 from apps.companies.services.job_benefit_service import JobBenefitService
+from apps.companies.services.job_requirement_service import JobRequirementService
 from apps.companies.services.job_task_service import JobTaskService
-from apps.core.mixins.app_context_mixin import AppContextMixin
 
 User = get_user_model()
 
@@ -276,3 +288,90 @@ class JobTaskDeleteView(LoginRequiredMixin, DeleteView):
         )
 
         return redirect("job-task-list-web")
+
+
+class JobRequirementListView(LoginRequiredMixin, ListView):
+
+    model = JobRequirement
+    template_name = "accounts/job_requirement/list.html"
+    context_object_name = "job_requirements"
+
+    def get_queryset(self):
+
+        return JobRequirementSelector.list(user=self.request.user)
+
+
+class JobRequirementCreateView(LoginRequiredMixin, CreateView):
+
+    model = JobRequirement
+    template_name = "accounts/job_requirement/create.html"
+    fields = ["title", "description"]
+    success_url = reverse_lazy("job-requirement-list-web")
+
+    def form_valid(self, form):
+        JobRequirementService.create(
+            user=self.request.user,
+            validated_data=form.cleaned_data
+        )
+
+        return redirect(self.success_url)
+
+    def form_invalid(self, form):
+
+        return super().form_invalid(form)
+
+
+class JobRequirementDetailView(LoginRequiredMixin,  DetailView):
+
+    model = JobRequirement
+    template_name = "accounts/job_requirement/detail.html"
+    context_object_name = "job_requirement"
+
+    def get_queryset(self):
+
+        return JobRequirementSelector.list(user=self.request.user)
+
+
+class JobRequirementUpdateView(LoginRequiredMixin, UpdateView):
+
+    model = JobRequirement
+    template_name = "accounts/job_requirement/edit.html"
+    fields = ["title", "description"]
+    context_object_name = "job_requirement"
+
+    def get_queryset(self):
+
+        return JobRequirementSelector.list(user=self.request.user)
+
+    def form_valid(self, form):
+
+        JobRequirementService.update(
+            user=self.request.user,
+            job_requirement_id=self.kwargs["pk"],
+            validated_data=form.cleaned_data
+        )
+
+        return redirect("job-requirement-detail-web", pk=self.kwargs["pk"])
+
+    def form_invalid(self, form):
+
+        return super().form_invalid(form)
+
+
+class JobRequirementDeleteView(LoginRequiredMixin, DeleteView):
+
+    model = JobRequirement
+    template_name = "accounts/job_requirement/delete.html"
+
+    def get_queryset(self):
+
+        return JobRequirementSelector.list(user=self.request.user)
+
+    def post(self, request, *args, **kwargs):
+
+        JobRequirementService.remove(
+            user=self.request.user,
+            job_requirement_id=self.kwargs["pk"],
+        )
+
+        return redirect("job-requirement-list-web")
