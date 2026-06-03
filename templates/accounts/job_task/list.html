@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Job Tasks</title>
+</head>
+<body>
+<h1>Your Job Tasks</h1>
+
+<a href="{% url 'job-task-create-web' %}">+ Create Job Task</a>
+<a href="{% url 'dashboard' %}">Back to dashboard</a>
+<hr>
+
+{% if job_tasks %}
+    {% for job_task in job_tasks %}
+        <div>
+            <h3>{{ job_task.title }}</h3>
+
+            <a href="{% url 'job-task-detail-web' job_task.pk %}">Open</a>
+            |
+            <a href="{% url 'job-task-edit-web' job_task.pk %}">Edit</a>
+            |
+            <a href="{% url 'job-task-delete-web' job_task.pk %}">Delete</a>
+        </div>
+        <hr>
+    {% endfor %}
+{% else %}
+    <p>No job tasks yet.</p>
+    <a href="{% url 'job-task-create-web' %}">
+        Create your first job task
+    </a>
+{% endif %}
+</body>
+</html>

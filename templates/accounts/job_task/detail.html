@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ job_task.name }}</title>
+</head>
+<body>
+<h1>{{ job_task.name }}</h1>
+
+<p>Job Benefit details page</p>
+
+<p><a href="{% url 'dashboard' %}">Back to Dashboard</a></p>
+
+<p>Title: {{ job_task.title }}</p>
+<p>Description: {{ job_task.description }}</p>
+
+<a href="{% url 'job-task-edit-web' job_task.pk %}">Edit</a>
+|
+<a href="{% url 'job-task-delete-web' job_task.pk %}">Delete</a>
+|
+<a href="{% url 'job-task-list-web' %}">Back to Job Tasks</a>
+</body>
+</html>

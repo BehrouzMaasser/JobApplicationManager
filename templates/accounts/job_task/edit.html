@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Job Task</title>
+</head>
+<body>
+<h1>Edit Job Task</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit">Save Changes</button>
+</form>
+
+<a href="{% url 'job-task-detail-web' job_task.pk %}">Back</a>
+<p><a href="{% url 'dashboard' %}">Back to Dashboard</a></p>
+</body>
+</html>
