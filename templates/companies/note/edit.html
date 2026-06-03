@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Company Note</title>
+</head>
+<body>
+<h1>Edit Company Note</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit">Save Changes</button>
+</form>
+
+<a href="{% url 'company-note-detail-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.note_id %}">Back to Note</a>
+<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Back to Company</a>
+</body>
+</html>

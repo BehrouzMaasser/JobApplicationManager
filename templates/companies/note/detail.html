@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ note.title }}</title>
+</head>
+<body>
+<h1>{{ note.title }}</h1>
+
+<p>Company Note details page</p>
+
+<p>Title: {{ note.title }}</p>
+<p>Note Content: {{ note.content }}</p>
+
+<a href="{% url 'company-note-edit-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.note_id %}">Edit</a>
+|
+<a href="{% url 'company-note-delete-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.note_id %}">Delete</a>
+|
+<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Back to Company</a>
+</body>
+</html>
