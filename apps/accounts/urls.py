@@ -6,7 +6,8 @@ from .views import (
     LogoutView,
     dashboard_view,
     JobBenefitListView, JobBenefitDetailView, JobBenefitUpdateView, JobBenefitCreateView, JobBenefitDeleteView,
-    JobTaskListView, JobTaskCreateView, JobTaskDetailView, JobTaskUpdateView, JobTaskDeleteView
+    JobTaskListView, JobTaskCreateView, JobTaskDetailView, JobTaskUpdateView, JobTaskDeleteView,
+    JobRequirementListView, JobRequirementCreateView, JobRequirementDetailView, JobRequirementUpdateView, JobRequirementDeleteView
 )
 
 urlpatterns = [
@@ -24,4 +25,9 @@ urlpatterns = [
     path("job_tasks/<int:pk>/", JobTaskDetailView.as_view(), name="job-task-detail-web"),
     path("job_tasks/<int:pk>/edit/", JobTaskUpdateView.as_view(), name="job-task-edit-web"),
     path("job_tasks/<int:pk>/delete/", JobTaskDeleteView.as_view(), name="job-task-delete-web"),
+    path("job_requirements/", JobRequirementListView.as_view(), name="job-requirement-list-web"),
+    path("job_requirements/create/", JobRequirementCreateView.as_view(), name="job-requirement-create-web"),
+    path("job_requirements/<int:pk>/", JobRequirementDetailView.as_view(), name="job-requirement-detail-web"),
+    path("job_requirements/<int:pk>/edit/", JobRequirementUpdateView.as_view(), name="job-requirement-edit-web"),
+    path("job_requirements/<int:pk>/delete/", JobRequirementDeleteView.as_view(), name="job-requirement-delete-web"),
 ]
