@@ -8,9 +8,11 @@ from django.contrib import messages
 from django.views.generic import ListView, CreateView, DetailView, UpdateView, \
     DeleteView
 
-from apps.companies.models import JobBenefit
+from apps.companies.models import JobBenefit, JobTask
 from apps.companies.selectors.job_benefit_selector import JobBenefitSelector
+from apps.companies.selectors.job_task_selector import JobTaskSelector
 from apps.companies.services.job_benefit_service import JobBenefitService
+from apps.companies.services.job_task_service import JobTaskService
 from apps.core.mixins.app_context_mixin import AppContextMixin
 
 User = get_user_model()
@@ -187,3 +189,90 @@ class JobBenefitDeleteView(LoginRequiredMixin, DeleteView):
         )
 
         return redirect("job-benefit-list-web")
+
+
+class JobTaskListView(LoginRequiredMixin, ListView):
+
+    model = JobTask
+    template_name = "accounts/job_task/list.html"
+    context_object_name = "job_tasks"
+
+    def get_queryset(self):
+
+        return JobTaskSelector.list(user=self.request.user)
+
+
+class JobTaskCreateView(LoginRequiredMixin, CreateView):
+
+    model = JobTask
+    template_name = "accounts/job_task/create.html"
+    fields = ["title", "description"]
+    success_url = reverse_lazy("job-task-list-web")
+
+    def form_valid(self, form):
+        JobTaskService.create(
+            user=self.request.user,
+            validated_data=form.cleaned_data
+        )
+
+        return redirect(self.success_url)
+
+    def form_invalid(self, form):
+
+        return super().form_invalid(form)
+
+
+class JobTaskDetailView(LoginRequiredMixin,  DetailView):
+
+    model = JobTask
+    template_name = "accounts/job_task/detail.html"
+    context_object_name = "job_task"
+
+    def get_queryset(self):
+
+        return JobTaskSelector.list(user=self.request.user)
+
+
+class JobTaskUpdateView(LoginRequiredMixin, UpdateView):
+
+    model = JobTask
+    template_name = "accounts/job_task/edit.html"
+    fields = ["title", "description"]
+    context_object_name = "job_task"
+
+    def get_queryset(self):
+
+        return JobTaskSelector.list(user=self.request.user)
+
+    def form_valid(self, form):
+
+        JobTaskService.update(
+            user=self.request.user,
+            job_task_id=self.kwargs["pk"],
+            validated_data=form.cleaned_data
+        )
+
+        return redirect("job-task-detail-web", pk=self.kwargs["pk"])
+
+    def form_invalid(self, form):
+
+        return super().form_invalid(form)
+
+
+class JobTaskDeleteView(LoginRequiredMixin, DeleteView):
+
+    model = JobTask
+    template_name = "accounts/job_task/delete.html"
+
+    def get_queryset(self):
+
+        return JobTaskSelector.list(user=self.request.user)
+
+    def post(self, request, *args, **kwargs):
+
+        JobTaskService.remove(
+            user=self.request.user,
+            job_task_id=self.kwargs["pk"],
+        )
+
+        return redirect("job-task-list-web")
