@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ email.title }}</title>
+</head>
+<body>
+<h1>{{ email.title }}</h1>
+
+<p>Company Email details page</p>
+
+<p>Title: {{ email.title }}</p>
+<p>Email Address: {{ email.email }}</p>
+
+<a href="{% url 'company-email-edit-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.email_id %}">Edit</a>
+|
+<a href="{% url 'company-email-delete-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.email_id %}">Delete</a>
+|
+<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Back to Company</a>
+</body>
+</html>

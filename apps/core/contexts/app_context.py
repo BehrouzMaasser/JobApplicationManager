@@ -6,4 +6,5 @@ class AppContext:
 
     workspace_id: str | None = None
     company_id: int | None = None
+    email_id: int | None = None
     position_id: int | None = None

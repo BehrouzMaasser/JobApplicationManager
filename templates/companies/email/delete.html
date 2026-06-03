@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Delete Company Email</title>
+</head>
+<body>
+<h1>Delete Company Email</h1>
+
+<p>Are you sure you want to delete "{{ object.name }}"?</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Yes, Delete</button>
+</form>
+
+<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">
+    Cancel
+</a>
+</body>
+</html>
