@@ -1,11 +1,12 @@
 from django.db.models import QuerySet
 
+from apps.accounts.models import User
 from apps.companies.models import JobRequirement
 
 
 class JobRequirementSelector:
 
     @staticmethod
-    def list() -> QuerySet[JobRequirement]:
+    def list(user: User) -> QuerySet[JobRequirement]:
 
-        return JobRequirement.objects.all()
+        return JobRequirement.objects.filter(user=user)
