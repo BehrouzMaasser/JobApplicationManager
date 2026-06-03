@@ -7,8 +7,8 @@
 <body>
 <h1>Your Companies</h1>
 
-<a href="{% url 'company-create' workspace_id %}">+ Create Company</a>
-<a href="{% url 'workspace-detail-web' workspace_id %}">
+<a href="{% url 'company-create-web' app_context.workspace_id %}">+ Create Company</a>
+<a href="{% url 'workspace-detail-web' app_context.workspace_id %}">
     Back to workspace
 </a>
 <hr>
@@ -18,17 +18,17 @@
         <div>
             <h3>{{ company.name }}</h3>
 
-            <a href="{% url 'company-detail-web' company.pk %}">Open</a>
+            <a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=company.pk %}">Open</a>
             |
-            <a href="{% url 'company-edit' company.pk %}">Edit</a>
+            <a href="{% url 'company-edit-web' workspace_id=app_context.workspace_id pk=company.pk %}">Edit</a>
             |
-            <a href="{% url 'company-delete' company.pk %}">Delete</a>
+            <a href="{% url 'company-delete-web' workspace_id=app_context.workspace_id pk=company.pk %}">Delete</a>
         </div>
         <hr>
     {% endfor %}
 {% else %}
     <p>No companies yet.</p>
-    <a href="{% url 'company-create' workspace_id %}">
+    <a href="{% url 'company-create-web' app_context.workspace_id %}">
         Create your first company
     </a>
 {% endif %}

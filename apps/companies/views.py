@@ -11,11 +11,14 @@ from django.views.generic import (
 from django.urls import reverse_lazy, reverse
 
 from .models import Company
+from .selectors.company_selector import CompanySelector
 from .services.company_service import CompanyService
 from .services.contexts.company_context import CompanyContext
+from ..core.contexts.app_context import AppContext
+from ..core.mixins.app_context_mixin import AppContextMixin
 
 
-class CompanyListView(LoginRequiredMixin, ListView):
+class CompanyListView(LoginRequiredMixin, AppContextMixin, ListView):
 
     model = Company
     template_name = "companies/company/list.html"
@@ -23,20 +26,15 @@ class CompanyListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
 
-        return Company.objects.filter(
-            workspace__owner=self.request.user,
-            workspace__workspace_id=self.kwargs["workspace_id"]
+        return CompanySelector.list(
+            user=self.request.user,
+            filters=CompanySelector.QueryFilter(
+                workspace_id=self.kwargs["workspace_id"]
+            )
         )
 
-    def get_context_data(self, **kwargs):
 
-        context = super().get_context_data(**kwargs)
-        context["workspace_id"] = self.kwargs["workspace_id"]
-
-        return context
-
-
-class CompanyCreateView(LoginRequiredMixin, CreateView):
+class CompanyCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
 
     model = Company
     template_name = "companies/company/create.html"
@@ -63,54 +61,67 @@ class CompanyCreateView(LoginRequiredMixin, CreateView):
 
         return reverse_lazy(
             "company-list-web",
-            kwargs={"workspace_id": self.kwargs["workspace_id"]}
+            kwargs={
+                "workspace_id": self.kwargs["workspace_id"]
+            }
         )
 
-    def get_context_data(self, **kwargs):
 
-        context = super().get_context_data(**kwargs)
-        context["workspace_id"] = self.kwargs["workspace_id"]
-
-        return context
-
-
-class CompanyDetailView(LoginRequiredMixin, DetailView):
+class CompanyDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
 
     model = Company
     template_name = "companies/company/detail.html"
     context_object_name = "company"
 
+    @property
+    def company(self):
+
+        return self.get_object()
+
     def get_queryset(self):
 
-        return Company.objects.filter(workspace__owner=self.request.user)
+        return CompanySelector.list(
+            user=self.request.user,
+            filters=CompanySelector.QueryFilter(
+                workspace_id=self.kwargs["workspace_id"]
+            )
+        )
 
-    def get_context_data(self, **kwargs):
+    def build_app_context(self):
 
-        context = super().get_context_data(**kwargs)
-        context["workspace_id"] = self.get_object().workspace.workspace_id
+        return AppContext(
+            workspace_id=self.company.workspace.workspace_id,
+            company_id=self.company.pk,
+        )
 
-        return context
 
-
-class CompanyUpdateView(LoginRequiredMixin, UpdateView):
+class CompanyUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
 
     model = Company
     template_name = "companies/company/edit.html"
     fields = ["name", "website"]
 
+    @property
+    def company(self):
+
+        return self.get_object()
+
     def get_queryset(self):
 
-        return Company.objects.filter(workspace__owner=self.request.user)
+        return CompanySelector.list(
+            user=self.request.user,
+            filters=CompanySelector.QueryFilter(
+                workspace_id=self.kwargs["workspace_id"]
+            )
+        )
 
     def form_valid(self, form):
-
-        company = self.get_object()
 
         CompanyService.update(
             user=self.request.user,
             context=CompanyContext(
-                workspace_id=company.workspace.workspace_id,
-                id=company.id,
+                workspace_id=self.company.workspace.workspace_id,
+                id=self.company.pk,
             ),
             validated_data=form.cleaned_data
         )
@@ -121,50 +132,61 @@ class CompanyUpdateView(LoginRequiredMixin, UpdateView):
 
         return reverse(
             "company-detail-web",
-            kwargs={"pk": self.object.pk}
+            kwargs={
+                "pk": self.company.pk,
+                "workspace_id": self.company.workspace.workspace_id,
+            }
         )
 
     def form_invalid(self, form):
 
         return super().form_invalid(form)
 
-    def get_context_data(self, **kwargs):
+    def build_app_context(self):
 
-        context = super().get_context_data(**kwargs)
-        context["workspace_id"] = self.get_object().workspace.workspace_id
+        return AppContext(
+            workspace_id=self.company.workspace.workspace_id,
+            company_id=self.company.pk,
+        )
 
-        return context
 
-
-class CompanyDeleteView(LoginRequiredMixin, DeleteView):
+class CompanyDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
 
     model = Company
     template_name = "companies/company/delete.html"
 
+    @property
+    def company(self):
+
+        return self.get_object()
+
     def get_queryset(self):
 
-        return Company.objects.filter(workspace__owner=self.request.user)
+        return CompanySelector.list(
+            user=self.request.user,
+            filters=CompanySelector.QueryFilter(
+                workspace_id=self.kwargs["workspace_id"]
+            )
+        )
 
     def post(self, request, *args, **kwargs):
-
-        company = self.get_object()
 
         CompanyService.remove(
             user=self.request.user,
             context=CompanyContext(
-                workspace_id=company.workspace.workspace_id,
-                id=company.id,
+                workspace_id=self.company.workspace.workspace_id,
+                id=self.company.pk,
             )
         )
 
         return redirect(
             "company-list-web",
-            workspace_id=company.workspace.workspace_id
+            workspace_id=self.kwargs["workspace_id"]
         )
 
-    def get_context_data(self, **kwargs):
+    def build_app_context(self):
 
-        context = super().get_context_data(**kwargs)
-        context["workspace_id"] = self.get_object().workspace.workspace_id
-
-        return context
+        return AppContext(
+            workspace_id=self.company.workspace.workspace_id,
+            company_id=self.company.pk,
+        )

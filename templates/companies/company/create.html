@@ -14,10 +14,10 @@
     <button type="submit">Create</button>
 </form>
 
-<a href="{% url 'company-list-web' workspace_id %}">
+<a href="{% url 'company-list-web' app_context.workspace_id %}">
     Back to companies
 </a>
-<a href="{% url 'workspace-detail-web' workspace_id %}">
+<a href="{% url 'workspace-detail-web' app_context.workspace_id %}">
     Back to workspace
 </a>
 </body>

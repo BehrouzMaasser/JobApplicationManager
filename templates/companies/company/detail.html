@@ -5,18 +5,29 @@
     <title>{{ company.name }}</title>
 </head>
 <body>
-<h1>{{ workspace.name }}</h1>
+<h1>{{ company.name }}</h1>
 
 <p>Company details page</p>
 
-<ul>
-</ul>
+<p>Website:</p>
+<p><a href="{{ company.website }}">{{ company.website }}</a></p>
+<p>Emails:</p>
+{% if company.emails.all %}
+    <ul>
+        {% for email in company.emails.all %}
+            <li><a>{{ email.title }}: {{ email.email }}</a></li>
+        {% endfor %}
+    </ul>
+{% else %}
+<p>No Emails Yet!</p>
+{% endif %}
 
-<a href="{% url 'company-edit' company.pk %}">Edit</a>
+
+<a href="{% url 'company-edit-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Edit</a>
 |
-<a href="{% url 'company-delete' company.pk %}">Delete</a>
+<a href="{% url 'company-delete-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Delete</a>
 |
-<a href="{% url 'company-list-web' workspace_id %}">
+<a href="{% url 'company-list-web' app_context.workspace_id %}">
     Back to Companies
 </a>
 </body>

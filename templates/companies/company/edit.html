@@ -14,7 +14,7 @@
     <button type="submit">Save Changes</button>
 </form>
 
-<a href="{% url 'company-list-web' workspace_id %}">
+<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">
     Back
 </a>
 </body>

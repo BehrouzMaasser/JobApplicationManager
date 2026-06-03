@@ -8,9 +8,9 @@ from .views import (
 )
 
 urlpatterns = [
-    path("<uuid:workspace_id>/", CompanyListView.as_view(), name="company-list-web"),
-    path("<uuid:workspace_id>/create/", CompanyCreateView.as_view(), name="company-create"),
+    path("", CompanyListView.as_view(), name="company-list-web"),
+    path("create/", CompanyCreateView.as_view(), name="company-create-web"),
     path("<int:pk>/", CompanyDetailView.as_view(), name="company-detail-web"),
-    path("<int:pk>/edit/", CompanyUpdateView.as_view(), name="company-edit"),
-    path("<int:pk>/delete/", CompanyDeleteView.as_view(), name="company-delete"),
+    path("<int:pk>/edit/", CompanyUpdateView.as_view(), name="company-edit-web"),
+    path("<int:pk>/delete/", CompanyDeleteView.as_view(), name="company-delete-web"),
 ]
