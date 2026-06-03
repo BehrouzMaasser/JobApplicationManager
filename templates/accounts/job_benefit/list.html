@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Companies</title>
+</head>
+<body>
+<h1>Your Job Benefits</h1>
+
+<a href="{% url 'job-benefit-create-web' %}">+ Create Job Benefit</a>
+<a href="{% url 'dashboard' %}">Back to dashboard</a>
+<hr>
+
+{% if job_benefits %}
+    {% for job_benefit in job_benefits %}
+        <div>
+            <h3>{{ job_benefit.name }}</h3>
+
+            <a href="{% url 'job-benefit-detail-web' job_benefit.pk %}">Open</a>
+            |
+            <a href="{% url 'job-benefit-edit-web' job_benefit.pk %}">Edit</a>
+            |
+            <a href="{% url 'job-benefit-delete-web' job_benefit.pk %}">Delete</a>
+        </div>
+        <hr>
+    {% endfor %}
+{% else %}
+    <p>No job benefits yet.</p>
+    <a href="{% url 'job-benefit-create-web' %}">
+        Create your first job benefit
+    </a>
+{% endif %}
+</body>
+</html>
