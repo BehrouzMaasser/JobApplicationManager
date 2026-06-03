@@ -25,6 +25,20 @@
 {% else %}
 <p>No Emails Yet!</p>
 {% endif %}
+<p>
+    Notes:
+    <a href="{% url 'company-note-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">Create Note</a>
+    <a href="{% url 'company-note-list-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">See All Notes</a>
+</p>
+{% if company.company_notes.all %}
+    <ul>
+        {% for note in company.company_notes.all %}
+            <li><a>{{ note.title }}</a></li>
+        {% endfor %}
+    </ul>
+{% else %}
+<p>No Notes Yet!</p>
+{% endif %}
 
 
 <a href="{% url 'company-edit-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Edit</a>
