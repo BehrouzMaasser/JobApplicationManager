@@ -13,7 +13,7 @@
 
 <ul>
     {% for company in workspace.companies.all %}
-        <li>{{ company.name }}</li>
+        <li><a href="{% url 'company-list-web' workspace.workspace_id %}">{{ company.name }}</a></li>
     {% endfor %}
 </ul>
 
