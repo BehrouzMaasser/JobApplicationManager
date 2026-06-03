@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Delete Job Requirement</title>
+</head>
+<body>
+<h1>Delete Job Requirement</h1>
+
+<p>Are you sure you want to delete "{{ object.title }}"?</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Yes, Delete</button>
+</form>
+
+<a href="{% url 'job-requirement-detail-web' object.pk %}">Cancel</a>
+<p><a href="{% url 'dashboard' %}">Back to Dashboard</a></p>
+</body>
+</html>

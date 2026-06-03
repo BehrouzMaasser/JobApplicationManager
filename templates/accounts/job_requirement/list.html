@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Job Requirements</title>
+</head>
+<body>
+<h1>Your Job Requirements</h1>
+
+<a href="{% url 'job-requirement-create-web' %}">+ Create Job Requirement</a>
+<a href="{% url 'dashboard' %}">Back to dashboard</a>
+<hr>
+
+{% if job_requirements %}
+    {% for job_requirement in job_requirements %}
+        <div>
+            <h3>{{ job_requirement.title }}</h3>
+
+            <a href="{% url 'job-requirement-detail-web' job_requirement.pk %}">Open</a>
+            |
+            <a href="{% url 'job-requirement-edit-web' job_requirement.pk %}">Edit</a>
+            |
+            <a href="{% url 'job-requirement-delete-web' job_requirement.pk %}">Delete</a>
+        </div>
+        <hr>
+    {% endfor %}
+{% else %}
+    <p>No job requirements yet.</p>
+    <a href="{% url 'job-requirement-create-web' %}">
+        Create your first job requirement
+    </a>
+{% endif %}
+</body>
+</html>

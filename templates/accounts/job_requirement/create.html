@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Job Requirement</title>
+</head>
+<body>
+<h1>Create Job Requirement</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit">Create</button>
+</form>
+
+<a href="{% url 'job-requirement-list-web' %}">Back to Job Requirements</a>
+<a href="{% url 'dashboard' %}">Back to dashboard</a>
+</body>
+</html>

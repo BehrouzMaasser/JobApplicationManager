@@ -9,6 +9,7 @@
 <p>You are logged in.</p>
 <h4><a href="{% url 'job-benefit-list-web' %}">Job Benefits</a></h4>
 <h4><a href="{% url 'job-task-list-web' %}">Job Tasks</a></h4>
+<h4><a href="{% url 'job-requirement-list-web' %}">Job Requirements</a></h4>
 <form method="post" action="{% url 'logout' %}">
     {% csrf_token %}
     <button type="submit">Logout</button>
