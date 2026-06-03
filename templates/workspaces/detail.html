@@ -9,7 +9,7 @@
 
 <p>Workspace details page</p>
 
-<a href="{% url 'company-create' workspace.workspace_id %}">+ Create Company</a>
+<a href="{% url 'company-create-web' workspace.workspace_id %}">+ Create Company</a>
 
 <ul>
     {% for company in workspace.companies.all %}
