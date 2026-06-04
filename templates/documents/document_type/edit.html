@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Document Type</title>
+</head>
+<body>
+<h1>Edit Document Type</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit">Save Changes</button>
+</form>
+
+<a href="{% url 'document-type-detail-web' object.pk %}">Back</a>
+<p><a href="{% url 'dashboard' %}">Back to Dashboard</a></p>
+</body>
+</html>

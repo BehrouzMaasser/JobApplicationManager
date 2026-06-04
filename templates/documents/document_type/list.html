@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document Types</title>
+</head>
+<body>
+<h1>Your Document Types</h1>
+
+<a href="{% url 'document-type-create-web' %}">+ Create Document Type</a>
+<a href="{% url 'dashboard' %}">Back to dashboard</a>
+<hr>
+
+{% if document_types %}
+    {% for document_type in document_types %}
+        <div>
+            <h3>{{ document_type.name }}</h3>
+            <p>Description: {{ document_type.description }}</p>
+
+            <a href="{% url 'document-type-detail-web' document_type.pk %}">Open</a>
+            |
+            <a href="{% url 'document-type-edit-web' document_type.pk %}">Edit</a>
+            |
+            <a href="{% url 'document-type-delete-web' document_type.pk %}">Delete</a>
+        </div>
+        <hr>
+    {% endfor %}
+{% else %}
+    <p>No document types yet.</p>
+    <a href="{% url 'document-type-create-web' %}">
+        Create your first document type
+    </a>
+{% endif %}
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ document_type.name }}</title>
+</head>
+<body>
+<h1>{{ document_type.name }}</h1>
+
+<p>Document Type details page</p>
+
+<p><a href="{% url 'dashboard' %}">Back to Dashboard</a></p>
+
+<p>Name: {{ document_type.name }}</p>
+<p>Description: {{ document_type.description }}</p>
+
+<a href="{% url 'document-type-edit-web' document_type.pk %}">Edit</a>
+|
+<a href="{% url 'document-type-delete-web' document_type.pk %}">Delete</a>
+|
+<a href="{% url 'document-type-list-web' %}">Back to Document Types</a>
+</body>
+</html>
