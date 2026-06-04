@@ -1,8 +1,13 @@
 from django.urls import path
 from .views import (
-    CompanyListView, CompanyCreateView, CompanyDetailView, CompanyUpdateView, CompanyDeleteView,
-    CompanyEmailListView, CompanyEmailCreateView, CompanyEmailDetailView, CompanyEmailUpdateView, CompanyEmailDeleteView,
-    CompanyNoteCreateView, CompanyNoteDetailView, CompanyNoteUpdateView, CompanyNoteDeleteView, CompanyNoteListView
+    CompanyListView, CompanyCreateView, CompanyDetailView, CompanyUpdateView,
+    CompanyDeleteView,
+    CompanyEmailListView, CompanyEmailCreateView, CompanyEmailDetailView,
+    CompanyEmailUpdateView, CompanyEmailDeleteView,
+    CompanyNoteCreateView, CompanyNoteDetailView, CompanyNoteUpdateView,
+    CompanyNoteDeleteView, CompanyNoteListView, JobPositionListView,
+    JobPositionCreateView, JobPositionDetailView, JobPositionUpdateView,
+    JobPositionDeleteView
 )
 
 urlpatterns = [
@@ -21,4 +26,9 @@ urlpatterns = [
     path("<int:company_id>/notes/<int:pk>/", CompanyNoteDetailView.as_view(), name="company-note-detail-web"),
     path("<int:company_id>/notes/<int:pk>/edit/", CompanyNoteUpdateView.as_view(), name="company-note-edit-web"),
     path("<int:company_id>/notes/<int:pk>/delete/", CompanyNoteDeleteView.as_view(), name="company-note-delete-web"),
+    path("<int:company_id>/job_positions/", JobPositionListView.as_view(), name="job-position-list-web"),
+    path("<int:company_id>/job_positions/create/", JobPositionCreateView.as_view(), name="job-position-create-web"),
+    path("<int:company_id>/job_positions/<int:pk>/", JobPositionDetailView.as_view(), name="job-position-detail-web"),
+    path("<int:company_id>/job_positions/<int:pk>/edit/", JobPositionUpdateView.as_view(), name="job-position-edit-web"),
+    path("<int:company_id>/job_positions/<int:pk>/delete/", JobPositionDeleteView.as_view(), name="job-position-delete-web"),
 ]
