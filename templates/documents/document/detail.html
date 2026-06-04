@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ document.name }}</title>
+</head>
+<body>
+<h1>{{ document.name }}</h1>
+
+<p>Document details page</p>
+
+<p><a href="{% url 'dashboard' %}">Back to Dashboard</a></p>
+
+<p>Name: {{ document.name }}</p>
+<p>Document Type: {{ document.document_type.name }}</p>
+<p>
+    File:
+    <a href="{% url 'document-open-web' document.pk %}" target="_blank">Open File</a>
+    |
+    <a href="{% url 'document-download-web' document.pk %}">Download</a>
+</p>
+
+<a href="{% url 'document-edit-web' document.pk %}">Edit</a>
+|
+<a href="{% url 'document-delete-web' document.pk %}">Delete</a>
+|
+<a href="{% url 'document-list-web' %}">Back to Documents</a>
+</body>
+</html>
