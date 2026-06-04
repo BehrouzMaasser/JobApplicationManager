@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ job_position.title }}</title>
+</head>
+<body>
+<h1>{{ job_position.title }}</h1>
+
+<p>Job Position details page</p>
+
+<p>Title: {{ job_position.title }}</p>
+<p>Job Description:</p>
+<p>{{ job_position.description }}</p>
+<p>Employment Type(s):</p>
+<ul>
+    {% for employment_type in job_position.employment_types.all %}
+        <li>{{ employment_type.name }}</li>
+    {% endfor %}
+</ul>
+<p>Job Site(s):</p>
+<ul>
+    {% for job_site in job_position.job_sites.all %}
+        <li>{{ job_site.name }}</li>
+    {% endfor %}
+</ul>
+<p>Task(s):</p>
+{% for task in job_position.tasks.all %}
+    <p><a href="{% url 'job-task-detail-web' task.pk %}">{{ task.title }}: {{ task.description }}</a></p>
+{% endfor %}
+<p>Requirement(s):</p>
+{% for requirement in job_position.requirements.all %}
+    <p><a href="{% url 'job-requirement-detail-web' requirement.pk %}">{{ requirement.title }}: {{ requirement.description }}</a></p>
+{% endfor %}
+<p>Benefit(s):</p>
+{% if job_position.benefits.all %}
+    {% for benefit in job_position.benefits.all %}
+        <p><a href="{% url 'job-benefit-detail-web' benefit.pk %}">{{ benefit.name }}: {{ benefit.description }}</a></p>
+    {% endfor %}
+{% else %}
+<p>No Benefits!</p>
+{% endif %}
+<p>Date Posted: {{ job_position.date_posted }}</p>
+<p>Minimum Salary: {{ job_position.min_salary }}</p>
+<p>Maximum Salary: {{ job_position.max_salary }}</p>
+<p>Job Position Ad URL Salary: <a href="{{ job_position.job_position_ad_url }}">{{ job_position.job_position_ad_url }}</a></p>
+<p>Job Location URL: {{ job_position.job_location_url }}</p>
+<p>Job Portal URL: {{ job_position.job_portal_url }}</p>
+<p>Job Portal Username: {{ job_position.portal_username }}</p>
+<p>Job Portal Password: {{ job_position.portal_password }}</p>
+
+<a href="{% url 'job-position-edit-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.position_id %}">Edit</a>
+|
+<a href="{% url 'job-position-delete-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.position_id %}">Delete</a>
+|
+<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Back to Company</a>
+</body>
+</html>

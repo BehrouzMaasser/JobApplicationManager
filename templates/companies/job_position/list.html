@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Company's Job Positions</title>
+</head>
+<body>
+<h1>Company's Job Positions</h1>
+
+<a href="{% url 'job-position-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">+ Create Job Position</a>
+<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">
+    Back to company
+</a>
+<hr>
+
+{% if job_positions %}
+    {% for job_position in job_positions %}
+        <div>
+            <h3>{{ job_position.title }}</h3>
+            <p>{{ job_position.description }}</p>
+
+            <a href="{% url 'job-position-detail-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=job_position.pk %}">Open</a>
+            |
+            <a href="{% url 'job-position-edit-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=job_position.pk %}">Edit</a>
+            |
+            <a href="{% url 'job-position-delete-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=job_position.pk %}">Delete</a>
+        </div>
+        <hr>
+    {% endfor %}
+{% else %}
+    <p>No job positions yet.</p>
+    <a href="{% url 'job-position-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">
+        Create your first job position
+    </a>
+{% endif %}
+</body>
+</html>

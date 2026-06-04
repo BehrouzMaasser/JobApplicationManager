@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Delete Job Position</title>
+</head>
+<body>
+<h1>Delete Job Position</h1>
+
+<p>Are you sure you want to delete "{{ object.title }}"?</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Yes, Delete</button>
+</form>
+
+<a href="{% url 'job-position-detail-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.position_id %}">
+    Cancel
+</a>
+</body>
+</html>

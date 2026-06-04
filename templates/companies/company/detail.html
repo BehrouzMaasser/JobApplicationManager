@@ -12,6 +12,11 @@
 <p>Website:</p>
 <p><a href="{{ company.website }}">{{ company.website }}</a></p>
 <p>
+    Job Positions:
+    <a href="{% url 'job-position-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">Create Job Position</a>
+    <a href="{% url 'job-position-list-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">See All Job Positions</a>
+</p>
+<p>
     Emails:
     <a href="{% url 'company-email-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">Create Email</a>
     <a href="{% url 'company-email-list-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">See All Emails</a>
