@@ -70,7 +70,7 @@ class DocumentType(models.Model):
 
     def __str__(self):
 
-        return f"{self.name} {self.owner}"
+        return self.name
 
     def save(self, *args, **kwargs):
 
