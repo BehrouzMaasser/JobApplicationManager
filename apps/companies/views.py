@@ -11,12 +11,13 @@ from django.views.generic import (
 from django.urls import reverse_lazy, reverse
 
 # Models
-from .models import Company, CompanyEmail, CompanyNote
+from .models import Company, CompanyEmail, CompanyNote, JobPosition
 
 # Selectors
 from .selectors.company_email_selector import CompanyEmailSelector
 from .selectors.company_note_selector import CompanyNoteSelector
 from .selectors.company_selector import CompanySelector
+from .selectors.job_position_selector import JobPositionSelector
 
 # Services
 from .services.company_email_service import CompanyEmailService
@@ -27,6 +28,7 @@ from .services.contexts.company_context import (
     CompanyContext,
     CompanyChildContext
 )
+from .services.job_position_service import JobPositionService
 
 # View Contexts and Mixins
 from ..core.contexts.app_context import AppContext
@@ -563,4 +565,221 @@ class CompanyNoteDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
             workspace_id=self.kwargs["workspace_id"],
             company_id=self.kwargs["company_id"],
             note_id=self.kwargs["pk"],
+        )
+
+
+class JobPositionListView(LoginRequiredMixin, AppContextMixin, ListView):
+
+    model = JobPosition
+    template_name = "companies/job_position/list.html"
+    context_object_name = "job_positions"
+
+    def get_queryset(self):
+
+        return JobPositionSelector.list(
+            user=self.request.user,
+            filters=JobPositionSelector.QueryFilter(
+                workspace_id=self.kwargs["workspace_id"],
+                company_id=self.kwargs["company_id"]
+            )
+        )
+
+    def build_app_context(self):
+
+        return AppContext(
+            workspace_id=self.kwargs["workspace_id"],
+            company_id=self.kwargs["company_id"],
+        )
+
+
+class JobPositionCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
+
+    model = JobPosition
+    template_name = "companies/job_position/create.html"
+    fields = [
+        "title",
+        "description",
+        "employment_types",
+        "job_sites",
+        "tasks",
+        "requirements",
+        "benefits",
+        "date_posted",
+        "min_salary",
+        "max_salary",
+        "job_position_ad_url",
+        "job_location_url",
+        "job_portal_url",
+        "portal_username",
+        "portal_password",
+    ]
+
+    def form_valid(self, form):
+        JobPositionService.create(
+            user=self.request.user,
+            context=CompanyChildContext(
+                workspace_id=self.kwargs["workspace_id"],
+                company_id=self.kwargs["company_id"],
+                id=None
+            ),
+            validated_data=form.cleaned_data
+        )
+
+        return redirect(self.get_success_url())
+
+    def form_invalid(self, form):
+
+        return super().form_invalid(form)
+
+    def get_success_url(self):
+
+        return reverse_lazy(
+            "company-detail-web",
+            kwargs={
+                "workspace_id": self.kwargs["workspace_id"],
+                "pk": self.kwargs["company_id"]
+            }
+        )
+
+    def build_app_context(self):
+
+        return AppContext(
+            workspace_id=self.kwargs["workspace_id"],
+            company_id=self.kwargs["company_id"],
+        )
+
+
+class JobPositionDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
+
+    model = JobPosition
+    template_name = "companies/job_position/detail.html"
+    context_object_name = "job_position"
+
+    def get_queryset(self):
+
+        return JobPositionSelector.list(
+            user=self.request.user,
+            filters=JobPositionSelector.QueryFilter(
+                workspace_id=self.kwargs["workspace_id"],
+                company_id=self.kwargs["company_id"]
+            )
+        )
+
+    def build_app_context(self):
+
+        return AppContext(
+            workspace_id=self.kwargs["workspace_id"],
+            company_id=self.kwargs["company_id"],
+            position_id=self.kwargs["pk"],
+        )
+
+
+class JobPositionUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
+
+    model = JobPosition
+    template_name = "companies/job_position/edit.html"
+    fields = [
+        "title",
+        "description",
+        "employment_types",
+        "job_sites",
+        "tasks",
+        "requirements",
+        "benefits",
+        "date_posted",
+        "min_salary",
+        "max_salary",
+        "job_position_ad_url",
+        "job_location_url",
+        "job_portal_url",
+        "portal_username",
+        "portal_password",
+    ]
+
+    def get_queryset(self):
+
+        return JobPositionSelector.list(
+            user=self.request.user,
+            filters=JobPositionSelector.QueryFilter(
+                workspace_id=self.kwargs["workspace_id"],
+                company_id=self.kwargs["company_id"]
+            )
+        )
+
+    def form_valid(self, form):
+
+        JobPositionService.update(
+            user=self.request.user,
+            context=CompanyChildContext(
+                workspace_id=self.kwargs["workspace_id"],
+                company_id=self.kwargs["company_id"],
+                id=self.kwargs["pk"],
+            ),
+            validated_data=form.cleaned_data
+        )
+
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+
+        return reverse(
+            "job-position-detail-web",
+            kwargs={
+                "workspace_id": self.kwargs["workspace_id"],
+                "company_id": self.kwargs["company_id"],
+                "pk": self.kwargs["pk"]
+            }
+        )
+
+    def form_invalid(self, form):
+
+        return super().form_invalid(form)
+
+    def build_app_context(self):
+
+        return AppContext(
+            workspace_id=self.kwargs["workspace_id"],
+            company_id=self.kwargs["company_id"],
+            position_id=self.kwargs["pk"],
+        )
+
+
+class JobPositionDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
+
+    model = JobPosition
+    template_name = "companies/job_position/delete.html"
+
+    def get_queryset(self):
+
+        return JobPositionSelector.list(
+            user=self.request.user,
+            filters=JobPositionSelector.QueryFilter(
+                workspace_id=self.kwargs["workspace_id"],
+                company_id=self.kwargs["company_id"]
+            )
+        )
+
+    def post(self, request, *args, **kwargs):
+
+        JobPositionService.remove(
+            user=self.request.user,
+            context=CompanyChildContext(
+                workspace_id=self.kwargs["workspace_id"],
+                company_id=self.kwargs["company_id"],
+                id=self.kwargs["pk"],
+            )
+        )
+
+        return redirect(
+            "company-detail-web",
+            workspace_id=self.kwargs["workspace_id"],
+            pk=self.kwargs["company_id"],
+        )
+
+    def build_app_context(self):
+
+        return AppContext(
+            workspace_id=self.kwargs["workspace_id"],
+            company_id=self.kwargs["company_id"],
+            position_id=self.kwargs["pk"],
         )
