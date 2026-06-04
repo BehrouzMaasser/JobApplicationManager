@@ -26,6 +26,8 @@
 - Create HTML views for the app
 
 ## Planned
+- Move JobTask, JobBenefit and JobRequirement logic from Companies to Accounts
+- Add tests for updated JobTaskSelector, JobBenefitSelector and JobRequirementSelector
 - Authentication
 - Search functionality
 - Document categorization
