@@ -8,7 +8,16 @@
 <h1>{{ company.name }}</h1>
 
 <p>Company details page</p>
-
+<a href="{% url 'company-edit-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Edit</a>
+|
+<a href="{% url 'company-delete-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Delete</a>
+|
+<a href="{% url 'company-list-web' app_context.workspace_id %}">
+    Back to Companies
+</a>
+|
+<a href="{{ app_context.applications_list_url }}">See All Job Applications</a>
+<hr>
 <p>Website:</p>
 <p><a href="{{ company.website }}">{{ company.website }}</a></p>
 <p>
@@ -44,14 +53,5 @@
 {% else %}
 <p>No Notes Yet!</p>
 {% endif %}
-
-
-<a href="{% url 'company-edit-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Edit</a>
-|
-<a href="{% url 'company-delete-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Delete</a>
-|
-<a href="{% url 'company-list-web' app_context.workspace_id %}">
-    Back to Companies
-</a>
 </body>
 </html>

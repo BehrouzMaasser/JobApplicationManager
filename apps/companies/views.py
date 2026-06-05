@@ -29,6 +29,7 @@ from .services.contexts.company_context import (
     CompanyChildContext
 )
 from .services.job_position_service import JobPositionService
+from ..applications.views import application_list_url
 
 # View Contexts and Mixins
 from ..core.contexts.app_context import AppContext
@@ -109,6 +110,10 @@ class CompanyDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
         return AppContext(
             workspace_id=self.kwargs["workspace_id"],
             company_id=self.kwargs["pk"],
+            applications_list_url=application_list_url(
+                workspace_id=self.kwargs["workspace_id"],
+                company_id=self.kwargs["pk"],
+            )
         )
 
 
@@ -671,6 +676,11 @@ class JobPositionDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
             workspace_id=self.kwargs["workspace_id"],
             company_id=self.kwargs["company_id"],
             position_id=self.kwargs["pk"],
+            applications_list_url=application_list_url(
+                workspace_id=self.kwargs["workspace_id"],
+                company_id=self.kwargs["company_id"],
+                job_position_id=self.kwargs["pk"],
+            )
         )
 
 

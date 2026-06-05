@@ -8,7 +8,17 @@
 <h1>{{ job_position.title }}</h1>
 
 <p>Job Position details page</p>
-
+<a href="{% url 'job-position-edit-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.position_id %}">Edit</a>
+|
+<a href="{% url 'job-position-delete-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.position_id %}">Delete</a>
+|
+<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Back to Company</a>
+|
+<a href="{% url 'job-application-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id job_position_id=app_context.position_id %}">
+    +Create Job Application
+</a>
+|
+<a href="{{ app_context.applications_list_url }}">Job Applications</a>
 <p>Title: {{ job_position.title }}</p>
 <p>Job Description:</p>
 <p>{{ job_position.description }}</p>
@@ -49,10 +59,6 @@
 <p>Job Portal Username: {{ job_position.portal_username }}</p>
 <p>Job Portal Password: {{ job_position.portal_password }}</p>
 
-<a href="{% url 'job-position-edit-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.position_id %}">Edit</a>
-|
-<a href="{% url 'job-position-delete-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.position_id %}">Delete</a>
-|
-<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Back to Company</a>
+
 </body>
 </html>
