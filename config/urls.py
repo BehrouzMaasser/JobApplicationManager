@@ -24,6 +24,8 @@ urlpatterns = [
     path("documents/", include("apps.documents.urls")),
     path("workspaces/", include("apps.workspaces.urls")),
     path("workspaces/<uuid:workspace_id>/companies/", include("apps.companies.urls")),
+    path("applications/", include("apps.applications.urls")),
+    path("workspaces/<uuid:workspace_id>/companies/<int:company_id>/job_positions/<int:job_position_id>/applications/", include("apps.applications.context_urls")),
     path('admin/', admin.site.urls),
     path("api/v1/", include("config.api.v1.urls")),
 ]

@@ -9,3 +9,5 @@ class AppContext:
     email_id: int | None = None
     note_id: int | None = None
     position_id: int | None = None
+    application_id: int | None = None
+    applications_list_url: str | None = None
