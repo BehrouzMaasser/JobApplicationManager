@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Job Applications</title>
+</head>
+<body>
+<h1>Job Applications</h1>
+
+{% if app_context.position_id %}
+<a href="{% url 'job-position-detail-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.position_id %}">
+    Back to job position
+</a>
+|
+{% endif %}
+{%  if app_context.company_id %}
+<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">
+    Back to company
+</a>
+|
+{% endif %}
+{% if app_context.workspace_id %}
+<a href="{% url 'workspace-detail-web' workspace_id=app_context.workspace_id %}">
+    Back to job workspace
+</a>
+|
+{% endif %}
+<a href="{% url 'dashboard' %}">
+    Back to dashboard
+</a>
+<hr>
+
+{% if job_applications %}
+    {% for job_application in job_applications %}
+        <div>
+            <h3>{{ job_application }}</h3>
+            <p>Applied At: {{ job_application.date_applied }}</p>
+
+            <a href="{% url 'job-application-detail-web' pk=job_application.pk %}">Open</a>
+            |
+            <a href="{% url 'job-application-edit-web' pk=job_application.pk %}">Edit</a>
+            |
+            <a href="{% url 'job-application-delete-web' pk=job_application.pk %}">Delete</a>
+        </div>
+        <hr>
+    {% endfor %}
+{% else %}
+    <p>No applications yet.</p>
+{#    {% if app_context.workspace_id and app_context.company_id and app_context.position_id %}#}
+{#        <a href="{% url 'job-application-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id job_position_id=app_context.position_id %}">#}
+{#            Create your first applications#}
+{#        </a>#}
+{#    {% endif %}#}
+{% endif %}
+</body>
+</html>
