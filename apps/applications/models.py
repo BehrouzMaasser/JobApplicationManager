@@ -150,7 +150,7 @@ class JobApplicationNote(models.Model):
         related_name="job_application_notes"
     )
 
-    title = models.TextField(max_length=60)
+    title = models.CharField(max_length=60)
     content = models.TextField()
 
     class Meta:
