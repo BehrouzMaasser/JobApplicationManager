@@ -2,7 +2,7 @@ from urllib.parse import urlencode
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect, get_object_or_404
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     ListView,
     CreateView,
@@ -12,17 +12,27 @@ from django.views.generic import (
 )
 
 # Models
-from apps.applications.models import JobApplication
+from apps.applications.models import (
+    JobApplication,
+    JobApplicationNote
+)
+from apps.applications.selectors.application_note_selector import (
+    JobApplicationNoteSelector
+)
 
 # Selectors
 from apps.applications.selectors.application_selector import JobApplicationSelector
+from apps.applications.services.application_note_service import (
+    JobApplicationNoteService
+)
 
 # Services
 from apps.applications.services.application_service import JobApplicationService
 
 # Contexts
 from apps.applications.services.contexts.application_context import (
-    JobApplicationContext
+    JobApplicationContext,
+    JobApplicationChildContext
 )
 
 # View Contexts and Mixins
@@ -34,14 +44,33 @@ from apps.core.mixins.job_application_form_mixin import JobApplicationFormMixin
 def application_list_url(workspace_id=None, company_id=None, job_position_id=None):
 
     params = {
-            "workspace_id": workspace_id,
-            "company_id": company_id,
-            "job_position_id": job_position_id,
+        "workspace_id": workspace_id,
+        "company_id": company_id,
+        "job_position_id": job_position_id,
     }
 
     params = {param: value for param, value in params.items() if value is not None}
 
     return f"{reverse('job-application-list-web')}?{urlencode(params)}"
+
+
+def application_note_list_url(
+        workspace_id=None,
+        company_id=None,
+        job_position_id=None,
+        job_application_id=None,
+):
+
+    params = {
+        "workspace_id": workspace_id,
+        "company_id": company_id,
+        "job_position_id": job_position_id,
+        "job_application_id": job_application_id,
+    }
+
+    params = {param: value for param, value in params.items() if value is not None}
+
+    return f"{reverse('job-application-note-list-web')}?{urlencode(params)}"
 
 
 class JobApplicationListView(LoginRequiredMixin, AppContextMixin, ListView):
@@ -147,6 +176,9 @@ class JobApplicationDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
             company_id=self.application.job_position.company.pk,
             position_id=self.application.job_position.pk,
             application_id=self.application.pk,
+            application_notes_list_url=application_note_list_url(
+                job_application_id=self.application.pk
+            )
         )
 
 
@@ -251,4 +283,207 @@ class JobApplicationDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
             company_id=self.application.job_position.company.pk,
             position_id=self.application.job_position.pk,
             application_id=self.application.pk,
+        )
+
+
+class JobApplicationNoteListView(LoginRequiredMixin, AppContextMixin, ListView):
+
+    model = JobApplicationNote
+    template_name = "applications/application_note/list.html"
+    context_object_name = "application_notes"
+
+    def get_queryset(self):
+
+        return JobApplicationNoteSelector.list(
+            user=self.request.user,
+            filters=JobApplicationNoteSelector.QueryFilter(
+                workspace_id=self.request.GET.get("workspace_id"),
+                company_id=self.request.GET.get("company_id"),
+                job_position_id=self.request.GET.get("job_position_id"),
+                job_application_id=self.request.GET.get("job_application_id"),
+            )
+        )
+
+    def build_app_context(self):
+
+        return AppContext(
+            workspace_id=self.request.GET.get("workspace_id"),
+            company_id=self.request.GET.get("company_id"),
+            position_id=self.request.GET.get("job_position_id"),
+            application_id=self.request.GET.get("job_application_id"),
+        )
+
+
+class JobApplicationNoteCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
+
+    model = JobApplicationNote
+    template_name = "applications/application_note/create.html"
+    fields = ["title", "content"]
+
+    def form_valid(self, form):
+
+        job_application = get_object_or_404(
+            JobApplication, pk=self.kwargs["job_application_id"]
+        )
+
+        JobApplicationNoteService.create(
+            user=self.request.user,
+            context=JobApplicationChildContext(
+                workspace_id=job_application.workspace.workspace_id,
+                company_id=job_application.job_position.company.pk,
+                job_position_id=job_application.job_position.pk,
+                job_application_id=job_application.pk,
+                id=None
+            ),
+            validated_data=form.cleaned_data
+        )
+
+        return redirect(self.get_success_url())
+
+    def form_invalid(self, form):
+
+        return super().form_invalid(form)
+
+    def get_success_url(self):
+
+        return reverse_lazy(
+            "job-application-detail-web",
+            kwargs={
+                "pk": self.kwargs["job_application_id"]
+            }
+        )
+
+    def build_app_context(self):
+
+        return AppContext(
+            application_id=self.kwargs["job_application_id"],
+            application_notes_list_url=application_note_list_url(
+                job_application_id=self.kwargs["job_application_id"],
+            )
+        )
+
+
+class JobApplicationNoteDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
+
+    model = JobApplicationNote
+    template_name = "applications/application_note/detail.html"
+    context_object_name = "application_note"
+
+    @property
+    def app_note(self):
+
+        return self.object
+
+    def get_queryset(self):
+
+        return JobApplicationNoteSelector.list(user=self.request.user)
+
+    def build_app_context(self):
+
+        return AppContext(
+            workspace_id=self.app_note.job_application.workspace.workspace_id,
+            company_id=self.app_note.job_application.job_position.company.pk,
+            position_id=self.app_note.job_application.job_position.pk,
+            application_id=self.app_note.job_application.pk,
+            application_note_id=self.app_note.pk
+        )
+
+
+class JobApplicationNoteUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
+
+    model = JobApplicationNote
+    template_name = "applications/application_note/edit.html"
+    fields = ["title", "content"]
+
+    @property
+    def app_note(self):
+
+        return self.object
+
+    def get_queryset(self):
+
+        return JobApplicationNoteSelector.list(user=self.request.user)
+
+    def form_valid(self, form):
+
+        JobApplicationNoteService.update(
+            user=self.request.user,
+            context=JobApplicationChildContext(
+                workspace_id=self.app_note.job_application.workspace.workspace_id,
+                company_id=self.app_note.job_application.job_position.company.pk,
+                job_position_id=self.app_note.job_application.job_position.pk,
+                job_application_id=self.app_note.job_application.pk,
+                id=self.app_note.pk,
+            ),
+            validated_data=form.cleaned_data
+        )
+
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+
+        return reverse(
+            "job-application-detail-web",
+            kwargs={
+                "pk": self.app_note.job_application.pk,
+            }
+        )
+
+    def form_invalid(self, form):
+
+        return super().form_invalid(form)
+
+    def build_app_context(self):
+
+        return AppContext(
+            workspace_id=self.app_note.job_application.workspace.workspace_id,
+            company_id=self.app_note.job_application.job_position.company.pk,
+            position_id=self.app_note.job_application.job_position.pk,
+            application_id=self.app_note.job_application.pk,
+            application_note_id=self.app_note.pk,
+        )
+
+
+class JobApplicationNoteDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
+
+    model = JobApplicationNote
+    template_name = "applications/application_note/delete.html"
+
+    @property
+    def app_note(self):
+
+        return self.object
+
+    def get_queryset(self):
+
+        return JobApplicationNoteSelector.list(user=self.request.user)
+
+    def post(self, request, *args, **kwargs):
+
+        self.object = self.get_object()
+
+        JobApplicationNoteService.remove(
+            user=self.request.user,
+            context=JobApplicationChildContext(
+                workspace_id=self.app_note.job_application.workspace.workspace_id,
+                company_id=self.app_note.job_application.job_position.company.pk,
+                job_position_id=self.app_note.job_application.job_position.pk,
+                job_application_id=self.app_note.job_application.pk,
+                id=self.kwargs["pk"],
+            )
+        )
+
+        return redirect(
+            "job-application-detail-web",
+            pk=self.app_note.job_application.pk,
+        )
+
+    def build_app_context(self):
+
+        return AppContext(
+            workspace_id=self.app_note.job_application.workspace.workspace_id,
+            company_id=self.app_note.job_application.job_position.company.pk,
+            position_id=self.app_note.job_application.job_position.pk,
+            application_id=self.app_note.job_application.pk,
+            application_note_id=self.app_note.pk
         )
