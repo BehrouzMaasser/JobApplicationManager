@@ -19,11 +19,12 @@
 - Wrote tests for Serializers
 - Reviewed Selectors and wrote tests for them
 - Reviewed accounts app and write tests for them
+- Created views and templates for All Applications
 
 ## In Progress
 - Clean the project files
 - Modifying README
-- Create HTML views for the app
+- Review and refactor views' structure
 
 ## Planned
 - Move JobTask, JobBenefit and JobRequirement logic from Companies to Accounts
