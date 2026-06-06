@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ application_note.title }}</title>
+</head>
+<body>
+<h1>{{ application_note.title }}</h1>
+
+<a href="{% url 'job-application-detail-web' pk=app_context.application_id %}">
+    Back to job application
+</a>
+|
+<a href="{% url 'job-position-detail-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.position_id %}">
+    Back to job position
+</a>
+|
+<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">
+    Back to company
+</a>
+|
+<a href="{% url 'workspace-detail-web' workspace_id=app_context.workspace_id %}">
+    Back to job workspace
+</a>
+|
+<a href="{% url 'dashboard' %}">
+    Back to dashboard
+</a>
+
+<p>Job Application details page</p>
+
+<p>Title: {{ application_note.title }}</p>
+<p>Content: {{ application_note.content }}</p>
+
+<a href="{% url 'job-application-note-edit-web' app_context.application_note_id %}">Edit</a>
+|
+<a href="{% url 'job-application-note-delete-web' app_context.application_note_id %}">Delete</a>
+</body>
+</html>

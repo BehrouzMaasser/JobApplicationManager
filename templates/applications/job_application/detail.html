@@ -33,6 +33,16 @@
 
 <p>Status: {{ job_application.status }}</p>
 <p>Date Applied: {{ job_application.date_applied }}</p>
+<p>Notes: <a href="{{ app_context.application_notes_list_url }}">Go To Notes</a></p>
+<ul>
+{% if job_application.job_application_notes.all %}
+    {% for note in job_application.job_application_notes.all %}
+        <li>{{ note.title }}: {{ note.content }}</li>
+    {% endfor %}
+{% else %}
+    <li>No Notes!</li>
+{% endif %}
+</ul>
 <p>Email(s):</p>
 <ul>
 {% if job_application.emails.all %}
