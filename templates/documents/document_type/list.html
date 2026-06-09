@@ -6,9 +6,9 @@
 </head>
 <body>
 <h1>Your Document Types</h1>
-
+<a href="{% url 'dashboard' %}">Back to Dashboard</a>
+|
 <a href="{% url 'document-type-create-web' %}">+ Create Document Type</a>
-<a href="{% url 'dashboard' %}">Back to dashboard</a>
 <hr>
 
 {% if document_types %}

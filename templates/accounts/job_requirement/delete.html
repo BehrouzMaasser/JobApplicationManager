@@ -6,6 +6,7 @@
 </head>
 <body>
 <h1>Delete Job Requirement</h1>
+<p><a href="{% url 'dashboard' %}">Back to Dashboard</a></p>
 
 <p>Are you sure you want to delete "{{ object.title }}"?</p>
 
@@ -15,6 +16,5 @@
 </form>
 
 <a href="{% url 'job-requirement-detail-web' object.pk %}">Cancel</a>
-<p><a href="{% url 'dashboard' %}">Back to Dashboard</a></p>
 </body>
 </html>

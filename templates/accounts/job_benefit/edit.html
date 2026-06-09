@@ -6,6 +6,7 @@
 </head>
 <body>
 <h1>Edit Job Benefit</h1>
+<p><a href="{% url 'dashboard' %}">Back to Dashboard</a></p>
 
 <form method="post">
     {% csrf_token %}
@@ -14,7 +15,6 @@
     <button type="submit">Save Changes</button>
 </form>
 
-<a href="{% url 'job-benefit-detail-web' job_benefit.pk %}">Back</a>
-<p><a href="{% url 'dashboard' %}">Back to Dashboard</a></p>
+<a href="{% url 'job-benefit-detail-web' job_benefit.pk %}">Cancel</a>
 </body>
 </html>

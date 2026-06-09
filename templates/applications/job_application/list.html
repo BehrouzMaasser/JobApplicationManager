@@ -6,28 +6,24 @@
 </head>
 <body>
 <h1>Job Applications</h1>
-
+<a href="{% url 'dashboard' %}">Back to Dashboard</a>
 {% if app_context.position_id %}
-<a href="{% url 'job-position-detail-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.position_id %}">
+    |
+<a href="{% url 'job-position-detail-web' pk=app_context.position_id %}">
     Back to job position
 </a>
 |
 {% endif %}
 {%  if app_context.company_id %}
-<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">
+<a href="{% url 'company-detail-web' pk=app_context.company_id %}">
     Back to company
 </a>
-|
 {% endif %}
 {% if app_context.workspace_id %}
 <a href="{% url 'workspace-detail-web' workspace_id=app_context.workspace_id %}">
     Back to job workspace
 </a>
-|
 {% endif %}
-<a href="{% url 'dashboard' %}">
-    Back to dashboard
-</a>
 <hr>
 
 {% if job_applications %}

@@ -2,15 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Company's Job Positions</title>
+    <title>Job Positions</title>
 </head>
 <body>
-<h1>Company's Job Positions</h1>
-
+<h1>Job Positions</h1>
+<a href="{% url 'dashboard' %}">Back to Dashboard</a>
+{% if app_context.workspace_id %}
+    |
+    <a href="{% url 'workspace-detail-web' workspace_id=app_context.workspace_id %}">Back to Workspace</a>
+{% endif %}
+{% if app_context.company_id %}
+    |
 <a href="{% url 'job-position-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">+ Create Job Position</a>
-<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">
-    Back to company
-</a>
+    |
+<a href="{% url 'company-detail-web' pk=app_context.company_id %}">Back to Company</a>
+{% endif %}
 <hr>
 
 {% if job_positions %}
@@ -19,19 +25,21 @@
             <h3>{{ job_position.title }}</h3>
             <p>{{ job_position.description }}</p>
 
-            <a href="{% url 'job-position-detail-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=job_position.pk %}">Open</a>
+            <a href="{% url 'job-position-detail-web' pk=job_position.pk %}">Open</a>
             |
-            <a href="{% url 'job-position-edit-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=job_position.pk %}">Edit</a>
+            <a href="{% url 'job-position-edit-web' pk=job_position.pk %}">Edit</a>
             |
-            <a href="{% url 'job-position-delete-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=job_position.pk %}">Delete</a>
+            <a href="{% url 'job-position-delete-web' pk=job_position.pk %}">Delete</a>
         </div>
         <hr>
     {% endfor %}
 {% else %}
     <p>No job positions yet.</p>
-    <a href="{% url 'job-position-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">
-        Create your first job position
-    </a>
+    {% if app_context.company_id %}
+        <a href="{% url 'job-position-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">
+            Create your first job position
+        </a>
+    {% endif %}
 {% endif %}
 </body>
 </html>

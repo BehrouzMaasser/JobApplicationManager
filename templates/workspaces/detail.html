@@ -10,7 +10,7 @@
 <p>Workspace details page</p>
 
 <a href="{% url 'company-create-web' workspace.workspace_id %}">+ Create Company</a>
-<p><a href="{% url 'company-list-web' workspace.workspace_id %}">List of Companies</a></p>
+<p><a href="{{ app_context.companies_list_url }}">Companies</a></p>
 
 <a href="{% url 'workspace-edit' workspace.workspace_id %}">Edit</a>
 |

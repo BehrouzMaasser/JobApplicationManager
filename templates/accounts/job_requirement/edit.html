@@ -6,6 +6,8 @@
 </head>
 <body>
 <h1>Edit Job Requirement</h1>
+<a href="{% url 'job-requirement-detail-web' job_requirement.pk %}">Cancel</a>
+<p><a href="{% url 'dashboard' %}">Back to Dashboard</a></p>
 
 <form method="post">
     {% csrf_token %}
@@ -13,8 +15,5 @@
 
     <button type="submit">Save Changes</button>
 </form>
-
-<a href="{% url 'job-requirement-detail-web' job_requirement.pk %}">Back</a>
-<p><a href="{% url 'dashboard' %}">Back to Dashboard</a></p>
 </body>
 </html>

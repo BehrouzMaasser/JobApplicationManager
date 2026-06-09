@@ -8,8 +8,8 @@
 <h1>{{ job_task.title }}</h1>
 
 <p>Job Task details page</p>
-
 <p><a href="{% url 'dashboard' %}">Back to Dashboard</a></p>
+<a href="{% url 'job-task-list-web' %}">Back to Job Tasks</a>
 
 <p>Title: {{ job_task.title }}</p>
 <p>Description: {{ job_task.description }}</p>
@@ -17,7 +17,5 @@
 <a href="{% url 'job-task-edit-web' job_task.pk %}">Edit</a>
 |
 <a href="{% url 'job-task-delete-web' job_task.pk %}">Delete</a>
-|
-<a href="{% url 'job-task-list-web' %}">Back to Job Tasks</a>
 </body>
 </html>

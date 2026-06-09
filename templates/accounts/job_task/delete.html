@@ -6,6 +6,7 @@
 </head>
 <body>
 <h1>Delete Job Task</h1>
+<p><a href="{% url 'dashboard' %}">Back to Dashboard</a></p>
 
 <p>Are you sure you want to delete "{{ object.title }}"?</p>
 
@@ -13,8 +14,6 @@
     {% csrf_token %}
     <button type="submit">Yes, Delete</button>
 </form>
-
 <a href="{% url 'job-task-detail-web' object.pk %}">Cancel</a>
-<p><a href="{% url 'dashboard' %}">Back to Dashboard</a></p>
 </body>
 </html>

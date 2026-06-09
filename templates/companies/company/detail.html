@@ -8,32 +8,38 @@
 <h1>{{ company.name }}</h1>
 
 <p>Company details page</p>
-<a href="{% url 'company-edit-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Edit</a>
+<a href="{% url 'company-edit-web' pk=app_context.company_id %}">Edit</a>
 |
-<a href="{% url 'company-delete-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Delete</a>
+<a href="{% url 'company-delete-web' pk=app_context.company_id %}">Delete</a>
 |
-<a href="{% url 'company-list-web' app_context.workspace_id %}">
-    Back to Companies
+<a href="{% url 'dashboard' %}">Back to Dashboard</a>
+|
+<a href="{% url 'workspace-detail-web' workspace_id=app_context.workspace_id %}">
+    Back to Workspace
 </a>
+|
+<a href="{{ app_context.companies_list_url }}">Back to Companies</a>
 |
 <a href="{{ app_context.applications_list_url }}">See All Job Applications</a>
 <hr>
 <p>Website:</p>
-<p><a href="{{ company.website }}">{{ company.website }}</a></p>
+<p><a href="{{ company.website }}" target="_blank">{{ company.website }}</a></p>
 <p>
     Job Positions:
     <a href="{% url 'job-position-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">Create Job Position</a>
-    <a href="{% url 'job-position-list-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">See All Job Positions</a>
+    |
+    <a href="{{ app_context.positions_list_url }}">See All Job Positions</a>
 </p>
 <p>
     Emails:
     <a href="{% url 'company-email-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">Create Email</a>
-    <a href="{% url 'company-email-list-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">See All Emails</a>
+    |
+    <a href="{{ app_context.company_emails_list_url }}">See All Emails</a>
 </p>
 {% if company.company_emails.all %}
     <ul>
         {% for email in company.company_emails.all %}
-            <li><a>{{ email.title }}: {{ email.email }}</a></li>
+            <li><a href="{% url 'company-email-detail-web' pk=email.pk %}">{{ email.title }}: {{ email.email }}</a></li>
         {% endfor %}
     </ul>
 {% else %}
@@ -42,12 +48,13 @@
 <p>
     Notes:
     <a href="{% url 'company-note-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">Create Note</a>
-    <a href="{% url 'company-note-list-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">See All Notes</a>
+    |
+    <a href="{{ app_context.company_notes_list_url }}">See All Notes</a>
 </p>
 {% if company.company_notes.all %}
     <ul>
         {% for note in company.company_notes.all %}
-            <li><a>{{ note.title }}</a></li>
+            <li><a href="{% url 'company-note-detail-web' pk=note.pk %}">{{ note.title }}</a></li>
         {% endfor %}
     </ul>
 {% else %}

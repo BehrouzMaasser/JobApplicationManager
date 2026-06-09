@@ -2,15 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Company's Emails</title>
+    <title>Company Emails</title>
 </head>
 <body>
-<h1>Company's Emails</h1>
-
+<h1>Company Emails</h1>
+<a href="{% url 'dashboard' %}">Back to Dashboard</a>
+{% if app_context.workspace_id %}
+    |
+    <a href="{% url 'workspace-detail-web' workspace_id=app_context.workspace_id %}">Back to Workspace</a>
+{% endif %}
+{% if app_context.company_id %}
+    |
 <a href="{% url 'company-email-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">+ Create Email</a>
-<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">
-    Back to company
+    |
+<a href="{% url 'company-detail-web' pk=app_context.company_id %}">
+    Back to Company
 </a>
+{% endif %}
 <hr>
 
 {% if emails %}
@@ -18,19 +26,21 @@
         <div>
             <h3>{{ email.title }}</h3>
 
-            <a href="{% url 'company-email-detail-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=email.pk %}">Open</a>
+            <a href="{% url 'company-email-detail-web' pk=email.pk %}">Open</a>
             |
-            <a href="{% url 'company-email-edit-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=email.pk %}">Edit</a>
+            <a href="{% url 'company-email-edit-web' pk=email.pk %}">Edit</a>
             |
-            <a href="{% url 'company-email-delete-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=email.pk %}">Delete</a>
+            <a href="{% url 'company-email-delete-web' pk=email.pk %}">Delete</a>
         </div>
         <hr>
     {% endfor %}
 {% else %}
     <p>No emails yet.</p>
-    <a href="{% url 'company-email-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">
-        Create your first company email
-    </a>
+    {% if app_context.company_id %}
+        <a href="{% url 'company-email-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">
+            Create your first company email
+        </a>
+    {% endif %}
 {% endif %}
 </body>
 </html>

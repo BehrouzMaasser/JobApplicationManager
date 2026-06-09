@@ -6,11 +6,15 @@
 </head>
 <body>
 <h1>Your Companies</h1>
-
+<a href="{% url 'dashboard' %}">Back to Dashboard</a>
+{% if app_context.workspace_id %}
+    |
 <a href="{% url 'company-create-web' app_context.workspace_id %}">+ Create Company</a>
+    |
 <a href="{% url 'workspace-detail-web' app_context.workspace_id %}">
-    Back to workspace
+    Back to Workspace
 </a>
+{% endif %}
 <hr>
 
 {% if companies %}
@@ -18,19 +22,21 @@
         <div>
             <h3>{{ company.name }}</h3>
 
-            <a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=company.pk %}">Open</a>
+            <a href="{% url 'company-detail-web' pk=company.pk %}">Open</a>
             |
-            <a href="{% url 'company-edit-web' workspace_id=app_context.workspace_id pk=company.pk %}">Edit</a>
+            <a href="{% url 'company-edit-web' pk=company.pk %}">Edit</a>
             |
-            <a href="{% url 'company-delete-web' workspace_id=app_context.workspace_id pk=company.pk %}">Delete</a>
+            <a href="{% url 'company-delete-web' pk=company.pk %}">Delete</a>
         </div>
         <hr>
     {% endfor %}
 {% else %}
     <p>No companies yet.</p>
-    <a href="{% url 'company-create-web' app_context.workspace_id %}">
-        Create your first company
-    </a>
+    {% if app_context.workspace_id %}
+        <a href="{% url 'company-create-web' app_context.workspace_id %}">
+            Create your first company
+        </a>
+    {% endif %}
 {% endif %}
 </body>
 </html>
