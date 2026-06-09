@@ -269,10 +269,9 @@ class JobApplicationDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
         )
 
         return redirect(
-            application_list_url(
-                self.application.job_position.company.workspace_id,
-                self.application.job_position.company_id,
-                self.application.job_position_id,
+            reverse(
+                "job-position-detail-web",
+                kwargs={"pk": self.application.job_position.pk}
             )
         )
 

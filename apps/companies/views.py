@@ -1,3 +1,5 @@
+from urllib.parse import urlencode
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
 from django.views.generic import (
@@ -36,6 +38,54 @@ from ..core.contexts.app_context import AppContext
 from ..core.mixins.app_context_mixin import AppContextMixin
 
 
+def company_list_url(workspace_id=None):
+
+    if workspace_id:
+        params = {
+            "workspace_id": workspace_id,
+        }
+    else:
+        params = {}
+
+    return f"{reverse('company-list-web')}?{urlencode(params)}"
+
+
+def position_list_url(workspace_id=None, company_id=None):
+
+    params = {
+        "workspace_id": workspace_id,
+        "company_id": company_id,
+    }
+
+    params = {key: value for key, value in params.items() if value is not None}
+
+    return f"{reverse('job-position-list-web')}?{urlencode(params)}"
+
+
+def company_note_list_url(workspace_id=None, company_id=None):
+
+    params = {
+        "workspace_id": workspace_id,
+        "company_id": company_id,
+    }
+
+    params = {key: value for key, value in params.items() if value is not None}
+
+    return f"{reverse('company-note-list-web')}?{urlencode(params)}"
+
+
+def company_email_list_url(workspace_id=None, company_id=None):
+
+    params = {
+        "workspace_id": workspace_id,
+        "company_id": company_id,
+    }
+
+    params = {key: value for key, value in params.items() if value is not None}
+
+    return f"{reverse('company-email-list-web')}?{urlencode(params)}"
+
+
 class CompanyListView(LoginRequiredMixin, AppContextMixin, ListView):
 
     model = Company
@@ -47,8 +97,14 @@ class CompanyListView(LoginRequiredMixin, AppContextMixin, ListView):
         return CompanySelector.list(
             user=self.request.user,
             filters=CompanySelector.QueryFilter(
-                workspace_id=self.kwargs["workspace_id"]
+                workspace_id=self.request.GET.get("workspace_id"),
             )
+        )
+
+    def build_app_context(self):
+
+        return AppContext(
+            workspace_id=self.request.GET.get("workspace_id"),
         )
 
 
@@ -77,11 +133,15 @@ class CompanyCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
 
     def get_success_url(self):
 
-        return reverse_lazy(
-            "company-list-web",
-            kwargs={
-                "workspace_id": self.kwargs["workspace_id"]
-            }
+        return company_list_url(self.kwargs["workspace_id"])
+
+    def build_app_context(self):
+
+        return AppContext(
+            workspace_id=self.kwargs["workspace_id"],
+            companies_list_url=company_list_url(
+                workspace_id=self.kwargs["workspace_id"]
+            )
         )
 
 
@@ -94,26 +154,34 @@ class CompanyDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
     @property
     def company(self):
 
-        return self.get_object()
+        return self.object
 
     def get_queryset(self):
 
-        return CompanySelector.list(
-            user=self.request.user,
-            filters=CompanySelector.QueryFilter(
-                workspace_id=self.kwargs["workspace_id"]
-            )
-        )
+        return CompanySelector.list(user=self.request.user)
 
     def build_app_context(self):
 
+        companies_list_url = company_list_url(
+            workspace_id=self.company.workspace.workspace_id
+        )
+
+        print("Companies List Url: ", companies_list_url)
+
+        company_emails_list_url = company_email_list_url(
+            company_id=self.company.pk
+        )
+
+        print("Company Emails List Url: ", company_emails_list_url)
+
         return AppContext(
-            workspace_id=self.kwargs["workspace_id"],
-            company_id=self.kwargs["pk"],
-            applications_list_url=application_list_url(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["pk"],
-            )
+            workspace_id=self.company.workspace.workspace_id,
+            company_id=self.company.pk,
+            applications_list_url=application_list_url(company_id=self.company.pk),
+            companies_list_url=companies_list_url,
+            positions_list_url=position_list_url(company_id=self.company.pk),
+            company_emails_list_url=company_emails_list_url,
+            company_notes_list_url=company_note_list_url(company_id=self.company.pk),
         )
 
 
@@ -123,22 +191,22 @@ class CompanyUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
     template_name = "companies/company/edit.html"
     fields = ["name", "website"]
 
+    @property
+    def company(self):
+
+        return self.object
+
     def get_queryset(self):
 
-        return CompanySelector.list(
-            user=self.request.user,
-            filters=CompanySelector.QueryFilter(
-                workspace_id=self.kwargs["workspace_id"]
-            )
-        )
+        return CompanySelector.list(user=self.request.user)
 
     def form_valid(self, form):
 
         CompanyService.update(
             user=self.request.user,
             context=CompanyContext(
-                workspace_id=self.kwargs["workspace_id"],
-                id=self.kwargs["pk"],
+                workspace_id=self.company.workspace.workspace_id,
+                id=self.company.pk,
             ),
             validated_data=form.cleaned_data
         )
@@ -149,10 +217,7 @@ class CompanyUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
 
         return reverse(
             "company-detail-web",
-            kwargs={
-                "pk": self.kwargs["pk"],
-                "workspace_id": self.kwargs["workspace_id"],
-            }
+            kwargs={"pk": self.kwargs["pk"]}
         )
 
     def form_invalid(self, form):
@@ -162,8 +227,11 @@ class CompanyUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
     def build_app_context(self):
 
         return AppContext(
-            workspace_id=self.kwargs["workspace_id"],
-            company_id=self.kwargs["pk"],
+            workspace_id=self.company.workspace.workspace_id,
+            company_id=self.company.pk,
+            companies_list_url=company_list_url(
+                workspace_id=self.company.workspace.workspace_id
+            )
         )
 
 
@@ -172,35 +240,39 @@ class CompanyDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
     model = Company
     template_name = "companies/company/delete.html"
 
+    @property
+    def company(self):
+
+        return self.object
+
     def get_queryset(self):
 
-        return CompanySelector.list(
-            user=self.request.user,
-            filters=CompanySelector.QueryFilter(
-                workspace_id=self.kwargs["workspace_id"]
-            )
-        )
+        return CompanySelector.list(user=self.request.user)
 
     def post(self, request, *args, **kwargs):
+
+        self.object = self.get_object()
 
         CompanyService.remove(
             user=self.request.user,
             context=CompanyContext(
-                workspace_id=self.kwargs["workspace_id"],
-                id=self.kwargs["pk"],
+                workspace_id=self.company.workspace.workspace_id,
+                id=self.company.pk,
             )
         )
 
         return redirect(
-            "company-list-web",
-            workspace_id=self.kwargs["workspace_id"]
+            company_list_url(workspace_id=self.company.workspace.workspace_id)
         )
 
     def build_app_context(self):
 
         return AppContext(
-            workspace_id=self.kwargs["workspace_id"],
-            company_id=self.kwargs["pk"],
+            workspace_id=self.company.workspace.workspace_id,
+            company_id=self.company.pk,
+            companies_list_url=company_list_url(
+                workspace_id=self.company.workspace.workspace_id
+            )
         )
 
 
@@ -215,16 +287,30 @@ class CompanyEmailListView(LoginRequiredMixin, AppContextMixin, ListView):
         return CompanyEmailSelector.list(
             user=self.request.user,
             filters=CompanyEmailSelector.QueryFilter(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"]
+                workspace_id=self.request.GET.get("workspace_id"),
+                company_id=self.request.GET.get("company_id")
             )
         )
 
     def build_app_context(self):
 
+        workspace_id = self.request.GET.get("workspace_id")
+        company_id = self.request.GET.get("company_id")
+
+        company = CompanySelector.list(
+            user=self.request.user,
+            filters=CompanySelector.QueryFilter(
+                id=company_id
+            )
+        ).first()
+
+        if company:
+            workspace_id = company.workspace.workspace_id
+            company_id = company.pk
+
         return AppContext(
-            workspace_id=self.kwargs["workspace_id"],
-            company_id=self.kwargs["company_id"],
+            workspace_id=workspace_id,
+            company_id=company_id,
         )
 
 
@@ -256,10 +342,7 @@ class CompanyEmailCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
 
         return reverse_lazy(
             "company-detail-web",
-            kwargs={
-                "workspace_id": self.kwargs["workspace_id"],
-                "pk": self.kwargs["company_id"]
-            }
+            kwargs={"pk": self.kwargs["company_id"]}
         )
 
     def build_app_context(self):
@@ -276,22 +359,21 @@ class CompanyEmailDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
     template_name = "companies/email/detail.html"
     context_object_name = "email"
 
+    @property
+    def email(self):
+
+        return self.object
+
     def get_queryset(self):
 
-        return CompanyEmailSelector.list(
-            user=self.request.user,
-            filters=CompanyEmailSelector.QueryFilter(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"]
-            )
-        )
+        return CompanyEmailSelector.list(user=self.request.user)
 
     def build_app_context(self):
 
         return AppContext(
-            workspace_id=self.kwargs["workspace_id"],
-            company_id=self.kwargs["company_id"],
-            email_id=self.kwargs["pk"],
+            workspace_id=self.email.company.workspace.workspace_id,
+            company_id=self.email.company.pk,
+            email_id=self.email.pk,
         )
 
 
@@ -301,24 +383,23 @@ class CompanyEmailUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
     template_name = "companies/email/edit.html"
     fields = ["title", "email"]
 
+    @property
+    def email(self):
+
+        return self.object
+
     def get_queryset(self):
 
-        return CompanyEmailSelector.list(
-            user=self.request.user,
-            filters=CompanyEmailSelector.QueryFilter(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"]
-            )
-        )
+        return CompanyEmailSelector.list(user=self.request.user)
 
     def form_valid(self, form):
 
         CompanyEmailService.update(
             user=self.request.user,
             context=CompanyChildContext(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"],
-                id=self.kwargs["pk"],
+                workspace_id=self.email.company.workspace.workspace_id,
+                company_id=self.email.company.pk,
+                id=self.email.pk,
             ),
             validated_data=form.cleaned_data
         )
@@ -329,10 +410,7 @@ class CompanyEmailUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
 
         return reverse(
             "company-detail-web",
-            kwargs={
-                "pk": self.kwargs["company_id"],
-                "workspace_id": self.kwargs["workspace_id"],
-            }
+            kwargs={"pk": self.kwargs["company_id"]}
         )
 
     def form_invalid(self, form):
@@ -342,9 +420,9 @@ class CompanyEmailUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
     def build_app_context(self):
 
         return AppContext(
-            workspace_id=self.kwargs["workspace_id"],
-            company_id=self.kwargs["company_id"],
-            email_id=self.kwargs["pk"],
+            workspace_id=self.email.company.workspace.workspace_id,
+            company_id=self.email.company.pk,
+            email_id=self.email.pk,
         )
 
 
@@ -353,39 +431,36 @@ class CompanyEmailDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
     model = CompanyEmail
     template_name = "companies/email/delete.html"
 
+    @property
+    def email(self):
+
+        return self.object
+
     def get_queryset(self):
 
-        return CompanyEmailSelector.list(
-            user=self.request.user,
-            filters=CompanyEmailSelector.QueryFilter(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"]
-            )
-        )
+        return CompanyEmailSelector.list(user=self.request.user)
 
     def post(self, request, *args, **kwargs):
+
+        self.object = self.get_object()
 
         CompanyEmailService.remove(
             user=self.request.user,
             context=CompanyChildContext(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"],
-                id=self.kwargs["pk"],
+                workspace_id=self.email.company.workspace.workspace_id,
+                company_id=self.email.company.pk,
+                id=self.email.pk,
             )
         )
 
-        return redirect(
-            "company-detail-web",
-            workspace_id=self.kwargs["workspace_id"],
-            pk=self.kwargs["company_id"],
-        )
+        return redirect("company-detail-web", pk=self.email.pk)
 
     def build_app_context(self):
 
         return AppContext(
-            workspace_id=self.kwargs["workspace_id"],
-            company_id=self.kwargs["company_id"],
-            email_id=self.kwargs["pk"],
+            workspace_id=self.email.company.workspace.workspace_id,
+            company_id=self.email.company.pk,
+            email_id=self.email.pk,
         )
 
 
@@ -400,16 +475,30 @@ class CompanyNoteListView(LoginRequiredMixin, AppContextMixin, ListView):
         return CompanyNoteSelector.list(
             user=self.request.user,
             filters=CompanyNoteSelector.QueryFilter(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"]
+                workspace_id=self.request.GET.get("workspace_id"),
+                company_id=self.request.GET.get("company_id"),
             )
         )
 
     def build_app_context(self):
 
+        workspace_id = self.request.GET.get("workspace_id")
+        company_id = self.request.GET.get("company_id")
+
+        company = CompanySelector.list(
+            user=self.request.user,
+            filters=CompanySelector.QueryFilter(
+                id=company_id
+            )
+        ).first()
+
+        if company:
+            workspace_id = company.workspace.workspace_id
+            company_id = company.pk
+
         return AppContext(
-            workspace_id=self.kwargs["workspace_id"],
-            company_id=self.kwargs["company_id"],
+            workspace_id=workspace_id,
+            company_id=company_id,
         )
 
 
@@ -420,6 +509,7 @@ class CompanyNoteCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
     fields = ["title", "content"]
 
     def form_valid(self, form):
+
         CompanyNoteService.create(
             user=self.request.user,
             context=CompanyChildContext(
@@ -440,10 +530,7 @@ class CompanyNoteCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
 
         return reverse_lazy(
             "company-detail-web",
-            kwargs={
-                "workspace_id": self.kwargs["workspace_id"],
-                "pk": self.kwargs["company_id"]
-            }
+            kwargs={"pk": self.kwargs["company_id"]}
         )
 
     def build_app_context(self):
@@ -460,22 +547,21 @@ class CompanyNoteDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
     template_name = "companies/note/detail.html"
     context_object_name = "note"
 
+    @property
+    def company_note(self):
+
+        return self.object
+
     def get_queryset(self):
 
-        return CompanyNoteSelector.list(
-            user=self.request.user,
-            filters=CompanyNoteSelector.QueryFilter(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"]
-            )
-        )
+        return CompanyNoteSelector.list(user=self.request.user)
 
     def build_app_context(self):
 
         return AppContext(
-            workspace_id=self.kwargs["workspace_id"],
-            company_id=self.kwargs["company_id"],
-            note_id=self.kwargs["pk"],
+            workspace_id=self.company_note.company.workspace.workspace_id,
+            company_id=self.company_note.company.pk,
+            note_id=self.company_note.pk,
         )
 
 
@@ -485,24 +571,23 @@ class CompanyNoteUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
     template_name = "companies/note/edit.html"
     fields = ["title", "content"]
 
+    @property
+    def company_note(self):
+
+        return self.object
+
     def get_queryset(self):
 
-        return CompanyNoteSelector.list(
-            user=self.request.user,
-            filters=CompanyNoteSelector.QueryFilter(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"]
-            )
-        )
+        return CompanyNoteSelector.list(user=self.request.user)
 
     def form_valid(self, form):
 
         CompanyNoteService.update(
             user=self.request.user,
             context=CompanyChildContext(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"],
-                id=self.kwargs["pk"],
+                workspace_id=self.company_note.company.workspace.workspace_id,
+                company_id=self.company_note.company.pk,
+                id=self.company_note.pk,
             ),
             validated_data=form.cleaned_data
         )
@@ -513,10 +598,7 @@ class CompanyNoteUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
 
         return reverse(
             "company-detail-web",
-            kwargs={
-                "pk": self.kwargs["company_id"],
-                "workspace_id": self.kwargs["workspace_id"],
-            }
+            kwargs={"pk": self.kwargs["company_id"]}
         )
 
     def form_invalid(self, form):
@@ -526,9 +608,9 @@ class CompanyNoteUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
     def build_app_context(self):
 
         return AppContext(
-            workspace_id=self.kwargs["workspace_id"],
-            company_id=self.kwargs["company_id"],
-            note_id=self.kwargs["pk"],
+            workspace_id=self.company_note.company.workspace.workspace_id,
+            company_id=self.company_note.company.pk,
+            note_id=self.company_note.pk,
         )
 
 
@@ -537,39 +619,36 @@ class CompanyNoteDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
     model = CompanyEmail
     template_name = "companies/note/delete.html"
 
+    @property
+    def company_note(self):
+
+        return self.object
+
     def get_queryset(self):
 
-        return CompanyNoteSelector.list(
-            user=self.request.user,
-            filters=CompanyNoteSelector.QueryFilter(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"]
-            )
-        )
+        return CompanyNoteSelector.list(user=self.request.user)
 
     def post(self, request, *args, **kwargs):
+
+        self.object = self.get_object()
 
         CompanyNoteService.remove(
             user=self.request.user,
             context=CompanyChildContext(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"],
-                id=self.kwargs["pk"],
+                workspace_id=self.company_note.company.workspace.workspace_id,
+                company_id=self.company_note.company.pk,
+                id=self.company_note.pk,
             )
         )
 
-        return redirect(
-            "company-detail-web",
-            workspace_id=self.kwargs["workspace_id"],
-            pk=self.kwargs["company_id"],
-        )
+        return redirect("company-detail-web", pk=self.kwargs["company_id"])
 
     def build_app_context(self):
 
         return AppContext(
-            workspace_id=self.kwargs["workspace_id"],
-            company_id=self.kwargs["company_id"],
-            note_id=self.kwargs["pk"],
+            workspace_id=self.company_note.company.workspace.workspace_id,
+            company_id=self.company_note.company.pk,
+            note_id=self.company_note.pk,
         )
 
 
@@ -584,16 +663,30 @@ class JobPositionListView(LoginRequiredMixin, AppContextMixin, ListView):
         return JobPositionSelector.list(
             user=self.request.user,
             filters=JobPositionSelector.QueryFilter(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"]
+                workspace_id=self.request.GET.get("workspace_id"),
+                company_id=self.request.GET.get("company_id"),
             )
         )
 
     def build_app_context(self):
 
+        company_id = self.request.GET.get("company_id")
+        workspace_id = self.request.GET.get("workspace_id")
+
+        company = CompanySelector.list(
+            user=self.request.user,
+            filters=CompanySelector.QueryFilter(
+                id=self.request.GET.get("company_id")
+            )
+        ).first()
+
+        if company:
+            workspace_id = company.workspace.workspace_id
+            company_id = company.pk
+
         return AppContext(
-            workspace_id=self.kwargs["workspace_id"],
-            company_id=self.kwargs["company_id"],
+            workspace_id=workspace_id,
+            company_id=company_id,
         )
 
 
@@ -620,6 +713,7 @@ class JobPositionCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
     ]
 
     def form_valid(self, form):
+
         JobPositionService.create(
             user=self.request.user,
             context=CompanyChildContext(
@@ -640,10 +734,7 @@ class JobPositionCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
 
         return reverse_lazy(
             "company-detail-web",
-            kwargs={
-                "workspace_id": self.kwargs["workspace_id"],
-                "pk": self.kwargs["company_id"]
-            }
+            kwargs={"pk": self.kwargs["company_id"]}
         )
 
     def build_app_context(self):
@@ -660,26 +751,25 @@ class JobPositionDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
     template_name = "companies/job_position/detail.html"
     context_object_name = "job_position"
 
+    @property
+    def job_position(self):
+
+        return self.object
+
     def get_queryset(self):
 
-        return JobPositionSelector.list(
-            user=self.request.user,
-            filters=JobPositionSelector.QueryFilter(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"]
-            )
-        )
+        return JobPositionSelector.list(user=self.request.user)
 
     def build_app_context(self):
 
         return AppContext(
-            workspace_id=self.kwargs["workspace_id"],
-            company_id=self.kwargs["company_id"],
-            position_id=self.kwargs["pk"],
+            workspace_id=self.job_position.company.workspace.workspace_id,
+            company_id=self.job_position.company.pk,
+            position_id=self.job_position.pk,
             applications_list_url=application_list_url(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"],
-                job_position_id=self.kwargs["pk"],
+                workspace_id=self.job_position.company.workspace.workspace_id,
+                company_id=self.job_position.company.pk,
+                job_position_id=self.job_position.pk,
             )
         )
 
@@ -706,24 +796,23 @@ class JobPositionUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
         "portal_password",
     ]
 
+    @property
+    def job_position(self):
+
+        return self.object
+
     def get_queryset(self):
 
-        return JobPositionSelector.list(
-            user=self.request.user,
-            filters=JobPositionSelector.QueryFilter(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"]
-            )
-        )
+        return JobPositionSelector.list(user=self.request.user)
 
     def form_valid(self, form):
 
         JobPositionService.update(
             user=self.request.user,
             context=CompanyChildContext(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"],
-                id=self.kwargs["pk"],
+                workspace_id=self.job_position.company.workspace.workspace_id,
+                company_id=self.job_position.company.pk,
+                id=self.job_position.pk,
             ),
             validated_data=form.cleaned_data
         )
@@ -734,11 +823,7 @@ class JobPositionUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
 
         return reverse(
             "job-position-detail-web",
-            kwargs={
-                "workspace_id": self.kwargs["workspace_id"],
-                "company_id": self.kwargs["company_id"],
-                "pk": self.kwargs["pk"]
-            }
+            kwargs={"pk": self.kwargs["pk"]}
         )
 
     def form_invalid(self, form):
@@ -759,37 +844,34 @@ class JobPositionDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
     model = JobPosition
     template_name = "companies/job_position/delete.html"
 
+    @property
+    def job_position(self):
+
+        return self.object
+
     def get_queryset(self):
 
-        return JobPositionSelector.list(
-            user=self.request.user,
-            filters=JobPositionSelector.QueryFilter(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"]
-            )
-        )
+        return JobPositionSelector.list(user=self.request.user)
 
     def post(self, request, *args, **kwargs):
+
+        self.object = self.get_object()
 
         JobPositionService.remove(
             user=self.request.user,
             context=CompanyChildContext(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"],
-                id=self.kwargs["pk"],
+                workspace_id=self.job_position.company.workspace.workspace_id,
+                company_id=self.job_position.company.pk,
+                id=self.job_position.pk,
             )
         )
 
-        return redirect(
-            "company-detail-web",
-            workspace_id=self.kwargs["workspace_id"],
-            pk=self.kwargs["company_id"],
-        )
+        return redirect("company-detail-web", pk=self.kwargs["company_id"])
 
     def build_app_context(self):
 
         return AppContext(
-            workspace_id=self.kwargs["workspace_id"],
-            company_id=self.kwargs["company_id"],
-            position_id=self.kwargs["pk"],
+            workspace_id=self.job_position.company.workspace.workspace_id,
+            company_id=self.job_position.company.pk,
+            position_id=self.job_position.pk,
         )
