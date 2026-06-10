@@ -1,18 +1,22 @@
 from apps.core.contexts.app_context import AppContext
+from apps.core.contexts.extra_context import ExtraContext
 
 
 class AppContextMixin:
 
     def build_app_context(self):
 
-        return AppContext(
-            workspace_id=self.kwargs["workspace_id"],
-        )
+        return AppContext()
+
+    def build_extra_context(self):
+
+        return ExtraContext()
 
     def get_context_data(self, **kwargs):
 
         context = super().get_context_data(**kwargs)
 
         context["app_context"] = self.build_app_context()
+        context["extra_context"] = self.build_extra_context()
 
         return context

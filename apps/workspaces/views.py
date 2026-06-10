@@ -20,6 +20,7 @@ from .selectors.workspace_selector import WorkspaceSelector
 from .services.workspace_service import WorkspaceService
 from ..companies.views import company_list_url
 from ..core.contexts.app_context import AppContext
+from ..core.contexts.extra_context import ExtraContext
 from ..core.mixins.app_context_mixin import AppContextMixin
 
 
@@ -34,10 +35,10 @@ class WorkspaceListView(LoginRequiredMixin, ListView):
         return WorkspaceSelector.list(user=self.request.user)
 
 
-class WorkspaceCreateView(LoginRequiredMixin, CreateView):
+class WorkspaceCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
 
     model = Workspace
-    template_name = "workspaces/create.html"
+    template_name = "create_page.html"
     fields = ["name"]
     success_url = reverse_lazy("workspace-list-web")
 
@@ -53,6 +54,13 @@ class WorkspaceCreateView(LoginRequiredMixin, CreateView):
     def form_invalid(self, form):
 
         return super().form_invalid(form)
+
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="workspace",
+            page_title="Create Workspace",
+        )
 
 
 class WorkspaceDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
@@ -81,7 +89,7 @@ class WorkspaceDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
 class WorkspaceUpdateView(LoginRequiredMixin, UpdateView):
 
     model = Workspace
-    template_name = "workspaces/edit.html"
+    template_name = "edit_page.html"
     fields = ["name"]
 
     def get_object(self, queryset=None):
@@ -113,11 +121,18 @@ class WorkspaceUpdateView(LoginRequiredMixin, UpdateView):
 
         return super().form_invalid(form)
 
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="workspace",
+            page_title="Update Workspace",
+        )
+
 
 class WorkspaceDeleteView(LoginRequiredMixin, DeleteView):
 
     model = Workspace
-    template_name = "workspaces/delete.html"
+    template_name = "delete_confirm.html"
     success_url = reverse_lazy("workspace-list-web")
 
     def get_object(self, queryset=None):
@@ -136,3 +151,10 @@ class WorkspaceDeleteView(LoginRequiredMixin, DeleteView):
         )
 
         return redirect(self.success_url)
+
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="workspace",
+            page_title="Delete Workspace",
+        )

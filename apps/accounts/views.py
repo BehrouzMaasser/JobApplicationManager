@@ -130,7 +130,7 @@ class JobBenefitListView(LoginRequiredMixin, ListView):
 class JobBenefitCreateView(LoginRequiredMixin, CreateView):
 
     model = JobBenefit
-    template_name = "accounts/job_benefit/create.html"
+    template_name = "create_page.html"
     fields = ["name", "description"]
     success_url = reverse_lazy("job-benefit-list-web")
 
@@ -161,7 +161,7 @@ class JobBenefitDetailView(LoginRequiredMixin,  DetailView):
 class JobBenefitUpdateView(LoginRequiredMixin, UpdateView):
 
     model = JobBenefit
-    template_name = "accounts/job_benefit/edit.html"
+    template_name = "edit_page.html"
     fields = ["name", "description"]
     context_object_name = "job_benefit"
 
@@ -187,7 +187,7 @@ class JobBenefitUpdateView(LoginRequiredMixin, UpdateView):
 class JobBenefitDeleteView(LoginRequiredMixin, DeleteView):
 
     model = JobBenefit
-    template_name = "accounts/job_benefit/delete.html"
+    template_name = "delete_confirm.html"
 
     def get_queryset(self):
 
@@ -217,7 +217,7 @@ class JobTaskListView(LoginRequiredMixin, ListView):
 class JobTaskCreateView(LoginRequiredMixin, CreateView):
 
     model = JobTask
-    template_name = "accounts/job_task/create.html"
+    template_name = "create_page.html"
     fields = ["title", "description"]
     success_url = reverse_lazy("job-task-list-web")
 
@@ -248,7 +248,7 @@ class JobTaskDetailView(LoginRequiredMixin,  DetailView):
 class JobTaskUpdateView(LoginRequiredMixin, UpdateView):
 
     model = JobTask
-    template_name = "accounts/job_task/edit.html"
+    template_name = "edit_page.html"
     fields = ["title", "description"]
     context_object_name = "job_task"
 
@@ -274,7 +274,7 @@ class JobTaskUpdateView(LoginRequiredMixin, UpdateView):
 class JobTaskDeleteView(LoginRequiredMixin, DeleteView):
 
     model = JobTask
-    template_name = "accounts/job_task/delete.html"
+    template_name = "delete_confirm.html"
 
     def get_queryset(self):
 
@@ -304,7 +304,7 @@ class JobRequirementListView(LoginRequiredMixin, ListView):
 class JobRequirementCreateView(LoginRequiredMixin, CreateView):
 
     model = JobRequirement
-    template_name = "accounts/job_requirement/create.html"
+    template_name = "create_page.html"
     fields = ["title", "description"]
     success_url = reverse_lazy("job-requirement-list-web")
 
@@ -335,7 +335,7 @@ class JobRequirementDetailView(LoginRequiredMixin,  DetailView):
 class JobRequirementUpdateView(LoginRequiredMixin, UpdateView):
 
     model = JobRequirement
-    template_name = "accounts/job_requirement/edit.html"
+    template_name = "edit_page.html"
     fields = ["title", "description"]
     context_object_name = "job_requirement"
 
@@ -361,7 +361,7 @@ class JobRequirementUpdateView(LoginRequiredMixin, UpdateView):
 class JobRequirementDeleteView(LoginRequiredMixin, DeleteView):
 
     model = JobRequirement
-    template_name = "accounts/job_requirement/delete.html"
+    template_name = "delete_confirm.html"
 
     def get_queryset(self):
 

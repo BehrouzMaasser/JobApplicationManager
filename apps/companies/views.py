@@ -35,6 +35,7 @@ from ..applications.views import application_list_url
 
 # View Contexts and Mixins
 from ..core.contexts.app_context import AppContext
+from ..core.contexts.extra_context import ExtraContext
 from ..core.mixins.app_context_mixin import AppContextMixin
 
 
@@ -111,7 +112,7 @@ class CompanyListView(LoginRequiredMixin, AppContextMixin, ListView):
 class CompanyCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
 
     model = Company
-    template_name = "companies/company/create.html"
+    template_name = "create_page.html"
     fields = ["name", "website"]
 
     def form_valid(self, form):
@@ -142,6 +143,13 @@ class CompanyCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
             companies_list_url=company_list_url(
                 workspace_id=self.kwargs["workspace_id"]
             )
+        )
+
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="company",
+            page_title="Create Company",
         )
 
 
@@ -188,7 +196,7 @@ class CompanyDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
 class CompanyUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
 
     model = Company
-    template_name = "companies/company/edit.html"
+    template_name = "edit_page.html"
     fields = ["name", "website"]
 
     @property
@@ -234,11 +242,18 @@ class CompanyUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
             )
         )
 
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="company",
+            page_title="Update Company",
+        )
+
 
 class CompanyDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
 
     model = Company
-    template_name = "companies/company/delete.html"
+    template_name = "delete_confirm.html"
 
     @property
     def company(self):
@@ -273,6 +288,13 @@ class CompanyDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
             companies_list_url=company_list_url(
                 workspace_id=self.company.workspace.workspace_id
             )
+        )
+
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="company",
+            page_title="Delete Company",
         )
 
 
@@ -317,7 +339,7 @@ class CompanyEmailListView(LoginRequiredMixin, AppContextMixin, ListView):
 class CompanyEmailCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
 
     model = CompanyEmail
-    template_name = "companies/email/create.html"
+    template_name = "create_page.html"
     fields = ["title", "email"]
 
     def form_valid(self, form):
@@ -352,6 +374,13 @@ class CompanyEmailCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
             company_id=self.kwargs["company_id"],
         )
 
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="company email",
+            page_title="Create Company Email",
+        )
+
 
 class CompanyEmailDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
 
@@ -380,7 +409,7 @@ class CompanyEmailDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
 class CompanyEmailUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
 
     model = CompanyEmail
-    template_name = "companies/email/edit.html"
+    template_name = "edit_page.html"
     fields = ["title", "email"]
 
     @property
@@ -425,11 +454,18 @@ class CompanyEmailUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
             email_id=self.email.pk,
         )
 
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="company email",
+            page_title="Update Company Email",
+        )
+
 
 class CompanyEmailDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
 
     model = CompanyEmail
-    template_name = "companies/email/delete.html"
+    template_name = "delete_confirm.html"
 
     @property
     def email(self):
@@ -453,7 +489,7 @@ class CompanyEmailDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
             )
         )
 
-        return redirect("company-detail-web", pk=self.email.pk)
+        return redirect("company-detail-web", pk=self.email.company.pk)
 
     def build_app_context(self):
 
@@ -461,6 +497,13 @@ class CompanyEmailDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
             workspace_id=self.email.company.workspace.workspace_id,
             company_id=self.email.company.pk,
             email_id=self.email.pk,
+        )
+
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="company email",
+            page_title="Delete Company Email",
         )
 
 
@@ -505,7 +548,7 @@ class CompanyNoteListView(LoginRequiredMixin, AppContextMixin, ListView):
 class CompanyNoteCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
 
     model = CompanyNote
-    template_name = "companies/note/create.html"
+    template_name = "create_page.html"
     fields = ["title", "content"]
 
     def form_valid(self, form):
@@ -540,6 +583,13 @@ class CompanyNoteCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
             company_id=self.kwargs["company_id"],
         )
 
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="company note",
+            page_title="Create Company Note",
+        )
+
 
 class CompanyNoteDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
 
@@ -568,7 +618,7 @@ class CompanyNoteDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
 class CompanyNoteUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
 
     model = CompanyNote
-    template_name = "companies/note/edit.html"
+    template_name = "edit_page.html"
     fields = ["title", "content"]
 
     @property
@@ -613,11 +663,18 @@ class CompanyNoteUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
             note_id=self.company_note.pk,
         )
 
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="company note",
+            page_title="Update Company Notee",
+        )
+
 
 class CompanyNoteDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
 
-    model = CompanyEmail
-    template_name = "companies/note/delete.html"
+    model = CompanyNote
+    template_name = "delete_confirm.html"
 
     @property
     def company_note(self):
@@ -649,6 +706,13 @@ class CompanyNoteDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
             workspace_id=self.company_note.company.workspace.workspace_id,
             company_id=self.company_note.company.pk,
             note_id=self.company_note.pk,
+        )
+
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="company note",
+            page_title="Delete Company Note",
         )
 
 
@@ -693,7 +757,7 @@ class JobPositionListView(LoginRequiredMixin, AppContextMixin, ListView):
 class JobPositionCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
 
     model = JobPosition
-    template_name = "companies/job_position/create.html"
+    template_name = "create_page.html"
     fields = [
         "title",
         "description",
@@ -744,6 +808,13 @@ class JobPositionCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
             company_id=self.kwargs["company_id"],
         )
 
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="job position",
+            page_title="Create Job Position",
+        )
+
 
 class JobPositionDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
 
@@ -777,7 +848,7 @@ class JobPositionDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
 class JobPositionUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
 
     model = JobPosition
-    template_name = "companies/job_position/edit.html"
+    template_name = "edit_page.html"
     fields = [
         "title",
         "description",
@@ -833,16 +904,23 @@ class JobPositionUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
     def build_app_context(self):
 
         return AppContext(
-            workspace_id=self.kwargs["workspace_id"],
-            company_id=self.kwargs["company_id"],
-            position_id=self.kwargs["pk"],
+            workspace_id=self.job_position.company.workspace.workspace_id,
+            company_id=self.job_position.company.pk,
+            position_id=self.job_position.pk,
+        )
+
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="job position",
+            page_title="Update Job Position",
         )
 
 
 class JobPositionDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
 
     model = JobPosition
-    template_name = "companies/job_position/delete.html"
+    template_name = "delete_confirm.html"
 
     @property
     def job_position(self):
@@ -874,4 +952,11 @@ class JobPositionDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
             workspace_id=self.job_position.company.workspace.workspace_id,
             company_id=self.job_position.company.pk,
             position_id=self.job_position.pk,
+        )
+
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="job position",
+            page_title="Delete job Position",
         )

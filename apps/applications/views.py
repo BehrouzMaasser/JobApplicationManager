@@ -37,6 +37,7 @@ from apps.applications.services.contexts.application_context import (
 
 # View Contexts and Mixins
 from apps.core.contexts.app_context import AppContext
+from apps.core.contexts.extra_context import ExtraContext
 from apps.core.mixins.app_context_mixin import AppContextMixin
 from apps.core.mixins.job_application_form_mixin import JobApplicationFormMixin
 
@@ -104,7 +105,7 @@ class JobApplicationCreateView(
 ):
 
     model = JobApplication
-    template_name = "applications/job_application/create.html"
+    template_name = "create_page.html"
     fields = [
         "status",
         "date_applied",
@@ -147,6 +148,13 @@ class JobApplicationCreateView(
             company_id=self.kwargs["company_id"],
         )
 
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="job application",
+            page_title="Create Job Application",
+        )
+
 
 class JobApplicationDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
 
@@ -187,7 +195,7 @@ class JobApplicationUpdateView(
 ):
 
     model = JobApplication
-    template_name = "applications/job_application/edit.html"
+    template_name = "edit_page.html"
     fields = [
         "status",
         "date_applied",
@@ -239,11 +247,18 @@ class JobApplicationUpdateView(
             application_id=self.application.pk,
         )
 
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="job application",
+            page_title="Update Job Application",
+        )
+
 
 class JobApplicationDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
 
     model = JobApplication
-    template_name = "applications/job_application/delete.html"
+    template_name = "delete_confirm.html"
 
     @property
     def application(self):
@@ -284,6 +299,13 @@ class JobApplicationDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
             application_id=self.application.pk,
         )
 
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="job application",
+            page_title="Delete Job Application",
+        )
+
 
 class JobApplicationNoteListView(LoginRequiredMixin, AppContextMixin, ListView):
 
@@ -316,7 +338,7 @@ class JobApplicationNoteListView(LoginRequiredMixin, AppContextMixin, ListView):
 class JobApplicationNoteCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
 
     model = JobApplicationNote
-    template_name = "applications/application_note/create.html"
+    template_name = "create_page.html"
     fields = ["title", "content"]
 
     def form_valid(self, form):
@@ -361,6 +383,13 @@ class JobApplicationNoteCreateView(LoginRequiredMixin, AppContextMixin, CreateVi
             )
         )
 
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="job application note",
+            page_title="Create Job Application Note",
+        )
+
 
 class JobApplicationNoteDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
 
@@ -391,7 +420,7 @@ class JobApplicationNoteDetailView(LoginRequiredMixin, AppContextMixin, DetailVi
 class JobApplicationNoteUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
 
     model = JobApplicationNote
-    template_name = "applications/application_note/edit.html"
+    template_name = "edit_page.html"
     fields = ["title", "content"]
 
     @property
@@ -442,11 +471,18 @@ class JobApplicationNoteUpdateView(LoginRequiredMixin, AppContextMixin, UpdateVi
             application_note_id=self.app_note.pk,
         )
 
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="job application note",
+            page_title="Update Job Application Note",
+        )
+
 
 class JobApplicationNoteDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
 
     model = JobApplicationNote
-    template_name = "applications/application_note/delete.html"
+    template_name = "delete_confirm.html"
 
     @property
     def app_note(self):
@@ -485,4 +521,11 @@ class JobApplicationNoteDeleteView(LoginRequiredMixin, AppContextMixin, DeleteVi
             position_id=self.app_note.job_application.job_position.pk,
             application_id=self.app_note.job_application.pk,
             application_note_id=self.app_note.pk
+        )
+
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="job application note",
+            page_title="Delete Job Application Note",
         )

@@ -14,6 +14,8 @@ from django.views.generic import (
     DeleteView
 )
 
+from apps.core.contexts.extra_context import ExtraContext
+from apps.core.mixins.app_context_mixin import AppContextMixin
 # Models
 from apps.documents.models import DocumentType, Document
 from apps.documents.selectors.document_selector import DocumentSelector
@@ -37,10 +39,10 @@ class DocumentTypeListView(LoginRequiredMixin, ListView):
         return DocumentTypeSelector.list(user=self.request.user)
 
 
-class DocumentTypeCreateView(LoginRequiredMixin, CreateView):
+class DocumentTypeCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
 
     model = DocumentType
-    template_name = "documents/document_type/create.html"
+    template_name = "create_page.html"
     fields = ["name", "description"]
 
     def form_valid(self, form):
@@ -60,6 +62,13 @@ class DocumentTypeCreateView(LoginRequiredMixin, CreateView):
 
         return reverse_lazy("document-type-list-web")
 
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="document type",
+            page_title="Create Document Type",
+        )
+
 
 class DocumentTypeDetailView(LoginRequiredMixin, DetailView):
 
@@ -72,10 +81,10 @@ class DocumentTypeDetailView(LoginRequiredMixin, DetailView):
         return DocumentTypeSelector.list(user=self.request.user)
 
 
-class DocumentTypeUpdateView(LoginRequiredMixin, UpdateView):
+class DocumentTypeUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
 
     model = DocumentType
-    template_name = "documents/document_type/edit.html"
+    template_name = "edit_page.html"
     fields = ["name", "description"]
 
     def get_queryset(self):
@@ -103,11 +112,18 @@ class DocumentTypeUpdateView(LoginRequiredMixin, UpdateView):
 
         return super().form_invalid(form)
 
+    def build_extra_context(self):
 
-class DocumentTypeDeleteView(LoginRequiredMixin, DeleteView):
+        return ExtraContext(
+            app_kind="document type",
+            page_title="Update Document Type",
+        )
+
+
+class DocumentTypeDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
 
     model = DocumentType
-    template_name = "documents/document_type/delete.html"
+    template_name = "delete_confirm.html"
 
     def get_queryset(self):
 
@@ -122,6 +138,13 @@ class DocumentTypeDeleteView(LoginRequiredMixin, DeleteView):
 
         return redirect("document-type-list-web")
 
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="document type",
+            page_title="Delete Document Type",
+        )
+
 
 class DocumentListView(LoginRequiredMixin, ListView):
 
@@ -134,10 +157,10 @@ class DocumentListView(LoginRequiredMixin, ListView):
         return DocumentSelector.list(user=self.request.user)
 
 
-class DocumentCreateView(LoginRequiredMixin, CreateView):
+class DocumentCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
 
     model = Document
-    template_name = "documents/document/create.html"
+    template_name = "create_page.html"
     fields = ["name", "document_type", "file"]
 
     def form_valid(self, form):
@@ -157,6 +180,13 @@ class DocumentCreateView(LoginRequiredMixin, CreateView):
 
         return reverse_lazy("document-list-web")
 
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="document",
+            page_title="Create Document",
+        )
+
 
 class DocumentDetailView(LoginRequiredMixin, DetailView):
 
@@ -169,11 +199,11 @@ class DocumentDetailView(LoginRequiredMixin, DetailView):
         return DocumentSelector.list(user=self.request.user)
 
 
-class DocumentUpdateView(LoginRequiredMixin, UpdateView):
+class DocumentUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
 
     model = Document
-    template_name = "documents/document_type/edit.html"
-    fields = ["name", "description"]
+    template_name = "edit_page.html"
+    fields = ["name", "document_type", "file"]
 
     def get_queryset(self):
 
@@ -200,11 +230,18 @@ class DocumentUpdateView(LoginRequiredMixin, UpdateView):
 
         return super().form_invalid(form)
 
+    def build_extra_context(self):
 
-class DocumentDeleteView(LoginRequiredMixin, DeleteView):
+        return ExtraContext(
+            app_kind="document",
+            page_title="Update Document",
+        )
+
+
+class DocumentDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
 
     model = Document
-    template_name = "documents/document/delete.html"
+    template_name = "delete_confirm.html"
 
     def get_queryset(self):
 
@@ -218,6 +255,13 @@ class DocumentDeleteView(LoginRequiredMixin, DeleteView):
         )
 
         return redirect("document-list-web")
+
+    def build_extra_context(self):
+
+        return ExtraContext(
+            app_kind="document",
+            page_title="Delete Document",
+        )
 
 
 class BaseDocumentFileView(LoginRequiredMixin, View):
