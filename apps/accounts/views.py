@@ -76,7 +76,7 @@ class LoginView(View):
 
         if request.user.is_authenticated:
 
-            return redirect("workspace-list-web")
+            return redirect("dashboard")
 
         return render(request, self.template_name)
 
@@ -94,7 +94,7 @@ class LoginView(View):
         if user:
             login(request, user)
 
-            return redirect("workspace-list-web")
+            return redirect("dashboard")
 
         messages.error(request, "Invalid credentials.")
 
