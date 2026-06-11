@@ -27,6 +27,7 @@
 - Modifying README
 - Reviewing all created web views and resolving possible bugs and typos in 
     views/HTML templates/CSS
+- Modify Signup and Login pages
 
 ## Planned
 - Think about modifying view contexts
