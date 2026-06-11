@@ -174,13 +174,9 @@ class CompanyDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
             workspace_id=self.company.workspace.workspace_id
         )
 
-        print("Companies List Url: ", companies_list_url)
-
         company_emails_list_url = company_email_list_url(
             company_id=self.company.pk
         )
-
-        print("Company Emails List Url: ", company_emails_list_url)
 
         return AppContext(
             workspace_id=self.company.workspace.workspace_id,
