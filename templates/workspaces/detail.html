@@ -1,23 +1,174 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ workspace.name }}</title>
-</head>
-<body>
-<h1>{{ workspace.name }}</h1>
+{% extends "base.html" %}
 
-<p>Workspace details page</p>
+{% block title %}
+{{ workspace.name }}
+{% endblock %}
 
-<a href="{% url 'company-create-web' workspace.workspace_id %}">+ Create Company</a>
-<p><a href="{{ app_context.companies_list_url }}">Companies</a></p>
+{% block content %}
 
-<a href="{% url 'workspace-edit' workspace.workspace_id %}">Edit</a>
-|
-<a href="{% url 'workspace-delete' workspace.workspace_id %}">Delete</a>
-|
-<a href="{% url 'workspace-list-web' %}">
-    Back to Workspaces
-</a>
-</body>
-</html>
+<!-- HEADER -->
+
+<div class="page-header">
+
+    <h1>{{ workspace.name }}</h1>
+
+    <p class="page-description">
+        Workspace Overview
+    </p>
+
+    <div class="action-bar">
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'company-create-web' workspace_id=workspace.workspace_id %}"
+        >
+            + Add Company
+        </a>
+
+        <a
+            class="btn btn-secondary"
+            href="{% url 'company-list-web' %}?workspace_id={{ workspace.workspace_id }}"
+        >
+            View All Companies
+        </a>
+
+        <a
+            class="btn btn-secondary"
+            href="{% url 'workspace-edit-web' workspace_id=workspace.workspace_id %}"
+        >
+            Edit
+        </a>
+
+        <a
+            class="btn btn-danger"
+            href="{% url 'workspace-delete-web' workspace_id=workspace.workspace_id %}"
+        >
+            Delete
+        </a>
+
+    </div>
+
+</div>
+
+<!-- WORKSPACE INFO -->
+
+<div class="card">
+
+    <h2 class="section-title">
+        Workspace Information
+    </h2>
+
+    <div class="info-grid">
+
+        <div>
+            <strong>Name</strong><br>
+            {{ workspace.name }}
+        </div>
+
+        <div>
+            <strong>Companies</strong><br>
+            {{ workspace.companies.count }}
+        </div>
+
+    </div>
+
+</div>
+
+<!-- COMPANIES -->
+
+<div
+    class="card"
+    style="margin-top:20px;"
+>
+
+    <div
+        style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:16px;
+        "
+    >
+
+        <h2 class="section-title">
+            Recent Companies
+        </h2>
+
+        <a
+            class="btn btn-secondary"
+            href="{% url 'company-list-web' %}?workspace_id={{ workspace.workspace_id }}"
+        >
+            View All
+        </a>
+
+    </div>
+
+    {% if workspace.companies.all %}
+
+        <div class="mini-list">
+
+            {% for company in workspace.companies.all|slice:":5" %}
+
+                <div
+                    class="mini-item"
+                    style="
+                        display:flex;
+                        justify-content:space-between;
+                        align-items:center;
+                        gap:16px;
+                    "
+                >
+
+                    <div>
+
+                        <a
+                            href="{% url 'company-detail-web' company.pk %}"
+                            class="mini-item-title"
+                        >
+                            {{ company.name }}
+                        </a>
+
+                    </div>
+
+                    <div class="card-actions">
+
+                        <a
+                            class="btn btn-primary"
+                            href="{% url 'company-detail-web' company.pk %}"
+                        >
+                            Open
+                        </a>
+
+                        <a
+                            class="btn btn-secondary"
+                            href="{% url 'company-edit-web' company.pk %}"
+                        >
+                            Edit
+                        </a>
+
+                        <a
+                            class="btn btn-danger"
+                            href="{% url 'company-delete-web' company.pk %}"
+                        >
+                            Delete
+                        </a>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="empty-text">
+            No companies yet.
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

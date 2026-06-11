@@ -1,35 +1,87 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Document Types</title>
-</head>
-<body>
-<h1>Your Document Types</h1>
-<a href="{% url 'dashboard' %}">Back to Dashboard</a>
-|
-<a href="{% url 'document-type-create-web' %}">+ Create Document Type</a>
-<hr>
+{% extends "base.html" %}
+
+{% block title %}
+Document Types
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <h1>Document Types</h1>
+
+    <p class="page-description">
+        Manage document categories.
+    </p>
+
+    <div class="action-bar">
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'document-type-create-web' %}"
+        >
+            + New Document Type
+        </a>
+
+    </div>
+
+</div>
 
 {% if document_types %}
-    {% for document_type in document_types %}
-        <div>
-            <h3>{{ document_type.name }}</h3>
-            <p>Description: {{ document_type.description }}</p>
 
-            <a href="{% url 'document-type-detail-web' document_type.pk %}">Open</a>
-            |
-            <a href="{% url 'document-type-edit-web' document_type.pk %}">Edit</a>
-            |
-            <a href="{% url 'document-type-delete-web' document_type.pk %}">Delete</a>
+<div class="grid">
+
+    {% for document_type in document_types %}
+
+        <div class="card">
+
+            <h3>
+                {{ document_type.name }}
+            </h3>
+
+            <div class="card-actions">
+
+                <a
+                    href="{% url 'document-type-detail-web' document_type.pk %}"
+                    class="btn btn-primary"
+                >
+                    Open
+                </a>
+
+                <a
+                    href="{% url 'document-type-edit-web' document_type.pk %}"
+                    class="btn btn-secondary"
+                >
+                    Edit
+                </a>
+
+                <a
+                    href="{% url 'document-type-delete-web' document_type.pk %}"
+                    class="btn btn-danger"
+                >
+                    Delete
+                </a>
+
+            </div>
+
         </div>
-        <hr>
+
     {% endfor %}
+
+</div>
+
 {% else %}
-    <p>No document types yet.</p>
-    <a href="{% url 'document-type-create-web' %}">
-        Create your first document type
-    </a>
+
+<div class="card empty-state">
+
+    <h3>No Document Types Yet</h3>
+
+    <p>
+        Create your first document type.
+    </p>
+
+</div>
+
 {% endif %}
-</body>
-</html>
+
+{% endblock %}

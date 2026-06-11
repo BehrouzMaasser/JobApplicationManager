@@ -1,69 +1,103 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Job Application Notes</title>
-</head>
-<body>
-<h1>Job Application Notes</h1>
+{% extends "base.html" %}
 
-{% if app_context.application_id %}
-<a href="{% url 'job-application-note-create-web' job_application_id=app_context.application_id %}">
-    +Create Job Application Note
-</a>
-|
-{% endif %}
+{% block title %}
+Job Application Notes
 
-{% if app_context.application_id %}
-<a href="{% url 'job-application-detail-web' pk=app_context.application_id %}">
-    Back to job application
-</a>
-|
-{% endif %}
-{% if app_context.position_id %}
-<a href="{% url 'job-position-detail-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.position_id %}">
-    Back to job position
-</a>
-|
-{% endif %}
-{%  if app_context.company_id %}
-<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">
-    Back to company
-</a>
-|
-{% endif %}
-{% if app_context.workspace_id %}
-<a href="{% url 'workspace-detail-web' workspace_id=app_context.workspace_id %}">
-    Back to job workspace
-</a>
-|
-{% endif %}
-<a href="{% url 'dashboard' %}">
-    Back to dashboard
-</a>
-<hr>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <h1>Job Application Notes</h1>
+
+    <p class="page-description">
+            Manage job application notes.
+    </p>
+
+    <div class="action-bar">
+
+        {% if app_context.job_application_id %}
+            <a
+                class="btn btn-primary"
+                href="{% url 'job-application-note-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id job_position_id=app_context.job_position_id job_application_id=app_context.job_application_id %}"
+            >
+                +New Job Application Note
+            </a>
+        {% endif %}
+
+    </div>
+
+</div>
 
 {% if application_notes %}
-    {% for application_note in application_notes %}
-        <div>
-            <h3>{{ application_note.title }}</h3>
-            <p>Content: {{ application_note.content }}</p>
 
-            <a href="{% url 'job-application-note-detail-web' pk=application_note.pk %}">Open</a>
-            |
-            <a href="{% url 'job-application-note-edit-web' pk=application_note.pk %}">Edit</a>
-            |
-            <a href="{% url 'job-application-note-delete-web' pk=application_note.pk %}">Delete</a>
+<div class="grid">
+
+
+    {% for application_notes in application_notes %}
+
+        <div class="card">
+
+            <h2 class="section-title">
+                Title
+            </h2>
+
+        <div class="mini-item">
+            {{ application_note.title|linebreaks }}
         </div>
-        <hr>
+
+            <h2 class="section-title">
+                Content
+            </h2>
+
+        <div class="mini-item">
+            {{ application_note.content|linebreaks }}
+        </div>
+
+            <div class="card-actions">
+
+                <a
+                    href="{% url 'job-application-note-detail-web' pk=application_note.pk %}"
+                    class="btn btn-primary"
+                >
+                    Open
+                </a>
+
+                <a
+                    href="{% url 'job-application-note-edit-web' pk=application_note.pk %}"
+                    class="btn btn-secondary"
+                >
+                    Edit
+                </a>
+
+                <a
+                    href="{% url 'job-application-note-delete-web' pk=application_note.pk %}"
+                    class="btn btn-danger"
+                >
+                    Delete
+                </a>
+
+            </div>
+
+        </div>
+
     {% endfor %}
+
+</div>
+
 {% else %}
-    <p>No application notes yet.</p>
-{#    {% if app_context.workspace_id and app_context.company_id and app_context.position_id %}#}
-{#        <a href="{% url 'job-application-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id job_position_id=app_context.position_id %}">#}
-{#            Create your first applications#}
-{#        </a>#}
-{#    {% endif %}#}
+
+<div class="card empty-state">
+
+    <h3>No Job Application Notes Yet</h3>
+
+    <p>
+        Start by creating your first job application note.
+    </p>
+
+</div>
+
 {% endif %}
-</body>
-</html>
+
+{% endblock %}

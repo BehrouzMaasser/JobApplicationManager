@@ -1,34 +1,87 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Job Tasks</title>
-</head>
-<body>
-<h1>Your Job Tasks</h1>
-<a href="{% url 'dashboard' %}">Back to Dashboard</a>
-|
-<a href="{% url 'job-task-create-web' %}">+ Create Job Task</a>
-<hr>
+{% extends "base.html" %}
+
+{% block title %}
+Job Tasks
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <h1>Job Tasks</h1>
+
+    <p class="page-description">
+        Manage reusable job tasks.
+    </p>
+
+    <div class="action-bar">
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'job-task-create-web' %}"
+        >
+            + New Task
+        </a>
+
+    </div>
+
+</div>
 
 {% if job_tasks %}
+
+<div class="grid">
+
     {% for job_task in job_tasks %}
-        <div>
+
+        <div class="card">
+
             <h3>{{ job_task.title }}</h3>
 
-            <a href="{% url 'job-task-detail-web' job_task.pk %}">Open</a>
-            |
-            <a href="{% url 'job-task-edit-web' job_task.pk %}">Edit</a>
-            |
-            <a href="{% url 'job-task-delete-web' job_task.pk %}">Delete</a>
+            <div class="card-meta">
+                {{ job_task.description|truncatechars:120 }}
+            </div>
+
+            <div class="card-actions">
+
+                <a
+                    href="{% url 'job-task-detail-web' job_task.pk %}"
+                    class="btn btn-primary"
+                >
+                    Open
+                </a>
+
+                <a
+                    href="{% url 'job-task-edit-web' job_task.pk %}"
+                    class="btn btn-secondary"
+                >
+                    Edit
+                </a>
+
+                <a
+                    href="{% url 'job-task-delete-web' job_task.pk %}"
+                    class="btn btn-danger"
+                >
+                    Delete
+                </a>
+
+            </div>
+
         </div>
-        <hr>
+
     {% endfor %}
+
+</div>
+
 {% else %}
-    <p>No job tasks yet.</p>
-    <a href="{% url 'job-task-create-web' %}">
-        Create your first job task
-    </a>
+
+<div class="card empty-state">
+
+    <h3>No Job Tasks Yet</h3>
+
+    <p>Create your first job task.</p>
+
+</div>
+
 {% endif %}
-</body>
-</html>
+
+{% endblock %}

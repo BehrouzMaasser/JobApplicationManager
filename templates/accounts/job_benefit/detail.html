@@ -1,25 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ job_benefit.name }}</title>
-</head>
-<body>
-<h1>{{ job_benefit.name }}</h1>
+{% extends "base.html" %}
 
-<p>Job Benefit details page</p>
+{% block title %}
+{{ job_benefit.name }}
+{% endblock %}
 
-<p>
-    <a href="{% url 'dashboard' %}">Back to Dashboard</a>
-    |
-    <a href="{% url 'job-benefit-list-web' %}">Back to Job Benefits</a>
-</p>
+{% block content %}
 
-<p>Name: {{ job_benefit.name }}</p>
-<p>Description: {{ job_benefit.description }}</p>
+<div class="page-header">
 
-<a href="{% url 'job-benefit-edit-web' job_benefit.pk %}">Edit</a>
-|
-<a href="{% url 'job-benefit-delete-web' job_benefit.pk %}">Delete</a>
-</body>
-</html>
+    <h1>{{ job_benefit.name }}</h1>
+
+    <p class="page-description">
+        Job Benefit Information
+    </p>
+
+    <div class="action-bar">
+
+        <a
+            class="btn btn-secondary"
+            href="{% url 'job-benefit-edit-web' job_benefit.pk %}"
+        >
+            Edit
+        </a>
+
+        <a
+            class="btn btn-danger"
+            href="{% url 'job-benefit-delete-web' job_benefit.pk %}"
+        >
+            Delete
+        </a>
+
+    </div>
+
+</div>
+
+<div class="card">
+
+    <h2 class="section-title">
+        Description
+    </h2>
+
+    <div class="mini-item">
+        {{ job_benefit.description|linebreaks }}
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,46 +1,92 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Company Emails</title>
-</head>
-<body>
-<h1>Company Emails</h1>
-<a href="{% url 'dashboard' %}">Back to Dashboard</a>
-{% if app_context.workspace_id %}
-    |
-    <a href="{% url 'workspace-detail-web' workspace_id=app_context.workspace_id %}">Back to Workspace</a>
-{% endif %}
-{% if app_context.company_id %}
-    |
-<a href="{% url 'company-email-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">+ Create Email</a>
-    |
-<a href="{% url 'company-detail-web' pk=app_context.company_id %}">
-    Back to Company
-</a>
-{% endif %}
-<hr>
+{% extends "base.html" %}
+
+{% block title %}
+Company Emails
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <h1>Company Emails</h1>
+
+    <p class="page-description">
+            Manage company emails.
+    </p>
+
+    <div class="action-bar">
+
+        {% if app_context.company_id %}
+            <a
+                class="btn btn-primary"
+                href="{% url 'company-email-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}"
+            >
+                +New Company Email
+            </a>
+        {% endif %}
+
+    </div>
+
+</div>
 
 {% if emails %}
+
+<div class="grid">
+
+
     {% for email in emails %}
-        <div>
+
+        <div class="card">
+
             <h3>{{ email.title }}</h3>
 
-            <a href="{% url 'company-email-detail-web' pk=email.pk %}">Open</a>
-            |
-            <a href="{% url 'company-email-edit-web' pk=email.pk %}">Edit</a>
-            |
-            <a href="{% url 'company-email-delete-web' pk=email.pk %}">Delete</a>
+            <p class="mini-item">
+                <a class="mini-item-title" href="mailto:{{ email.email }}" target="_blank">{{ email.email }}</a>
+            </p>
+
+            <div class="card-actions">
+
+                <a
+                    href="{% url 'company-email-detail-web' pk=email.pk %}"
+                    class="btn btn-primary"
+                >
+                    Open
+                </a>
+
+                <a
+                    href="{% url 'company-email-edit-web' pk=email.pk %}"
+                    class="btn btn-secondary"
+                >
+                    Edit
+                </a>
+
+                <a
+                    href="{% url 'company-email-delete-web' pk=email.pk %}"
+                    class="btn btn-danger"
+                >
+                    Delete
+                </a>
+
+            </div>
+
         </div>
-        <hr>
+
     {% endfor %}
+
+</div>
+
 {% else %}
-    <p>No emails yet.</p>
-    {% if app_context.company_id %}
-        <a href="{% url 'company-email-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">
-            Create your first company email
-        </a>
-    {% endif %}
+
+<div class="card empty-state">
+
+    <h3>No Company Emails Yet</h3>
+
+    <p>
+        Start by creating your first company email.
+    </p>
+
+</div>
+
 {% endif %}
-</body>
-</html>
+
+{% endblock %}

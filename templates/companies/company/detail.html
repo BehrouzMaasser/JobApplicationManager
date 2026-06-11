@@ -1,64 +1,189 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ company.name }}</title>
-</head>
-<body>
-<h1>{{ company.name }}</h1>
+{% extends "base.html" %}
 
-<p>Company details page</p>
-<a href="{% url 'company-edit-web' pk=app_context.company_id %}">Edit</a>
-|
-<a href="{% url 'company-delete-web' pk=app_context.company_id %}">Delete</a>
-|
-<a href="{% url 'dashboard' %}">Back to Dashboard</a>
-|
-<a href="{% url 'workspace-detail-web' workspace_id=app_context.workspace_id %}">
-    Back to Workspace
-</a>
-|
-<a href="{{ app_context.companies_list_url }}">Back to Companies</a>
-|
-<a href="{{ app_context.applications_list_url }}">See All Job Applications</a>
-<hr>
-<p>Website:</p>
-<p><a href="{{ company.website }}" target="_blank">{{ company.website }}</a></p>
-<p>
-    Job Positions:
-    <a href="{% url 'job-position-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">Create Job Position</a>
-    |
-    <a href="{{ app_context.positions_list_url }}">See All Job Positions</a>
-</p>
-<p>
-    Emails:
-    <a href="{% url 'company-email-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">Create Email</a>
-    |
-    <a href="{{ app_context.company_emails_list_url }}">See All Emails</a>
-</p>
-{% if company.company_emails.all %}
-    <ul>
+{% block title %}
+{{ company.name }}
+{% endblock %}
+
+{% block content %}
+
+<!-- HEADER -->
+<div class="page-header">
+
+    <h1>{{ company.name }}</h1>
+
+    <div class="page-description">
+        {% if company.website %}
+        <div class="mini-item">
+
+            <a
+                class="mini-item-title"
+                href="{{ company.website }}" target="_blank"
+            >
+                {{ company.website }}
+            </a>
+
+        </div>
+        {% else %}
+            <div class="empty-text">
+                No Website.
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="action-bar">
+
+        <a
+            class="btn btn-secondary"
+            href="{% url 'company-edit-web' company.pk %}"
+        >
+            Edit
+        </a>
+
+        <a
+            class="btn btn-danger"
+            href="{% url 'company-delete-web' company.pk %}"
+        >
+            Delete
+        </a>
+
+    </div>
+
+</div>
+
+<!-- RELATED DATA GRID -->
+<div class="grid">
+
+    <!-- EMAILS -->
+    <div class="card">
+
+        <h2 class="section-title">
+            Emails ({{ company.company_emails.count }})
+        </h2>
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'company-email-create-web' app_context.workspace_id app_context.company_id %}"
+        >
+            + Add Email
+        </a>
+
+        <a class="btn btn-secondary" href="{{ app_context.company_emails_list_url }}">List All</a>
+
+        <br><br>
+
         {% for email in company.company_emails.all %}
-            <li><a href="{% url 'company-email-detail-web' pk=email.pk %}">{{ email.title }}: {{ email.email }}</a></li>
-        {% endfor %}
-    </ul>
-{% else %}
-<p>No Emails Yet!</p>
-{% endif %}
-<p>
-    Notes:
-    <a href="{% url 'company-note-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">Create Note</a>
-    |
-    <a href="{{ app_context.company_notes_list_url }}">See All Notes</a>
-</p>
-{% if company.company_notes.all %}
-    <ul>
-        {% for note in company.company_notes.all %}
-            <li><a href="{% url 'company-note-detail-web' pk=note.pk %}">{{ note.title }}</a></li>
-        {% endfor %}
-    </ul>
-{% else %}
-<p>No Notes Yet!</p>
-{% endif %}
-</body>
-</html>
+
+        <div class="mini-item">
+
+            <a
+                class="mini-item-title"
+                href="{% url 'company-email-detail-web' email.pk %}"
+            >
+                {{ email.title }}: {{ email.email }}
+            </a>
+
+        </div>
+
+    {% empty %}
+
+        <div class="empty-text">
+            No Emails.
+        </div>
+
+    {% endfor %}
+
+    </div>
+
+    <!-- NOTES -->
+    <div class="card">
+
+        <h2 class="section-title">
+            Notes ({{ company.company_notes.count }})
+        </h2>
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'company-note-create-web' app_context.workspace_id app_context.company_id %}"
+        >
+            + Add Note
+        </a>
+
+        <a class="btn btn-secondary" href="{{ app_context.company_notes_list_url }}">List All</a>
+
+        <br><br>
+
+        <div class="mini-list">
+
+    {% for note in company.company_notes.all %}
+
+        <div class="mini-item">
+
+            <a
+                class="mini-item-title"
+                href="{% url 'company-note-detail-web' note.pk %}"
+            >
+                {{ note.title }}
+            </a>
+
+        </div>
+
+    {% empty %}
+
+        <div class="empty-text">
+            No Notes.
+        </div>
+
+    {% endfor %}
+
+</div>
+
+    </div>
+
+</div>
+
+<!-- JOB POSITIONS (full width section) -->
+<div class="card" style="margin-top: 20px;">
+
+    <h2 class="section-title">
+        Job Positions ({{ company.job_positions.count }})
+    </h2>
+
+    <a
+        class="btn btn-primary"
+        href="{% url 'job-position-create-web' app_context.workspace_id app_context.company_id %}"
+    >
+        + Add Position
+    </a>
+
+    <a class="btn btn-secondary" href="{{ app_context.positions_list_url }}">List All</a>
+
+    <br><br>
+
+    <div class="mini-list">
+
+    {% for position in company.job_positions.all %}
+
+        <div class="mini-item">
+
+            <a
+                class="mini-item-title"
+                href="{% url 'job-position-detail-web' position.pk %}"
+            >
+                {{ position.title }}
+            </a>
+
+        </div>
+
+    {% empty %}
+
+        <div class="empty-text">
+            No positions.
+        </div>
+
+    {% endfor %}
+
+</div>
+
+</div>
+
+{% endblock %}

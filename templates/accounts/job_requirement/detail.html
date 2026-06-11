@@ -1,21 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ job_requirement.title }}</title>
-</head>
-<body>
-<h1>{{ job_requirement.title }}</h1>
+{% extends "base.html" %}
 
-<p>Job Requirement details page</p>
-<p><a href="{% url 'dashboard' %}">Back to Dashboard</a></p>
-<a href="{% url 'job-requirement-list-web' %}">Back to Job Requirements</a>
+{% block title %}
+{{ job_requirement.title }}
+{% endblock %}
 
-<p>Title: {{ job_requirement.title }}</p>
-<p>Description: {{ job_requirement.description }}</p>
+{% block content %}
 
-<a href="{% url 'job-requirement-edit-web' job_requirement.pk %}">Edit</a>
-|
-<a href="{% url 'job-requirement-delete-web' job_requirement.pk %}">Delete</a>
-</body>
-</html>
+<div class="page-header">
+
+    <h1>{{ job_requirement.title }}</h1>
+
+    <p class="page-description">
+        Job Requirement Information
+    </p>
+
+    <div class="action-bar">
+
+        <a
+            class="btn btn-secondary"
+            href="{% url 'job-requirement-edit-web' job_requirement.pk %}"
+        >
+            Edit
+        </a>
+
+        <a
+            class="btn btn-danger"
+            href="{% url 'job-requirement-delete-web' job_requirement.pk %}"
+        >
+            Delete
+        </a>
+
+    </div>
+
+</div>
+
+<div class="card">
+
+    <h2 class="section-title">
+        Description
+    </h2>
+
+    <div class="mini-item">
+        {{ job_requirement.description|linebreaks }}
+    </div>
+
+</div>
+
+{% endblock %}

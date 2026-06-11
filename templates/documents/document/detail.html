@@ -1,29 +1,98 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ document.name }}</title>
-</head>
-<body>
-<h1>{{ document.name }}</h1>
+{% extends "base.html" %}
 
-<p>Document details page</p>
+{% block title %}
+{{ document.name }}
+{% endblock %}
 
-<p><a href="{% url 'dashboard' %}">Back to Dashboard</a></p>
+{% block content %}
 
-<p>Name: {{ document.name }}</p>
-<p>Document Type: {{ document.document_type.name }}</p>
-<p>
-    File:
-    <a href="{% url 'document-open-web' document.pk %}" target="_blank">Open File</a>
-    |
-    <a href="{% url 'document-download-web' document.pk %}">Download</a>
-</p>
+<div class="page-header">
 
-<a href="{% url 'document-edit-web' document.pk %}">Edit</a>
-|
-<a href="{% url 'document-delete-web' document.pk %}">Delete</a>
-|
-<a href="{% url 'document-list-web' %}">Back to Documents</a>
-</body>
-</html>
+    <h1>{{ document.name }}</h1>
+
+    <p class="page-description">
+        Document Information
+    </p>
+
+    <div class="action-bar">
+
+        <a
+            class="btn btn-secondary"
+            href="{% url 'document-edit-web' document.pk %}"
+        >
+            Edit
+        </a>
+
+        <a
+            class="btn btn-danger"
+            href="{% url 'document-delete-web' document.pk %}"
+        >
+            Delete
+        </a>
+
+    </div>
+
+</div>
+
+<div class="card">
+
+    <h2 class="section-title">
+        Details
+    </h2>
+
+    <div class="info-grid">
+
+        <div>
+            <strong>Name</strong><br>
+            {{ document.name }}
+        </div>
+
+        <div>
+            <strong>Type</strong><br>
+            {{ document.document_type.name|default:"-" }}
+        </div>
+
+        <div>
+            <strong>Created</strong><br>
+            {{ document.created_at|default:"-" }}
+        </div>
+
+        <div>
+            <strong>Updated</strong><br>
+            {{ document.updated_at|default:"-" }}
+        </div>
+
+    </div>
+
+</div>
+
+{% if document.file %}
+
+<div
+    class="card"
+    style="margin-top:20px;"
+>
+
+    <h2 class="section-title">
+        File
+    </h2>
+
+    <a
+        class="btn btn-primary"
+        href="{% url 'document-open-web' document.pk %}" target="_blank"
+    >
+        Open File
+    </a>
+
+    <a
+        class="btn btn-primary"
+        href="{% url 'document-download-web' document.pk %}" target="_blank"
+    >
+        Download File
+    </a>
+
+</div>
+
+{% endif %}
+
+{% endblock %}

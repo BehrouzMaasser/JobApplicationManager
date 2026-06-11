@@ -1,34 +1,87 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Job Requirements</title>
-</head>
-<body>
-<h1>Your Job Requirements</h1>
-<a href="{% url 'dashboard' %}">Back to Dashboard</a>
-|
-<a href="{% url 'job-requirement-create-web' %}">+ Create Job Requirement</a>
-<hr>
+{% extends "base.html" %}
+
+{% block title %}
+Job Requirements
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <h1>Job Requirements</h1>
+
+    <p class="page-description">
+        Manage reusable job requirements.
+    </p>
+
+    <div class="action-bar">
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'job-requirement-create-web' %}"
+        >
+            + New Requirement
+        </a>
+
+    </div>
+
+</div>
 
 {% if job_requirements %}
+
+<div class="grid">
+
     {% for job_requirement in job_requirements %}
-        <div>
+
+        <div class="card">
+
             <h3>{{ job_requirement.title }}</h3>
 
-            <a href="{% url 'job-requirement-detail-web' job_requirement.pk %}">Open</a>
-            |
-            <a href="{% url 'job-requirement-edit-web' job_requirement.pk %}">Edit</a>
-            |
-            <a href="{% url 'job-requirement-delete-web' job_requirement.pk %}">Delete</a>
+            <div class="card-meta">
+                {{ job_requirement.description|truncatechars:120 }}
+            </div>
+
+            <div class="card-actions">
+
+                <a
+                    href="{% url 'job-requirement-detail-web' job_requirement.pk %}"
+                    class="btn btn-primary"
+                >
+                    Open
+                </a>
+
+                <a
+                    href="{% url 'job-requirement-edit-web' job_requirement.pk %}"
+                    class="btn btn-secondary"
+                >
+                    Edit
+                </a>
+
+                <a
+                    href="{% url 'job-requirement-delete-web' job_requirement.pk %}"
+                    class="btn btn-danger"
+                >
+                    Delete
+                </a>
+
+            </div>
+
         </div>
-        <hr>
+
     {% endfor %}
+
+</div>
+
 {% else %}
-    <p>No job requirements yet.</p>
-    <a href="{% url 'job-requirement-create-web' %}">
-        Create your first job requirement
-    </a>
+
+<div class="card empty-state">
+
+    <h3>No Job Requirements Yet</h3>
+
+    <p>Create your first job requirement.</p>
+
+</div>
+
 {% endif %}
-</body>
-</html>
+
+{% endblock %}

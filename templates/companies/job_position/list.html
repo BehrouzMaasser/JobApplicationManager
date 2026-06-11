@@ -1,45 +1,95 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Job Positions</title>
-</head>
-<body>
-<h1>Job Positions</h1>
-<a href="{% url 'dashboard' %}">Back to Dashboard</a>
-{% if app_context.workspace_id %}
-    |
-    <a href="{% url 'workspace-detail-web' workspace_id=app_context.workspace_id %}">Back to Workspace</a>
-{% endif %}
-{% if app_context.company_id %}
-    |
-<a href="{% url 'job-position-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">+ Create Job Position</a>
-    |
-<a href="{% url 'company-detail-web' pk=app_context.company_id %}">Back to Company</a>
-{% endif %}
-<hr>
+{% extends "base.html" %}
+
+{% block title %}
+Job Positions
+
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <h1>Job Positions</h1>
+
+    <p class="page-description">
+            Manage job positions.
+    </p>
+
+    <div class="action-bar">
+
+        {% if app_context.company_id %}
+            <a
+                class="btn btn-primary"
+                href="{% url 'job-position-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}"
+            >
+                +New Job Position
+            </a>
+        {% endif %}
+
+    </div>
+
+</div>
 
 {% if job_positions %}
-    {% for job_position in job_positions %}
-        <div>
-            <h3>{{ job_position.title }}</h3>
-            <p>{{ job_position.description }}</p>
 
-            <a href="{% url 'job-position-detail-web' pk=job_position.pk %}">Open</a>
-            |
-            <a href="{% url 'job-position-edit-web' pk=job_position.pk %}">Edit</a>
-            |
-            <a href="{% url 'job-position-delete-web' pk=job_position.pk %}">Delete</a>
+<div class="grid">
+
+
+    {% for job_position in job_positions %}
+
+        <div class="card">
+
+            <h2 class="section-title">
+                Title
+            </h2>
+
+        <div class="mini-item">
+            {{ job_position.title|linebreaks }}
         </div>
-        <hr>
+
+            <div class="card-actions">
+
+                <a
+                    href="{% url 'job-position-detail-web' pk=job_position.pk %}"
+                    class="btn btn-primary"
+                >
+                    Open
+                </a>
+
+                <a
+                    href="{% url 'job-position-edit-web' pk=job_position.pk %}"
+                    class="btn btn-secondary"
+                >
+                    Edit
+                </a>
+
+                <a
+                    href="{% url 'job-position-delete-web' pk=job_position.pk %}"
+                    class="btn btn-danger"
+                >
+                    Delete
+                </a>
+
+            </div>
+
+        </div>
+
     {% endfor %}
+
+</div>
+
 {% else %}
-    <p>No job positions yet.</p>
-    {% if app_context.company_id %}
-        <a href="{% url 'job-position-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}">
-            Create your first job position
-        </a>
-    {% endif %}
+
+<div class="card empty-state">
+
+    <h3>No Job Positions Yet</h3>
+
+    <p>
+        Start by creating your first job position.
+    </p>
+
+</div>
+
 {% endif %}
-</body>
-</html>
+
+{% endblock %}

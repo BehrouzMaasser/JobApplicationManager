@@ -1,67 +1,254 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ job_application }}</title>
-</head>
-<body>
-<h1>{{ job_application }}</h1>
+{% extends "base.html" %}
 
-{% if app_context.position_id %}
-<a href="{% url 'job-position-detail-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.position_id %}">
-    Back to job position
-</a>
-|
-{% endif %}
-{% if app_context.company_id %}
-<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">
-    Back to company
-</a>
-|
-{% endif %}
-{% if app_context.workspace_id %}
-<a href="{% url 'workspace-detail-web' workspace_id=app_context.workspace_id %}">
-    Back to job workspace
-</a>
-|
-{% endif %}
-<a href="{% url 'dashboard' %}">
-    Back to dashboard
-</a>
+{% block title %}
+{{ job_application.job_position.title }} - {{ job_application.status }}
+{% endblock %}
 
-<p>Job Application details page</p>
+{% block content %}
 
-<p>Status: {{ job_application.status }}</p>
-<p>Date Applied: {{ job_application.date_applied }}</p>
-<p>Notes: <a href="{{ app_context.application_notes_list_url }}">Go To Notes</a></p>
-<ul>
-{% if job_application.job_application_notes.all %}
-    {% for note in job_application.job_application_notes.all %}
-        <li>{{ note.title }}: {{ note.content }}</li>
-    {% endfor %}
-{% else %}
-    <li>No Notes!</li>
-{% endif %}
-</ul>
-<p>Email(s):</p>
-<ul>
-{% if job_application.emails.all %}
-    {% for email in job_application.emails.all %}
-        <li>{{ email.title }}: {{ email.email }}</li>
-    {% endfor %}
-{% else %}
-    <li>No Emails!</li>
-{% endif %}
-</ul>
-<p>Document(s):</p>
-<ul>
-{% if job_application.documents.all %}
-    {% for document in job_application.documents.all %}
-        <li>{{ document.name }}</li>
-    {% endfor %}
-{% else %}
-    <li>No Documents!</li>
-{% endif %}
-</ul>
-</body>
-</html>
+<!-- HEADER -->
+
+<div class="page-header">
+
+    <h1>
+        {{ job_application.job_position.title }}
+    </h1>
+
+    <p class="page-description">
+        Status:
+        <span class="status-badge">
+            {{ job_application.status }}
+        </span>
+    </p>
+
+    <div class="action-bar">
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'job-application-note-create-web' job_application_id=app_context.application_id %}"
+        >
+            + Add Note
+        </a>
+
+        <a
+            class="btn btn-secondary"
+            href="{% url 'job-application-edit-web' job_application.pk %}"
+        >
+            Edit
+        </a>
+
+        <a
+            class="btn btn-danger"
+            href="{% url 'job-application-delete-web' job_application.pk %}"
+        >
+            Delete
+        </a>
+
+    </div>
+
+</div>
+
+<!-- APPLICATION INFO -->
+
+<div class="card">
+
+    <h2 class="section-title">
+        Application Information
+    </h2>
+
+    <div class="info-grid">
+
+        <div>
+            <strong>Status</strong><br>
+            {{ job_application.status|default:"-" }}
+        </div>
+
+        <div>
+            <strong>Date Applied</strong><br>
+            {{ job_application.date_applied|default:"-" }}
+        </div>
+
+        <div>
+            <strong>Created</strong><br>
+            {{ job_application.created_at|default:"-" }}
+        </div>
+
+        <div>
+            <strong>Last Updated</strong><br>
+            {{ job_application.updated_at|default:"-" }}
+        </div>
+
+    </div>
+
+</div>
+
+<!-- EMAILS + DOCUMENTS -->
+
+<div class="grid">
+
+    <!-- EMAILS -->
+
+    <div class="card">
+
+        <h2 class="section-title">
+            Emails
+        </h2>
+
+        <div class="action-bar section-actions">
+
+            <a
+                class="btn btn-primary"
+                href="{% url 'company-email-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}"
+            >
+                + Create Email
+            </a>
+
+            <a
+                class="btn btn-secondary"
+                href="{% url 'company-email-list-web' %}"
+            >
+                List All
+            </a>
+
+        </div>
+
+        <div class="mini-list">
+
+            {% for email in job_application.emails.all %}
+
+                <div class="mini-item">
+
+                    <a
+                        href="{% url 'company-email-detail-web' email.pk %}"
+                        class="mini-item-title"
+                    >
+                        {{ email.title }}
+                    </a>
+
+                    <small>
+                        {{ email.email }}
+                    </small>
+
+                </div>
+
+            {% empty %}
+
+                <div class="empty-text">
+                    No emails.
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+    <!-- DOCUMENTS -->
+
+    <div class="card">
+
+        <h2 class="section-title">
+            Documents
+        </h2>
+
+        <div class="action-bar section-actions">
+
+            <a
+                class="btn btn-primary"
+                href="{% url 'document-create-web' %}"
+            >
+                + Create Document
+            </a>
+
+            <a
+                class="btn btn-secondary"
+                href="{% url 'document-list-web' %}"
+            >
+                List All
+            </a>
+
+        </div>
+
+        <div class="mini-list">
+
+            {% for document in job_application.documents.all %}
+
+                <div class="mini-item">
+
+                    <a
+                        href="{% url 'document-detail-web' document.pk %}"
+                        class="mini-item-title"
+                    >
+                        {{ document.name }}
+                    </a>
+
+                </div>
+
+            {% empty %}
+
+                <div class="empty-text">
+                    No documents.
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- NOTES -->
+
+<div class="card">
+
+    <h2 class="section-title">
+        Notes
+    </h2>
+
+    <div class="action-bar section-actions">
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'job-application-note-create-web' job_application_id=app_context.application_id %}"
+        >
+            + Add Note
+        </a>
+
+        <a
+            class="btn btn-secondary"
+            href="{{ app_context.application_notes_list_url }}"
+        >
+            List All
+        </a>
+
+    </div>
+
+    <div class="mini-list">
+
+        {% for note in job_application.notes.all %}
+
+            <div class="mini-item">
+
+                <a
+                    href="{% url 'job-application-note-detail-web' note.pk %}"
+                    class="mini-item-title"
+                >
+                    {{ note.title }}
+                </a>
+
+            </div>
+
+        {% empty %}
+
+            <div class="empty-text">
+                No notes.
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock %}

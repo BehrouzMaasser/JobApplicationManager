@@ -1,21 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ email.title }}</title>
-</head>
-<body>
-<h1>{{ email.title }}</h1>
+{% extends "base.html" %}
 
-<p>Company Email details page</p>
+{% block title %}
+{{ email.title }}
+{% endblock %}
 
-<p>Title: {{ email.title }}</p>
-<p>Email Address: {{ email.email }}</p>
+{% block content %}
 
-<a href="{% url 'company-email-edit-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.email_id %}">Edit</a>
-|
-<a href="{% url 'company-email-delete-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.email_id %}">Delete</a>
-|
-<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Back to Company</a>
-</body>
-</html>
+<div class="page-header">
+
+    <h1>{{ email.title }}</h1>
+
+    <p class="page-description">
+        Company Email
+    </p>
+
+    <div class="action-bar">
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'company-email-create-web' app_context.workspace_id app_context.company_id %}"
+        >
+            + Add Email
+        </a>
+
+        <a
+            class="btn btn-secondary"
+            href="{% url 'company-email-edit-web' email.pk %}"
+        >
+            Edit
+        </a>
+
+        <a
+            class="btn btn-danger"
+            href="{% url 'company-email-delete-web' email.pk %}"
+        >
+            Delete
+        </a>
+
+    </div>
+
+</div>
+
+<div class="card section-card">
+
+    <h2 class="section-title">
+        Email Address
+    </h2>
+
+    <div class="mini-item">
+        {{ email.email|linebreaks }}
+    </div>
+
+</div>
+
+{% endblock %}

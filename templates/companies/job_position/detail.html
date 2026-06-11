@@ -1,64 +1,347 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ job_position.title }}</title>
-</head>
-<body>
-<h1>{{ job_position.title }}</h1>
+{% extends "base.html" %}
 
-<p>Job Position details page</p>
-<a href="{% url 'job-position-edit-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.position_id %}">Edit</a>
-|
-<a href="{% url 'job-position-delete-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.position_id %}">Delete</a>
-|
-<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Back to Company</a>
-|
-<a href="{% url 'job-application-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id job_position_id=app_context.position_id %}">
-    +Create Job Application
-</a>
-|
-<a href="{{ app_context.applications_list_url }}">Job Applications</a>
-<p>Title: {{ job_position.title }}</p>
-<p>Job Description:</p>
-<p>{{ job_position.description }}</p>
-<p>Employment Type(s):</p>
-<ul>
-    {% for employment_type in job_position.employment_types.all %}
-        <li>{{ employment_type.name }}</li>
-    {% endfor %}
-</ul>
-<p>Job Site(s):</p>
-<ul>
-    {% for job_site in job_position.job_sites.all %}
-        <li>{{ job_site.name }}</li>
-    {% endfor %}
-</ul>
-<p>Task(s):</p>
-{% for task in job_position.tasks.all %}
-    <p><a href="{% url 'job-task-detail-web' task.pk %}">{{ task.title }}: {{ task.description }}</a></p>
-{% endfor %}
-<p>Requirement(s):</p>
-{% for requirement in job_position.requirements.all %}
-    <p><a href="{% url 'job-requirement-detail-web' requirement.pk %}">{{ requirement.title }}: {{ requirement.description }}</a></p>
-{% endfor %}
-<p>Benefit(s):</p>
-{% if job_position.benefits.all %}
-    {% for benefit in job_position.benefits.all %}
-        <p><a href="{% url 'job-benefit-detail-web' benefit.pk %}">{{ benefit.name }}: {{ benefit.description }}</a></p>
-    {% endfor %}
-{% else %}
-<p>No Benefits!</p>
-{% endif %}
-<p>Date Posted: {{ job_position.date_posted }}</p>
-<p>Minimum Salary: {{ job_position.min_salary }}</p>
-<p>Maximum Salary: {{ job_position.max_salary }}</p>
-<p>Job Position Ad URL Salary: <a href="{{ job_position.job_position_ad_url }}">{{ job_position.job_position_ad_url }}</a></p>
-<p>Job Location URL: {{ job_position.job_location_url }}</p>
-<p>Job Portal URL: {{ job_position.job_portal_url }}</p>
-<p>Job Portal Username: {{ job_position.portal_username }}</p>
-<p>Job Portal Password: {{ job_position.portal_password }}</p>
+{% block title %}
+{{ job_position.title }}
+{% endblock %}
 
+{% block content %}
 
-</body>
-</html>
+<div class="page-header">
+
+    <h1>{{ job_position.title }}</h1>
+
+    <div class="action-bar">
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'job-application-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id job_position_id=app_context.position_id %}"
+        >
+            + Create Job Application
+        </a>
+
+        <a
+            class="btn btn-secondary"
+            href="{% url 'job-position-edit-web' job_position.pk %}"
+        >
+            Edit
+        </a>
+
+        <a
+            class="btn btn-danger"
+            href="{% url 'job-position-delete-web' job_position.pk %}"
+        >
+            Delete
+        </a>
+
+    </div>
+
+</div>
+
+<!-- POSITION INFORMATION -->
+
+<div class="card">
+
+    <h2 class="section-title">
+        Position Information
+    </h2>
+
+    <div class="info-grid">
+
+        <div>
+            <strong>Created</strong><br>
+            {{ job_position.created_at|default:"-" }}
+        </div>
+
+        <div>
+            <strong>Last Updated</strong><br>
+            {{ job_position.updated_at|default:"-" }}
+        </div>
+
+        <div>
+            <strong>Date Posted</strong><br>
+            {{ job_position.date_posted|default:"-" }}
+        </div>
+
+        <div>
+            <strong>Salary Range</strong><br>
+
+            {% if job_position.min_salary or job_position.max_salary %}
+                {{ job_position.min_salary }} - {{ job_position.max_salary }}
+            {% else %}
+                -
+            {% endif %}
+        </div>
+
+        <div>
+            <strong>Job Ad URL</strong><br>
+
+            {% if job_position.job_position_ad_url %}
+                <a
+                    href="{{ job_position.job_position_ad_url }}"
+                    target="_blank"
+                >
+                    Open
+                </a>
+            {% else %}
+                -
+            {% endif %}
+        </div>
+
+        <div>
+            <strong>Location URL</strong><br>
+
+            {% if job_position.job_location_url %}
+                <a
+                    href="{{ job_position.job_location_url }}"
+                    target="_blank"
+                >
+                    Open
+                </a>
+            {% else %}
+                -
+            {% endif %}
+        </div>
+
+        <div>
+            <strong>Portal URL</strong><br>
+
+            {% if job_position.job_portal_url %}
+                <a
+                    href="{{ job_position.job_portal_url }}"
+                    target="_blank"
+                >
+                    Open
+                </a>
+            {% else %}
+                -
+            {% endif %}
+        </div>
+
+        <div>
+            <strong>Portal Username</strong><br>
+            {{ job_position.portal_username|default:"-" }}
+        </div>
+
+    </div>
+
+</div>
+
+<!-- DESCRIPTION -->
+
+<div class="card section-card">
+
+    <h2 class="section-title">
+        Description
+    </h2>
+
+    <div class="mini-item">
+        {{ job_position.description|linebreaks }}
+    </div>
+
+</div>
+
+<!-- EMPLOYMENT TYPES + JOB SITES -->
+
+<div class="grid" style="margin-top: 20px;">
+
+    <div class="card">
+
+        <h2 class="section-title">
+            Employment Types
+        </h2>
+
+        <div class="mini-list">
+
+            {% for employment_type in job_position.employment_types.all %}
+
+                <div class="mini-item">
+
+                    <span class="mini-item-title">
+                        {{ employment_type.name }}
+                    </span>
+
+                </div>
+
+            {% empty %}
+
+                <div class="empty-text">
+                    No employment types.
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <h2 class="section-title">
+            Job Sites
+        </h2>
+
+        <div class="mini-list">
+
+            {% for job_site in job_position.job_sites.all %}
+
+                <div class="mini-item">
+
+                    <span class="mini-item-title">
+                        {{ job_site.name }}
+                    </span>
+
+                </div>
+
+            {% empty %}
+
+                <div class="empty-text">
+                    No job sites.
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- TASKS -->
+
+<div class="card section-card">
+
+    <div class="section-header">
+
+        <h2 class="section-title">
+            Job Tasks
+        </h2>
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'job-task-create-web' %}"
+        >
+            Add Task
+        </a>
+
+    </div>
+
+    <div class="mini-list">
+
+        {% for task in job_position.tasks.all %}
+
+            <div class="mini-item">
+
+                <a
+                    class="mini-item-title"
+                    href="{% url 'job-task-detail-web' task.pk %}"
+                >
+                    {{ task.title }}
+                </a>
+
+            </div>
+
+        {% empty %}
+
+            <div class="empty-text">
+                No tasks.
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+<!-- REQUIREMENTS -->
+
+<div class="card section-card">
+
+    <div class="section-header">
+
+        <h2 class="section-title">
+            Job Requirements
+        </h2>
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'job-requirement-create-web' %}"
+        >
+            Add Requirement
+        </a>
+
+    </div>
+
+    <div class="mini-list">
+
+        {% for requirement in job_position.requirements.all %}
+
+            <div class="mini-item">
+
+                <a
+                    class="mini-item-title"
+                    href="{% url 'job-requirement-detail-web' requirement.pk %}"
+                >
+                    {{ requirement.title }}
+                </a>
+
+            </div>
+
+        {% empty %}
+
+            <div class="empty-text">
+                No requirements.
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+<!-- BENEFITS -->
+
+<div class="card section-card">
+
+    <div class="section-header">
+
+        <h2 class="section-title">
+            Job Benefits
+        </h2>
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'job-benefit-create-web' %}"
+        >
+            Add Benefit
+        </a>
+
+    </div>
+
+    <div class="mini-list">
+
+        {% for benefit in job_position.benefits.all %}
+
+            <div class="mini-item">
+
+                <a
+                    class="mini-item-title"
+                    href="{% url 'job-benefit-detail-web' benefit.pk %}"
+                >
+                    {{ benefit.name }}
+                </a>
+
+            </div>
+
+        {% empty %}
+
+            <div class="empty-text">
+                No benefits.
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock %}

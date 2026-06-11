@@ -1,42 +1,96 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Companies</title>
-</head>
-<body>
-<h1>Your Companies</h1>
-<a href="{% url 'dashboard' %}">Back to Dashboard</a>
-{% if app_context.workspace_id %}
-    |
-<a href="{% url 'company-create-web' app_context.workspace_id %}">+ Create Company</a>
-    |
-<a href="{% url 'workspace-detail-web' app_context.workspace_id %}">
-    Back to Workspace
-</a>
-{% endif %}
-<hr>
+{% extends "base.html" %}
+
+{% block title %}
+Companies
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <h1>Companies</h1>
+
+    <p class="page-description">
+        {% if app_context.workspace_id %}
+            Manage companies in this workspace.
+        {% else %}
+            Manage companies.
+        {% endif %}
+    </p>
+
+    <div class="action-bar">
+
+        {% if app_context.workspace_id %}
+            <a
+                class="btn btn-primary"
+                href="{% url 'company-create-web' app_context.workspace_id %}"
+            >
+                New Company
+            </a>
+        {% endif %}
+
+    </div>
+
+</div>
 
 {% if companies %}
+
+<div class="grid">
+
+
     {% for company in companies %}
-        <div>
+
+        <div class="card">
+
             <h3>{{ company.name }}</h3>
 
-            <a href="{% url 'company-detail-web' pk=company.pk %}">Open</a>
-            |
-            <a href="{% url 'company-edit-web' pk=company.pk %}">Edit</a>
-            |
-            <a href="{% url 'company-delete-web' pk=company.pk %}">Delete</a>
+            <p class="mini-item">
+                <a class="mini-item-title" href="{{ company.website }}" target="_blank">{{ company.website }}</a>
+            </p>
+
+            <div class="card-actions">
+
+                <a
+                    href="{% url 'company-detail-web' pk=company.pk %}"
+                    class="btn btn-primary"
+                >
+                    Open
+                </a>
+
+                <a
+                    href="{% url 'company-edit-web' pk=company.pk %}"
+                    class="btn btn-secondary"
+                >
+                    Edit
+                </a>
+
+                <a
+                    href="{% url 'company-delete-web' pk=company.pk %}"
+                    class="btn btn-danger"
+                >
+                    Delete
+                </a>
+
+            </div>
+
         </div>
-        <hr>
+
     {% endfor %}
+
+</div>
+
 {% else %}
-    <p>No companies yet.</p>
-    {% if app_context.workspace_id %}
-        <a href="{% url 'company-create-web' app_context.workspace_id %}">
-            Create your first company
-        </a>
-    {% endif %}
+
+<div class="card empty-state">
+
+    <h3>No Companies Yet</h3>
+
+    <p>
+        Start by creating your first company.
+    </p>
+
+</div>
+
 {% endif %}
-</body>
-</html>
+
+{% endblock %}

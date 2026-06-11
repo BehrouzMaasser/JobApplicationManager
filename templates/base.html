@@ -1,0 +1,187 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <title>
+        {% block title %}
+            Job Tracker
+        {% endblock %}
+    </title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+
+<header class="topbar">
+
+    <div class="topbar-left">
+
+        <a href="{% url 'dashboard' %}" class="logo">
+            Job App Manager
+        </a>
+
+    </div>
+
+    <div class="topbar-right">
+
+        {% if request.user.is_authenticated %}
+
+            <span class="user-email">
+                {{ request.user.email }}
+            </span>
+
+            <form
+                method="post"
+                action="{% url 'logout' %}"
+                style="display:inline;"
+            >
+                {% csrf_token %}
+
+                <button
+                    type="submit"
+                    class="btn btn-danger btn-small"
+                >
+                    Logout
+                </button>
+
+            </form>
+
+        {% endif %}
+
+    </div>
+
+</header>
+
+<div class="layout">
+
+    {% if request.user.is_authenticated %}
+
+    <aside class="sidebar">
+
+        <div class="sidebar-section">
+
+            <div class="sidebar-title">
+                Main
+            </div>
+
+            <a
+                href="{% url 'workspace-list-web' %}"
+                class="{% if 'workspace' in request.path %}active{% endif %}"
+            >
+                Workspaces
+            </a>
+
+            <a
+                href="{% url 'company-list-web' %}"
+                class="{% if 'companies' in request.path %}active{% endif %}"
+            >
+                Companies
+            </a>
+
+            <a
+                href="{% url 'job-application-list-web' %}"
+                class="{% if 'application' in request.path %}active{% endif %}"
+            >
+                Applications
+            </a>
+
+            <a
+                href="{% url 'document-list-web' %}"
+                class="{% if 'document' in request.path %}active{% endif %}"
+            >
+                Documents
+            </a>
+
+        </div>
+
+        <div class="sidebar-section">
+
+            <div class="sidebar-title">
+                Reference Data
+            </div>
+
+            <a
+                href="{% url 'job-benefit-list-web' %}"
+                class="{% if 'job_benefit' in request.path %}active{% endif %}"
+            >
+                Benefits
+            </a>
+
+            <a
+                href="{% url 'job-task-list-web' %}"
+                class="{% if 'job_task' in request.path %}active{% endif %}"
+            >
+                Tasks
+            </a>
+
+            <a
+                href="{% url 'job-requirement-list-web' %}"
+                class="{% if 'job_requirement' in request.path %}active{% endif %}"
+            >
+                Requirements
+            </a>
+
+            <a
+                href="{% url 'document-type-list-web' %}"
+                class="{% if 'document_type' in request.path %}active{% endif %}"
+            >
+                Document Types
+            </a>
+
+        </div>
+
+    </aside>
+
+    {% endif %}
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div class="message {{ message.tags }}">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+    <main class="content">
+        {% if app_context %}
+
+        <div class="breadcrumbs">
+
+            {% if app_context.workspace_id %}
+                <span>Workspace</span>
+            {% endif %}
+
+            {% if app_context.company_id %}
+                <span>› Company</span>
+            {% endif %}
+
+            {% if app_context.position_id %}
+                <span>› Position</span>
+            {% endif %}
+
+            {% if app_context.application_id %}
+                <span>› Application</span>
+            {% endif %}
+
+            {% if app_context.application_note_id %}
+                <span>› Note</span>
+            {% endif %}
+
+        </div>
+
+        {% endif %}
+        {% block content %}
+        {% endblock %}
+
+    </main>
+
+</div>
+
+</body>
+</html>

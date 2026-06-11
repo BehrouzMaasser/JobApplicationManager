@@ -1,23 +1,81 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Dashboard</title>
-</head>
-<body>
-<h1>Welcome {{ request.user.email }}</h1>
-<p>You are logged in.</p>
-<h4><a href="{% url 'workspace-list-web' %}">Workspaces</a></h4>
-<h4><a href="{% url 'company-list-web' %}">Companies</a></h4>
-<h4><a href="{% url 'job-application-list-web' %}">Job Applications</a></h4>
-<h4><a href="{% url 'job-benefit-list-web' %}">Job Benefits</a></h4>
-<h4><a href="{% url 'job-task-list-web' %}">Job Tasks</a></h4>
-<h4><a href="{% url 'job-requirement-list-web' %}">Job Requirements</a></h4>
-<h4><a href="{% url 'document-type-list-web' %}">Document Types</a></h4>
-<h4><a href="{% url 'document-list-web' %}">Documents</a></h4>
-<form method="post" action="{% url 'logout' %}">
-    {% csrf_token %}
-    <button type="submit">Logout</button>
-</form>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}
+Dashboard
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <h1>
+        Welcome {{ request.user.email }}
+    </h1>
+
+    <p class="page-description">
+        Job Application Tracking Dashboard
+    </p>
+
+</div>
+
+<div class="grid">
+
+    <div class="card">
+        <h3>Workspaces</h3>
+        <p>Manage workspaces.</p>
+
+        <br>
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'workspace-list-web' %}"
+        >
+            Open
+        </a>
+    </div>
+
+    <div class="card">
+        <h3>Companies</h3>
+        <p>Manage companies.</p>
+
+        <br>
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'company-list-web' %}"
+        >
+            Open
+        </a>
+    </div>
+
+    <div class="card">
+        <h3>Applications</h3>
+        <p>Track applications.</p>
+
+        <br>
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'job-application-list-web' %}"
+        >
+            Open
+        </a>
+    </div>
+
+    <div class="card">
+        <h3>Documents</h3>
+        <p>Manage documents.</p>
+
+        <br>
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'document-list-web' %}"
+        >
+            Open
+        </a>
+    </div>
+
+</div>
+
+{% endblock %}

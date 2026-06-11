@@ -1,21 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ note.title }}</title>
-</head>
-<body>
-<h1>{{ note.title }}</h1>
+{% extends "base.html" %}
 
-<p>Company Note details page</p>
+{% block title %}
+{{ note.title }}
+{% endblock %}
 
-<p>Title: {{ note.title }}</p>
-<p>Note Content: {{ note.content }}</p>
+{% block content %}
 
-<a href="{% url 'company-note-edit-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.note_id %}">Edit</a>
-|
-<a href="{% url 'company-note-delete-web' workspace_id=app_context.workspace_id company_id=app_context.company_id pk=app_context.note_id %}">Delete</a>
-|
-<a href="{% url 'company-detail-web' workspace_id=app_context.workspace_id pk=app_context.company_id %}">Back to Company</a>
-</body>
-</html>
+<div class="page-header">
+
+    <h1>{{ note.title }}</h1>
+
+    <p class="page-description">
+        Company Note
+    </p>
+
+    <div class="action-bar">
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'company-note-create-web' app_context.workspace_id app_context.company_id %}"
+        >
+            + Add Note
+        </a>
+
+        <a
+            class="btn btn-secondary"
+            href="{% url 'company-note-edit-web' note.pk %}"
+        >
+            Edit
+        </a>
+
+        <a
+            class="btn btn-danger"
+            href="{% url 'company-note-delete-web' note.pk %}"
+        >
+            Delete
+        </a>
+
+    </div>
+
+</div>
+
+<div class="card section-card">
+
+    <h2 class="section-title">
+        Content
+    </h2>
+
+    <div class="mini-item">
+        {{ note.content|linebreaks }}
+    </div>
+
+</div>
+
+{% endblock %}

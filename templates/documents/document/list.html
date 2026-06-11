@@ -1,35 +1,101 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Documents</title>
-</head>
-<body>
-<h1>Your Documents</h1>
-<a href="{% url 'dashboard' %}">Back to Dashboard</a>
-|
-<a href="{% url 'document-create-web' %}">+ Create Document</a>
-<hr>
+{% extends "base.html" %}
+
+{% block title %}
+Documents
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <h1>Documents</h1>
+
+    <p class="page-description">
+        Manage your documents.
+    </p>
+
+    <div class="action-bar">
+
+        <a
+            class="btn btn-primary"
+            href="{% url 'document-create-web' %}"
+        >
+            + New Document
+        </a>
+
+    </div>
+
+</div>
 
 {% if documents %}
-    {% for document in documents %}
-        <div>
-            <h3>{{ document.name }}</h3>
-            <p>Document Type: {{ document.document_type.name }}</p>
 
-            <a href="{% url 'document-detail-web' document.pk %}">Open</a>
-            |
-            <a href="{% url 'document-edit-web' document.pk %}">Edit</a>
-            |
-            <a href="{% url 'document-delete-web' document.pk %}">Delete</a>
+<div class="grid">
+
+    {% for document in documents %}
+
+        <div class="card">
+
+            <h3>
+                {{ document.name }}
+            </h3>
+
+            <div class="card-meta">
+
+                <strong>Type:</strong>
+                {{ document.document_type.name|default:"-" }}
+
+            </div>
+
+            <div class="card-meta">
+
+                <strong>Created:</strong>
+                {{ document.created_at|default:"-" }}
+
+            </div>
+
+            <div class="card-actions">
+
+                <a
+                    href="{% url 'document-detail-web' document.pk %}"
+                    class="btn btn-primary"
+                >
+                    Open
+                </a>
+
+                <a
+                    href="{% url 'document-edit-web' document.pk %}"
+                    class="btn btn-secondary"
+                >
+                    Edit
+                </a>
+
+                <a
+                    href="{% url 'document-delete-web' document.pk %}"
+                    class="btn btn-danger"
+                >
+                    Delete
+                </a>
+
+            </div>
+
         </div>
-        <hr>
+
     {% endfor %}
+
+</div>
+
 {% else %}
-    <p>No documents yet.</p>
-    <a href="{% url 'document-create-web' %}">
-        Create your first document
-    </a>
+
+<div class="card empty-state">
+
+    <h3>No Documents Yet</h3>
+
+    <p>
+        Create your first document.
+    </p>
+
+</div>
+
 {% endif %}
-</body>
-</html>
+
+{% endblock %}
