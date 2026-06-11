@@ -21,6 +21,9 @@
 - Reviewed accounts app and write tests for them
 - Created views and templates for All Applications
 - A well-structured template for UI is created
+- Restricted Data access from other users for creating/updating documents and job 
+   positions
+- Added Application note detail HTML template
 
 ## In Progress
 - Clean the project files

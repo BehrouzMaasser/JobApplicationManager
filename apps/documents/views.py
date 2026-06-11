@@ -16,6 +16,7 @@ from django.views.generic import (
 
 from apps.core.contexts.extra_context import ExtraContext
 from apps.core.mixins.app_context_mixin import AppContextMixin
+from apps.core.mixins.documents_form_mixin import DocumentFormMixin
 # Models
 from apps.documents.models import DocumentType, Document
 from apps.documents.selectors.document_selector import DocumentSelector
@@ -157,7 +158,9 @@ class DocumentListView(LoginRequiredMixin, ListView):
         return DocumentSelector.list(user=self.request.user)
 
 
-class DocumentCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
+class DocumentCreateView(
+    LoginRequiredMixin, AppContextMixin, DocumentFormMixin, CreateView
+):
 
     model = Document
     template_name = "create_page.html"
@@ -199,7 +202,9 @@ class DocumentDetailView(LoginRequiredMixin, DetailView):
         return DocumentSelector.list(user=self.request.user)
 
 
-class DocumentUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
+class DocumentUpdateView(
+    LoginRequiredMixin, AppContextMixin, DocumentFormMixin, UpdateView
+):
 
     model = Document
     template_name = "edit_page.html"

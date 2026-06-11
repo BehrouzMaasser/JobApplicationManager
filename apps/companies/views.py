@@ -37,6 +37,7 @@ from ..applications.views import application_list_url
 from ..core.contexts.app_context import AppContext
 from ..core.contexts.extra_context import ExtraContext
 from ..core.mixins.app_context_mixin import AppContextMixin
+from ..core.mixins.jop_position_form_mixin import JobPositionFormMixin
 
 
 def company_list_url(workspace_id=None):
@@ -750,7 +751,9 @@ class JobPositionListView(LoginRequiredMixin, AppContextMixin, ListView):
         )
 
 
-class JobPositionCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
+class JobPositionCreateView(
+    LoginRequiredMixin, AppContextMixin, JobPositionFormMixin, CreateView
+):
 
     model = JobPosition
     template_name = "create_page.html"
@@ -841,7 +844,9 @@ class JobPositionDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
         )
 
 
-class JobPositionUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
+class JobPositionUpdateView(
+    LoginRequiredMixin, AppContextMixin, JobPositionFormMixin, UpdateView
+):
 
     model = JobPosition
     template_name = "edit_page.html"
