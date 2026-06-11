@@ -20,14 +20,18 @@
 - Reviewed Selectors and wrote tests for them
 - Reviewed accounts app and write tests for them
 - Created views and templates for All Applications
+- A well-structured template for UI is created
 
 ## In Progress
 - Clean the project files
 - Modifying README
-- Review and refactor views' structure
+- Reviewing all created web views and resolving possible bugs and typos in 
+    views/HTML templates/CSS
 
 ## Planned
-- Move JobTask, JobBenefit and JobRequirement logic from Companies to Accounts
+- Think about modifying view contexts
+- Think about moving JobTask, JobBenefit and JobRequirement logic from Companies to 
+   accounts
 - Add tests for updated JobTaskSelector, JobBenefitSelector and JobRequirementSelector
 - Authentication
 - Search functionality
