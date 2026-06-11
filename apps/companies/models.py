@@ -36,7 +36,7 @@ class Company(models.Model):
 
     def __str__(self):
 
-        return f"{self.name} - {self.workspace.name} {self.workspace.owner.email})"
+        return self.name
 
     def save(self, *args, **kwargs):
 
@@ -70,7 +70,7 @@ class CompanyNote(models.Model):
 
     def __str__(self):
 
-        return f"{self.company.name} - {self.title}"
+        return self.title
 
 
 class CompanyEmail(models.Model):
@@ -302,7 +302,7 @@ class JobPosition(models.Model):
 
     def __str__(self):
 
-        return f"{self.title} - {self.company.name}"
+        return self.title
 
     def save(self, *args, **kwargs):
 
