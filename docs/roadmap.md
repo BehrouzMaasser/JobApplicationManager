@@ -24,16 +24,16 @@
 - Restricted Data access from other users for creating/updating documents and job 
    positions
 - Added Application note detail HTML template
+- Corrected the architecture for timezone handling(local for UI + UTC for backend)
+- Modified Signup and Login pages
 
 ## In Progress
 - Clean the project files
 - Modifying README
 - Reviewing all created web views and resolving possible bugs and typos in 
     views/HTML templates/CSS
-- Modify Signup and Login pages
 - Investigate why a job position with date_posted value before job application's 
     date_applied value was allowed to be updated
-- Correct the architecture for timezone handling(local for UI + UTC for backend)
 
 ## Planned
 - Think about modifying view contexts
