@@ -5,15 +5,21 @@ from .views import (
     LoginView,
     LogoutView,
     dashboard_view,
-    JobBenefitListView, JobBenefitDetailView, JobBenefitUpdateView, JobBenefitCreateView, JobBenefitDeleteView,
-    JobTaskListView, JobTaskCreateView, JobTaskDetailView, JobTaskUpdateView, JobTaskDeleteView,
-    JobRequirementListView, JobRequirementCreateView, JobRequirementDetailView, JobRequirementUpdateView, JobRequirementDeleteView
+    JobBenefitListView, JobBenefitDetailView, JobBenefitUpdateView,
+    JobBenefitCreateView, JobBenefitDeleteView,
+    JobTaskListView, JobTaskCreateView, JobTaskDetailView, JobTaskUpdateView,
+    JobTaskDeleteView,
+    JobRequirementListView, JobRequirementCreateView, JobRequirementDetailView,
+    JobRequirementUpdateView, JobRequirementDeleteView, UserPasswordChangeView,
+    UserSettingsView
 )
 
 urlpatterns = [
     path("signup/", SignupView.as_view(), name="signup"),
     path("login/", LoginView.as_view(), name="login"),
     path("logout/", LogoutView.as_view(), name="logout"),
+    path("settings/", UserSettingsView.as_view(), name="user-settings"),
+    path("settings/password/", UserPasswordChangeView.as_view(), name="password-change"),
     path("dashboard/", dashboard_view, name="dashboard"),
     path("job_benefits/", JobBenefitListView.as_view(), name="job-benefit-list-web"),
     path("job_benefits/create/", JobBenefitCreateView.as_view(), name="job-benefit-create-web"),

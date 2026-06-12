@@ -1,6 +1,7 @@
 from django.contrib.auth import login, logout, authenticate, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import PasswordChangeView
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views import View
@@ -14,6 +15,7 @@ from django.views.generic import (
     DeleteView
 )
 
+from apps.accounts.forms import UserSettingsForm
 # Models
 from apps.companies.models import JobBenefit, JobTask, JobRequirement
 
@@ -108,6 +110,24 @@ class LogoutView(View):
         logout(request)
 
         return redirect("login")
+
+
+class UserSettingsView(LoginRequiredMixin, UpdateView):
+
+    model = User
+    form_class = UserSettingsForm
+    template_name = "accounts/settings.html"
+    success_url = reverse_lazy("user-settings")
+
+    def get_object(self):
+
+        return self.request.user
+
+
+class UserPasswordChangeView(PasswordChangeView):
+
+    template_name = "accounts/password_change.html"
+    success_url = reverse_lazy("user-settings")
 
 
 @login_required
