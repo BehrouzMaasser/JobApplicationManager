@@ -31,6 +31,9 @@
 - Reviewing all created web views and resolving possible bugs and typos in 
     views/HTML templates/CSS
 - Modify Signup and Login pages
+- Test why a job position with date_posted value before job application's 
+    date_applied value was allowed to be updated
+- Correct the architecture for timezone handling(local for UI + UTC for backend)
 
 ## Planned
 - Think about modifying view contexts
