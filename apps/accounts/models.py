@@ -68,11 +68,13 @@ class User(AbstractUser):
 
     email = models.EmailField(max_length=130, unique=True)
 
-    first_name = models.CharField(max_length=50, blank=True)
-    last_name = models.CharField(max_length=50, blank=True)
+    first_name = models.CharField(max_length=50, blank=True, null=True)
+    last_name = models.CharField(max_length=50, blank=True, null=True)
 
     phone_number = PhoneNumberField(blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
+
+    timezone = models.CharField(max_length=50, default="America/New_York")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
