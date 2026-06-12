@@ -1,8 +1,9 @@
 from apps.companies.selectors.company_email_selector import CompanyEmailSelector
+from apps.core.mixins.base_form_mixin import BaseFormMixin
 from apps.documents.selectors.document_selector import DocumentSelector
 
 
-class JobApplicationFormMixin:
+class JobApplicationFormMixin(BaseFormMixin):
 
     def get_form(self, form_class=None):
 

@@ -1,11 +1,10 @@
-from apps.companies.selectors.company_email_selector import CompanyEmailSelector
 from apps.companies.selectors.job_benefit_selector import JobBenefitSelector
 from apps.companies.selectors.job_requirement_selector import JobRequirementSelector
 from apps.companies.selectors.job_task_selector import JobTaskSelector
-from apps.documents.selectors.document_selector import DocumentSelector
+from apps.core.mixins.base_form_mixin import BaseFormMixin
 
 
-class JobPositionFormMixin:
+class JobPositionFormMixin(BaseFormMixin):
 
     def get_form(self, form_class=None):
 
