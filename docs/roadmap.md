@@ -28,13 +28,17 @@
 - Modified Signup and Login pages
 - Investigate why a job position with date_posted value before job application's
     date_applied value was allowed to be updated
+- Added validation for job position's date_posted in its services
+- Introduced service validation error mixin for handling web view form error messages
+- Added tests for the new validation added to `JobPositionService.update()`
 
 ## In Progress
 - Clean the project files
 - Modifying README
 - Reviewing all created web views and resolving possible bugs and typos in 
     views/HTML templates/CSS
-- Adding validation for job position's date_posted in its services
+- Apply new web view form error handling for the rest of views based on job position 
+   update view
 
 ## Planned
 - Think about modifying view contexts
