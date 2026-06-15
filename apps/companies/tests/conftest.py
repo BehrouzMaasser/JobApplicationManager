@@ -16,6 +16,7 @@ from apps.companies.services.contexts.company_context import (
 )
 
 from apps.workspaces.tests.conftest import *
+from apps.applications.tests.conftest import *
 
 
 @pytest.fixture

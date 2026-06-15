@@ -1,8 +1,12 @@
 import copy
+from datetime import timedelta
 
 import pytest
 
 from unittest.mock import patch
+
+from django.utils import timezone
+from django.core.exceptions import ValidationError as ValidationErrorDB
 
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
@@ -259,6 +263,83 @@ def test_update_job_position_successfully_returns_updated_job_position(
 
     assert (list(job_position.benefits.all()) ==
             list(job_pos_user1_updated_valid_data["benefits"]))
+
+
+def test_update_raises_when_date_posted_is_after_application_date(
+        job_position1_user1,
+        job_position1_context,
+        job_application1,
+        job_pos_user1_updated_valid_data
+):
+
+    application_date = timezone.now()
+
+    job_application1.date_applied = application_date
+    job_application1.save()
+
+    job_pos_user1_updated_valid_data["date_posted"] = (
+            application_date + timedelta(days=1))
+
+    with pytest.raises(ValidationErrorDB) as exc:
+
+        JobPositionService.update(
+            user=job_position1_user1.company.workspace.owner,
+            context=job_position1_context,
+            validated_data=job_pos_user1_updated_valid_data,
+        )
+
+    assert (
+        exc.value.error_dict["date_posted"][0].message
+        == "Date post cannot be in the future."
+    )
+
+
+def test_update_allows_date_posted_before_application_date(
+        job_position1_user1,
+        job_position1_context,
+        job_application1,
+        job_pos_user1_updated_valid_data
+):
+
+    application_date = timezone.now()
+
+    job_application1.date_applied = application_date
+    job_application1.save()
+
+    new_date_posted = application_date - timedelta(days=1)
+
+    job_pos_user1_updated_valid_data["date_posted"] = new_date_posted
+
+    result = JobPositionService.update(
+        user=job_position1_user1.company.workspace.owner,
+        context=job_position1_context,
+        validated_data=job_pos_user1_updated_valid_data
+    )
+
+    assert result.date_posted == new_date_posted
+
+
+def test_update_ignores_application_without_date_applied(
+        job_position1_user1,
+        job_position1_context,
+        job_application1,
+        job_pos_user1_updated_valid_data
+):
+
+    job_application1.date_applied = None
+    job_application1.save()
+
+    date_posted = timezone.now()
+
+    job_pos_user1_updated_valid_data["date_posted"] = date_posted
+
+    result = JobPositionService.update(
+        user=job_position1_user1.company.workspace.owner,
+        context=job_position1_context,
+        validated_data=job_pos_user1_updated_valid_data
+    )
+
+    assert result.date_posted == date_posted
 
 
 @pytest.mark.django_db
