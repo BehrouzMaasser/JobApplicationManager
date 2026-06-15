@@ -26,14 +26,15 @@
 - Added Application note detail HTML template
 - Corrected the architecture for timezone handling(local for UI + UTC for backend)
 - Modified Signup and Login pages
+- Investigate why a job position with date_posted value before job application's
+    date_applied value was allowed to be updated
 
 ## In Progress
 - Clean the project files
 - Modifying README
 - Reviewing all created web views and resolving possible bugs and typos in 
     views/HTML templates/CSS
-- Investigate why a job position with date_posted value before job application's 
-    date_applied value was allowed to be updated
+- Adding validation for job position's date_posted in its services
 
 ## Planned
 - Think about modifying view contexts
