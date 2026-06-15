@@ -11,6 +11,7 @@ from django.views.generic import (
 )
 
 from django.urls import reverse_lazy, reverse
+from rest_framework.exceptions import ValidationError
 
 # Models
 from .models import Company, CompanyEmail, CompanyNote, JobPosition
@@ -38,6 +39,7 @@ from ..core.contexts.app_context import AppContext
 from ..core.contexts.extra_context import ExtraContext
 from ..core.mixins.app_context_mixin import AppContextMixin
 from ..core.mixins.jop_position_form_mixin import JobPositionFormMixin
+from ..core.mixins.service_validation_error_mixin import ServiceValidationErrorMixin
 
 
 def company_list_url(workspace_id=None):
@@ -845,7 +847,8 @@ class JobPositionDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
 
 
 class JobPositionUpdateView(
-    LoginRequiredMixin, AppContextMixin, JobPositionFormMixin, UpdateView
+    LoginRequiredMixin, AppContextMixin, JobPositionFormMixin,
+    ServiceValidationErrorMixin, UpdateView
 ):
 
     model = JobPosition
@@ -879,15 +882,23 @@ class JobPositionUpdateView(
 
     def form_valid(self, form):
 
-        JobPositionService.update(
-            user=self.request.user,
-            context=CompanyChildContext(
-                workspace_id=self.job_position.company.workspace.workspace_id,
-                company_id=self.job_position.company.pk,
-                id=self.job_position.pk,
-            ),
-            validated_data=form.cleaned_data
-        )
+        try:
+            JobPositionService.update(
+                user=self.request.user,
+                context=CompanyChildContext(
+                    workspace_id=self.job_position.company.workspace.workspace_id,
+                    company_id=self.job_position.company.pk,
+                    id=self.job_position.pk,
+                ),
+                validated_data=form.cleaned_data
+            )
+        except ValidationError as err:
+
+            self.add_service_errors_to_form(
+                form=form,
+                exception=err,
+            )
+            return self.form_invalid(form=form)
 
         return redirect(self.get_success_url())
 
