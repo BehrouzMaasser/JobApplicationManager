@@ -145,6 +145,12 @@ class JobPositionService(CompanyService):
 
         # ----------------------*****---------------------
 
+        # Check if date posted is not after any of job position's job application's
+        #   date_applied
+        JobPositionService._validate_date_posted(instance, validated_data)
+
+        # ----------------------*****---------------------
+
         # Check validity of many-to-many fields
         JobPositionService._m2m_ownership_validation(
             user=user,
@@ -222,3 +228,18 @@ class JobPositionService(CompanyService):
             return company.job_positions.get(pk=context.id)
         except JobPosition.DoesNotExist:
             raise ValidationError({"Job Position": "Job Position not found"})
+
+    @staticmethod
+    def _validate_date_posted(instance: JobPosition, validated_data: dict) -> None:
+
+        if date_posted := validated_data.get("date_posted"):
+            for job_application in instance.job_applications.all():
+                if (job_application.date_applied and
+                        (job_application.date_applied < date_posted)):
+                    raise ValidationError(
+                        {
+                            "date_posted":
+                                "Date posted cannot be after the job application's "
+                                "date applied"
+                        }
+                    )
