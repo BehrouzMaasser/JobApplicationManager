@@ -40,6 +40,7 @@
     views/HTML templates/CSS
 
 ## Planned
+- Refactor REST API to something similar to web views
 - Think about modifying view contexts
 - Think about moving JobTask, JobBenefit and JobRequirement logic from Companies to 
    accounts
