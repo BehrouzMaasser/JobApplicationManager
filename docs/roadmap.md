@@ -37,8 +37,6 @@
 - Modifying README
 - Reviewing all created web views and resolving possible bugs and typos in 
     views/HTML templates/CSS
-- Apply new web view form error handling for the rest of views based on job position 
-   update view
 
 ## Planned
 - Think about modifying view contexts
