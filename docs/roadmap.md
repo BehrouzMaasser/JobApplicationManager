@@ -34,19 +34,19 @@
 - Added tests for updated JobTaskSelector, JobBenefitSelector and JobRequirementSelector
 
 ## In Progress
-- Clean the project files
 - Modifying README
 - Reviewing all created web views and resolving possible bugs and typos in 
     views/HTML templates/CSS
 
 ## Planned
-- Refactor REST API to something similar to web views
-- Think about modifying view contexts
-- Think about moving JobTask, JobBenefit and JobRequirement logic from Companies to 
-   accounts
+- Clean the project files
 - Come up with a good structure for error handling
 - Authentication
 - Search functionality
 - Document categorization
 - Docker deployment
 - CI/CD
+
+## Unnecessary But Good To Have
+- Think about modifying view contexts
+- Refactor REST API to something similar to web views
