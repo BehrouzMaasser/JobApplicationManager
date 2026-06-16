@@ -31,6 +31,7 @@
 - Added validation for job position's date_posted in its services
 - Introduced service validation error mixin for handling web view form error messages
 - Added tests for the new validation added to `JobPositionService.update()`
+- Added tests for updated JobTaskSelector, JobBenefitSelector and JobRequirementSelector
 
 ## In Progress
 - Clean the project files
@@ -42,7 +43,7 @@
 - Think about modifying view contexts
 - Think about moving JobTask, JobBenefit and JobRequirement logic from Companies to 
    accounts
-- Add tests for updated JobTaskSelector, JobBenefitSelector and JobRequirementSelector
+- Come up with a good structure for error handling
 - Authentication
 - Search functionality
 - Document categorization
