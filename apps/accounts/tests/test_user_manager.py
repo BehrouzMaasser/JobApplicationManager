@@ -21,8 +21,8 @@ class TestUserManager:
         assert user.is_staff is False
         assert user.is_superuser is False
         assert user.is_active is True
-        assert user.first_name == ""
-        assert user.last_name == ""
+        assert user.first_name is None
+        assert user.last_name is None
         assert user.phone_number is None
         assert user.date_of_birth is None
 
@@ -71,8 +71,8 @@ class TestUserManager:
         assert user.is_superuser is True
         assert user.is_active is True
         assert user.check_password("adminpass123")
-        assert user.first_name == ""
-        assert user.last_name == ""
+        assert user.first_name is None
+        assert user.last_name is None
         assert user.phone_number is None
         assert user.date_of_birth is None
 
