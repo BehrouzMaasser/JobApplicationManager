@@ -1,8 +1,6 @@
 import copy
 from datetime import timedelta
 
-import pytest
-
 from unittest.mock import patch
 
 from django.utils import timezone
@@ -10,8 +8,9 @@ from django.core.exceptions import ValidationError as ValidationErrorDB
 
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
-from apps.companies.services.contexts.company_context import CompanyChildContext
 from apps.companies.services.job_position_service import JobPositionService
+
+from apps.applications.tests.conftest import *
 
 #   ----------------------------------- ****** -----------------------------------
 
