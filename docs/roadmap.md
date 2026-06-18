@@ -1,51 +1,65 @@
 # Roadmap
 
-## Completed
-- Initial Django setup
-- Environment variable configuration
-- Project restructuring
-- Document upload flow
-- Storage architecture
-- REST API
-- Writing tests for REST API
-- Applications app is evaluated, models, services and API views are corrected
-- Applications app tests refind
-- Models' integrity verified
-- Tests cleaned
-- Services contracts and structure is fixed
-- Renamed some files to keep the similarity
-- Resolved test warnings and errors
-- Wrote tests for basic_services
-- Wrote tests for Serializers
-- Reviewed Selectors and wrote tests for them
-- Reviewed accounts app and write tests for them
-- Created views and templates for All Applications
-- A well-structured template for UI is created
-- Restricted Data access from other users for creating/updating documents and job 
-   positions
-- Added Application note detail HTML template
-- Corrected the architecture for timezone handling(local for UI + UTC for backend)
-- Modified Signup and Login pages
-- Investigate why a job position with date_posted value before job application's
-    date_applied value was allowed to be updated
-- Added validation for job position's date_posted in its services
-- Introduced service validation error mixin for handling web view form error messages
-- Added tests for the new validation added to `JobPositionService.update()`
-- Added tests for updated JobTaskSelector, JobBenefitSelector and JobRequirementSelector
+## Short-Term
 
-## In Progress
-- Working on documentation
+### Error Handling
 
-## Planned
-- Clean the project files
-- Refactor testing structure
-- Come up with a good structure for error handling
-- Authentication
-- Search functionality
-- Document categorization
-- Docker deployment
-- CI/CD
+Design a consistent error handling strategy for:
 
-## Unnecessary But Good To Have
-- Think about modifying view contexts
-- Refactor REST API to something similar to web views
+- Services
+- Web views
+- REST API endpoints
+
+### Testing Refactor
+
+Improve the organization and maintainability of the test suite.
+
+### Project Cleanup
+
+Review project structure and remove technical debt introduced during rapid development.
+
+### Documentation
+
+Continue improving developer and architecture documentation.
+
+## Medium-Term
+
+### Authentication
+
+Expand authentication capabilities and API authentication workflows.
+
+### Search Functionality
+
+Provide advanced search capabilities across companies, positions, and applications.
+
+### Document Categorization
+
+Improve document organization and management.
+
+---
+
+## Long-Term
+
+### REST API Version 2
+
+Introduce flatter resource paths and improved usability.
+
+### Shared Workspaces
+
+Support collaboration between multiple users.
+
+### Reporting and Analytics
+
+Provide insights into job search activity and outcomes.
+
+---
+
+## Infrastructure
+
+### Docker Deployment
+
+Containerize the application for consistent local and production environments.
+
+### Continuous Integration / Continuous Deployment
+
+Automate testing and deployment workflows.
