@@ -1,44 +1,66 @@
 # Setup
 
-## Clone repository
+## Requirements
+
+See the `requirements/requirements.txt`
+
+
+## Clone Repository
 
 ```bash
-git clone ...
-cd ...
+git clone https://github.com/BehrouzMaasser/JobApplicationManager.git
+cd JobApplicationManager
 ```
 
-## Create virtual environment
+## Create Virtual Environment
 
 ```bash
-python -m venv your-venv-name
-source your-venv-name/bin/activate
+python -m venv .venv
+source .venv/bin/activate
 ```
 
-## Install dependencies
+## Install Dependencies
 
 ```bash
-pip install -r requirements/base.txt
+pip install -r requirements.txt
 ```
 
-## Configure environment
+## Configure Environment Variables
 
-Create `.env`
+Create:
+
+```bash
+.env
+```
 
 Example:
 
 ```env
-SECRET_KEY=your-django-given-key
 DEBUG=True
+SECRET_KEY=...
+DATABASE_URL=...
 ```
 
-## Apply migrations
+## Apply Migrations
 
 ```bash
 python manage.py migrate
 ```
 
-## Run server
+## Create Superuser
+
+```bash
+python manage.py createsuperuser
+```
+
+## Run Development Server
 
 ```bash
 python manage.py runserver
+```
+
+## Run Tests
+
+```bash
+pytest --cov=apps --cov-report=term-missing
 ```
