@@ -34,9 +34,7 @@
 - Added tests for updated JobTaskSelector, JobBenefitSelector and JobRequirementSelector
 
 ## In Progress
-- Modifying README
-- Reviewing all created web views and resolving possible bugs and typos in 
-    views/HTML templates/CSS
+- Working on documentation
 
 ## Planned
 - Clean the project files
