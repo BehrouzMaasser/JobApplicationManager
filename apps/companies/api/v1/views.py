@@ -394,7 +394,7 @@ class JobBenefitViewSet(ModelViewSet):
 
     def get_queryset(self):
 
-        return JobBenefitSelector.list()
+        return JobBenefitSelector.list(self.request.user)
 
     def create(self, request, *args, **kwargs):
 
@@ -453,7 +453,7 @@ class JobTaskViewSet(ModelViewSet):
 
     def get_queryset(self):
 
-        return JobTaskSelector.list()
+        return JobTaskSelector.list(self.request.user)
 
     def create(self, request, *args, **kwargs):
 
@@ -512,7 +512,7 @@ class JobRequirementViewSet(ModelViewSet):
 
     def get_queryset(self):
 
-        return JobRequirementSelector.list()
+        return JobRequirementSelector.list(self.request.user)
 
     def create(self, request, *args, **kwargs):
 
