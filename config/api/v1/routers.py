@@ -7,7 +7,7 @@ from apps.applications.api.views import (
 )
 
 # For Companies Apps Views
-from apps.companies.api.views import (
+from apps.companies.api.v1.views import (
     CompanyViewSet,
     CompanyNoteViewSet,
     JobBenefitViewSet,
@@ -18,8 +18,8 @@ from apps.companies.api.views import (
 )
 
 # For Documents Apps Views
-from apps.documents.api.views import DocumentTypeViewSet, DocumentViewSet
-from apps.workspaces.api.views import WorkspaceViewSet
+from apps.documents.api.v1.views import DocumentTypeViewSet, DocumentViewSet
+from apps.workspaces.api.v1.views import WorkspaceViewSet
 
 
 router = DefaultRouter()

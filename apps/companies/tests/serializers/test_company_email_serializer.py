@@ -1,6 +1,6 @@
 import pytest
 
-from apps.companies.api.serializers import CompanyEmailSerializer
+from apps.companies.api.v1.serializers import CompanyEmailSerializer
 
 
 @pytest.mark.django_db

@@ -1,6 +1,6 @@
 import pytest
 
-from apps.companies.api.serializers import JobRequirementSerializer
+from apps.companies.api.v1.serializers import JobRequirementSerializer
 
 
 @pytest.mark.django_db

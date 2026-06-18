@@ -1,4 +1,4 @@
-from apps.documents.api.serializers import DocumentTypeSerializer
+from apps.documents.api.v1.serializers import DocumentTypeSerializer
 
 
 class TestDocumentTypeSerializer:

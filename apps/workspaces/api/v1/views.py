@@ -4,7 +4,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 
 # Serializers
-from apps.workspaces.api.serializers import (
+from apps.workspaces.api.v1.serializers import (
     DisplayWorkspaceSerializer,
     WorkspaceSerializer,
 )

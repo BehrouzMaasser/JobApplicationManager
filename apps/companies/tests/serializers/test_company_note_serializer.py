@@ -1,6 +1,6 @@
 import pytest
 
-from apps.companies.api.serializers import CompanyNoteSerializer
+from apps.companies.api.v1.serializers import CompanyNoteSerializer
 
 
 @pytest.mark.django_db

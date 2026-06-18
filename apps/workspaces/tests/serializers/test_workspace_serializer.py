@@ -1,4 +1,4 @@
-from apps.workspaces.api.serializers import (
+from apps.workspaces.api.v1.serializers import (
     WorkspaceSerializer,
     DisplayWorkspaceSerializer,
 )

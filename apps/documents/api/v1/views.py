@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 # Serializers
-from apps.documents.api.serializers import (
+from apps.documents.api.v1.serializers import (
     DocumentTypeSerializer,
     DocumentSerializer
 )

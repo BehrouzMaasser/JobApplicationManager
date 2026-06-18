@@ -1,7 +1,7 @@
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from apps.documents.api.serializers import DocumentSerializer
+from apps.documents.api.v1.serializers import DocumentSerializer
 
 
 pytestmark = pytest.mark.django_db

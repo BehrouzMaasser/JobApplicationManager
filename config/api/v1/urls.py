@@ -10,7 +10,7 @@ from apps.applications.api.views import (
     JobApplicationNoteNestedViewSet
 )
 
-from apps.companies.api.views import (
+from apps.companies.api.v1.views import (
     NestedCompanyViewSet,
     NestedCompanyNoteViewSet,
     NestedCompanyEmailViewSet,

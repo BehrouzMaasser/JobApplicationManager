@@ -4,7 +4,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 
 # Serializers
-from apps.companies.api.serializers import (
+from apps.companies.api.v1.serializers import (
 
     # Company Serializers:
     CompanySerializer,
