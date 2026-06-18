@@ -40,6 +40,7 @@
 
 ## Planned
 - Clean the project files
+- Refactor testing structure
 - Come up with a good structure for error handling
 - Authentication
 - Search functionality
