@@ -5,7 +5,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView
 )
 
-from apps.applications.api.views import (
+from apps.applications.api.v1.views import (
     JobApplicationNestedViewSet,
     JobApplicationNoteNestedViewSet
 )

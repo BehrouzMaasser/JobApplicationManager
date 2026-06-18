@@ -1,7 +1,7 @@
 from django.utils import timezone
 
-from apps.applications.api.serializers import JobApplicationSerializer
-from apps.documents.tests.conftest import doc1_user1, document_type_user1, fake_file1
+from apps.applications.api.v1.serializers import JobApplicationSerializer
+from apps.documents.tests.conftest import doc1_user1
 
 
 class TestJobApplicationSerializer:

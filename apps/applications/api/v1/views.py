@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 # Serializers
-from apps.applications.api.serializers import (
+from apps.applications.api.v1.serializers import (
     JobApplicationSerializer,
     JobApplicationNoteSerializer,
 )

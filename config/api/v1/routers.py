@@ -1,7 +1,7 @@
 from rest_framework.routers import DefaultRouter
 
 # For Applications Apps Views
-from apps.applications.api.views import (
+from apps.applications.api.v1.views import (
     JobApplicationViewSet,
     JobApplicationNoteViewSet
 )

@@ -1,4 +1,4 @@
-from apps.applications.api.serializers import JobApplicationNoteSerializer
+from apps.applications.api.v1.serializers import JobApplicationNoteSerializer
 
 
 class TestJobApplicationNoteSerializer:
