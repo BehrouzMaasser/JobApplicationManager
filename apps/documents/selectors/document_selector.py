@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 
 from django.db.models import QuerySet
+from django import shortcuts
+
 from apps.accounts.models import User
 from apps.documents.models import Document
 
@@ -30,3 +32,8 @@ class DocumentSelector:
             queryset = queryset.filter(pk=filters.id)
 
         return queryset
+
+    @staticmethod
+    def get_object_or_404(*, user: User, document_id: int) -> Document:
+
+        return shortcuts.get_object_or_404(Document, owner=user, id=document_id)
