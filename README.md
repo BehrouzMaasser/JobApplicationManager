@@ -235,6 +235,10 @@ While the project began as a learning exercise, it has evolved into a production
 
 ![Dashboard](docs/images/dashboard.png)
 
+### Workspaces
+
+![Dashboard](docs/images/workspaces.png)
+
 ### Companies
 
 ![Companies](docs/images/companies.png)
