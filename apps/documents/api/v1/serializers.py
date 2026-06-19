@@ -56,11 +56,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         required=True,
         allow_null=False,
     )
-    file = serializers.FileField(
-        required=True,
-        allow_null=False,
-        allow_empty_file=False,
-    )
 
     class Meta:
 
@@ -73,14 +68,11 @@ class DocumentSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "document_type",
-            "file",
-            "file_hash"
         ]
 
         read_only_fields = [
             "id",
             "owner",
-            "file_hash",
             "created_at",
             "updated_at",
         ]
