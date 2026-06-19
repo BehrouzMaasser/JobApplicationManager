@@ -1,13 +1,13 @@
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from apps.documents.api.v1.serializers import DocumentSerializer
+from apps.documents.api.v1.serializers import DocumentWriteSerializer
 
 
 pytestmark = pytest.mark.django_db
 
 
-class TestDocumentSerializer:
+class TestDocumentWriteSerializer:
 
     def test_valid_data(self, document_type_user1, api_upload_file1):
 
@@ -17,7 +17,7 @@ class TestDocumentSerializer:
             "file": api_upload_file1,
         }
 
-        serializer = DocumentSerializer(data=data)
+        serializer = DocumentWriteSerializer(data=data)
 
         assert serializer.is_valid(), serializer.errors
 
@@ -28,7 +28,7 @@ class TestDocumentSerializer:
             "file": api_upload_file1,
         }
 
-        serializer = DocumentSerializer(data=data)
+        serializer = DocumentWriteSerializer(data=data)
 
         assert not serializer.is_valid()
         assert "name" in serializer.errors
@@ -41,7 +41,7 @@ class TestDocumentSerializer:
             "file": api_upload_file1,
         }
 
-        serializer = DocumentSerializer(data=data)
+        serializer = DocumentWriteSerializer(data=data)
 
         assert not serializer.is_valid()
         assert "name" in serializer.errors
@@ -54,7 +54,7 @@ class TestDocumentSerializer:
             "file": api_upload_file1,
         }
 
-        serializer = DocumentSerializer(data=data)
+        serializer = DocumentWriteSerializer(data=data)
 
         assert not serializer.is_valid()
         assert "name" in serializer.errors
@@ -67,7 +67,7 @@ class TestDocumentSerializer:
             "file": api_upload_file1,
         }
 
-        serializer = DocumentSerializer(data=data)
+        serializer = DocumentWriteSerializer(data=data)
 
         assert not serializer.is_valid()
         assert "name" in serializer.errors
@@ -79,7 +79,7 @@ class TestDocumentSerializer:
             "file": api_upload_file1,
         }
 
-        serializer = DocumentSerializer(data=data)
+        serializer = DocumentWriteSerializer(data=data)
 
         assert not serializer.is_valid()
         assert "document_type" in serializer.errors
@@ -92,7 +92,7 @@ class TestDocumentSerializer:
             "file": api_upload_file1,
         }
 
-        serializer = DocumentSerializer(data=data)
+        serializer = DocumentWriteSerializer(data=data)
 
         assert not serializer.is_valid()
         assert "document_type" in serializer.errors
@@ -104,7 +104,7 @@ class TestDocumentSerializer:
             "document_type": document_type_user1.id,
         }
 
-        serializer = DocumentSerializer(data=data)
+        serializer = DocumentWriteSerializer(data=data)
 
         assert not serializer.is_valid()
         assert "file" in serializer.errors
@@ -117,7 +117,7 @@ class TestDocumentSerializer:
             "file": None,
         }
 
-        serializer = DocumentSerializer(data=data)
+        serializer = DocumentWriteSerializer(data=data)
 
         assert not serializer.is_valid()
         assert "file" in serializer.errors
@@ -136,7 +136,7 @@ class TestDocumentSerializer:
             "file": empty_file,
         }
 
-        serializer = DocumentSerializer(data=data)
+        serializer = DocumentWriteSerializer(data=data)
 
         assert not serializer.is_valid()
         assert "file" in serializer.errors
@@ -155,7 +155,7 @@ class TestDocumentSerializer:
             "updated_at": "2026-01-01T00:00:00Z",
         }
 
-        serializer = DocumentSerializer(data=data)
+        serializer = DocumentWriteSerializer(data=data)
 
         assert serializer.is_valid(), serializer.errors
 
