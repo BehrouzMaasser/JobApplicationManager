@@ -2,14 +2,6 @@
 
 ## Short-Term
 
-### Unify Document Accessing
-
-Web and REST API views use the same structure to retrieve the document url path
-
-- Add get_object_or_404() to DocumentSelector
-- Add a MIXIN for open/download in web and REST API views
-- Modify views
-
 ### Error Handling
 
 Design a consistent error handling strategy for:
