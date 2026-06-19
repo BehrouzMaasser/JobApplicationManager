@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.reverse import reverse
 
 # Models
 from apps.documents.models import (
@@ -43,7 +44,7 @@ class DocumentTypeSerializer(serializers.ModelSerializer):
         ]
 
 
-class DocumentSerializer(serializers.ModelSerializer):
+class DocumentBaseSerializer(serializers.ModelSerializer):
 
     name = serializers.CharField(
         max_length=50,
@@ -75,4 +76,40 @@ class DocumentSerializer(serializers.ModelSerializer):
             "owner",
             "created_at",
             "updated_at",
+        ]
+
+
+class DocumentReadSerializer(DocumentBaseSerializer):
+
+    file_url = serializers.SerializerMethodField(read_only=True)
+
+    class Meta(DocumentBaseSerializer.Meta):
+
+        fields = [
+            *DocumentBaseSerializer.Meta.fields,
+            "file_url"
+        ]
+
+    def get_file_url(self, document: Document) -> str | None:
+
+        request = self.context.get("request")
+
+        url = reverse(
+            "document-download",
+            kwargs={"id": document.pk}
+        )
+
+        if request:
+            return request.build_absolute_uri(url)
+
+        return url
+
+
+class DocumentWriteSerializer(DocumentBaseSerializer):
+
+    class Meta(DocumentBaseSerializer.Meta):
+
+        fields = [
+            *DocumentBaseSerializer.Meta.fields,
+            "file"
         ]
