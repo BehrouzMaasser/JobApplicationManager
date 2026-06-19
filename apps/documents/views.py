@@ -16,6 +16,7 @@ from django.views.generic import (
 
 from apps.core.contexts.extra_context import ExtraContext
 from apps.core.mixins.app_context_mixin import AppContextMixin
+from apps.core.mixins.document_file_response_mixin import DocumentFileResponseMixin
 from apps.core.mixins.documents_form_mixin import DocumentFormMixin
 # Models
 from apps.documents.models import DocumentType, Document
@@ -269,24 +270,17 @@ class DocumentDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
         )
 
 
-class BaseDocumentFileView(LoginRequiredMixin, View):
+class BaseDocumentFileView(LoginRequiredMixin, DocumentFileResponseMixin, View):
 
-    as_attachment = False
+    def get_document(self):
+
+        return DocumentSelector.get_object_or_404(
+            user=self.request.user, document_id=self.kwargs["pk"]
+        )
 
     def get(self, request, *args, **kwargs):
 
-        document = get_object_or_404(
-            Document, owner=request.user, pk=self.kwargs["pk"]
-        )
-
-        content_type, _ = guess_type(document.file.name)
-
-        return FileResponse(
-            document.file.open("rb"),
-            as_attachment=self.as_attachment,
-            filename=slugify(document.name),
-            content_type=content_type,
-        )
+        return self.get_response()
 
 
 class DownloadDocumentView(BaseDocumentFileView):

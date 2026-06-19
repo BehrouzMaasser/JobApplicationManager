@@ -1,12 +1,16 @@
 from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.core.mixins.document_file_response_mixin import DocumentFileResponseMixin
+
 # Serializers
 from apps.documents.api.v1.serializers import (
     DocumentTypeSerializer,
-    DocumentSerializer
+    DocumentReadSerializer,
+    DocumentWriteSerializer
 )
 
 # Selectors
@@ -82,16 +86,37 @@ class DocumentTypeViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_200_OK)
 
 
-class DocumentViewSet(viewsets.ModelViewSet):
+class DocumentViewSet(viewsets.ModelViewSet, DocumentFileResponseMixin):
 
     # URL Path:
     # documents/{id}
 
     permission_classes = [IsAuthenticated]
-    serializer_class = DocumentSerializer
     parser_classes = (MultiPartParser, FormParser)
 
     lookup_url_kwarg = "id"
+
+    def get_serializer_class(self):
+
+        if self.action in ["list", "retrieve", "download"]:
+            return DocumentReadSerializer
+        else:
+            return DocumentWriteSerializer
+
+    def get_document(self):
+
+        return DocumentSelector.get_object_or_404(
+            user=self.request.user, document_id=self.kwargs['id']
+        )
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="download",
+    )
+    def download(self, request, *args, **kwargs):
+
+        return self.get_response()
 
     def get_queryset(self):
 
@@ -110,7 +135,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
             validated_data=serializer.validated_data
         )
 
-        return Response(DocumentSerializer(instance).data)
+        return Response(DocumentReadSerializer(instance).data)
 
     def update(self, request, *args, **kwargs):
 
@@ -123,7 +148,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
             validated_data=serializer.validated_data
         )
 
-        return Response(DocumentTypeSerializer(instance).data)
+        return Response(DocumentReadSerializer(instance).data)
 
     def partial_update(self, request, *args, **kwargs):
 
@@ -136,7 +161,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
             validated_data=serializer.validated_data
         )
 
-        return Response(DocumentSerializer(instance).data)
+        return Response(DocumentReadSerializer(instance).data)
 
     def destroy(self, request, *args, **kwargs):
 
