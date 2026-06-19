@@ -229,7 +229,15 @@ This project was built as part of a continuous effort to learn:
 
 While the project began as a learning exercise, it has evolved into a production-oriented codebase focused on architectural consistency, testability, and long-term maintainability.
 
-## Screenshots
+## Web View Screenshots
+
+### Login
+
+![Login Page](docs/images/login_page.png)
+
+### Signup
+
+![Signup Page](docs/images/signup_page.png)
 
 ### Dashboard
 
@@ -237,7 +245,7 @@ While the project began as a learning exercise, it has evolved into a production
 
 ### Workspaces
 
-![Dashboard](docs/images/workspaces.png)
+![Workspaces](docs/images/workspaces.png)
 
 ### Companies
 
@@ -250,3 +258,17 @@ While the project began as a learning exercise, it has evolved into a production
 ### Documents
 
 ![Documents](docs/images/documents.png)
+
+## REST API Screenshots (Using Hoppscotch)
+
+### Workspaces
+
+![Workspaces](docs/images/rest_workspaces.png)
+
+### Companies
+
+![Companies](docs/images/rest_companies.png)
+
+### Applications
+
+![Applications](docs/images/rest_applications.png)
