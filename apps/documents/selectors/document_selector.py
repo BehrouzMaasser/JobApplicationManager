@@ -1,10 +1,17 @@
 from dataclasses import dataclass
 
 from django.db.models import QuerySet
-from django import shortcuts
 
+# Models
 from apps.accounts.models import User
 from apps.documents.models import Document
+
+# Exceptions
+from apps.core.exceptions.exceptions import (
+    ResourceNotFoundError,
+    InfraStructureViolationError,
+    AccessDeniedError
+)
 
 
 class DocumentSelector:
@@ -14,6 +21,23 @@ class DocumentSelector:
 
         document_type_id: int | None = None
         id: int | None = None
+
+    @staticmethod
+    def get(*, user: User, document_id: int) -> Document:
+
+        try:
+            document = Document.objects.get(pk=document_id)
+        except Document.DoesNotExist:
+            raise ResourceNotFoundError(f"Document {document_id} does not exist")
+        except Exception as e:
+            raise InfraStructureViolationError(str(e))
+
+        if document.owner != user:
+            raise AccessDeniedError(
+                f"Document {document_id} does not belong to {user}"
+            )
+
+        return document
 
     @staticmethod
     def list(
@@ -32,8 +56,3 @@ class DocumentSelector:
             queryset = queryset.filter(pk=filters.id)
 
         return queryset
-
-    @staticmethod
-    def get_object_or_404(*, user: User, document_id: int) -> Document:
-
-        return shortcuts.get_object_or_404(Document, owner=user, id=document_id)

@@ -1,9 +1,9 @@
-from rest_framework.exceptions import ValidationError
-
 # Models
-
 from apps.accounts.models import User
 from apps.documents.models import Document
+
+# Selectors
+from apps.documents.selectors.document_selector import DocumentSelector
 
 # Services
 from apps.workspaces.services.base_service import BaseService
@@ -67,7 +67,4 @@ class DocumentService(BaseService):
     @staticmethod
     def _resolve_document(user: User, document_id: int) -> Document:
 
-        try:
-            return user.documents.get(pk=document_id)
-        except Document.DoesNotExist:
-            raise ValidationError({'Document': "Document Not Found"})
+        return DocumentSelector.get(user=user, document_id=document_id)

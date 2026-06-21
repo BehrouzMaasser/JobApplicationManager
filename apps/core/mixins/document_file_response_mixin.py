@@ -9,7 +9,8 @@ class DocumentFileResponseMixin:
     as_attachment = False
 
     def get_document(self):
-        raise NotImplementedError
+
+        return self.get_object()
 
     def get_response(self):
 

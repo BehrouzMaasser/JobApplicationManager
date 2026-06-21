@@ -1,9 +1,13 @@
+# DRF
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+# DRF Permissions
+from rest_framework.permissions import IsAuthenticated
+
+# Mixins
 from apps.core.mixins.document_file_response_mixin import DocumentFileResponseMixin
 
 # Serializers
@@ -33,6 +37,12 @@ class DocumentTypeViewSet(viewsets.ModelViewSet):
     serializer_class = DocumentTypeSerializer
 
     lookup_url_kwarg = "id"
+
+    def get_object(self, queryset=None):
+
+        return DocumentTypeSelector.get(
+            user=self.request.user, document_type_id=self.kwargs["id"]
+        )
 
     def get_queryset(self):
 
@@ -96,18 +106,18 @@ class DocumentViewSet(viewsets.ModelViewSet, DocumentFileResponseMixin):
 
     lookup_url_kwarg = "id"
 
+    def get_object(self, queryset=None):
+
+        return DocumentSelector.get(
+            user=self.request.user, document_id=self.kwargs["id"]
+        )
+
     def get_serializer_class(self):
 
         if self.action in ["list", "retrieve", "download"]:
             return DocumentReadSerializer
         else:
             return DocumentWriteSerializer
-
-    def get_document(self):
-
-        return DocumentSelector.get_object_or_404(
-            user=self.request.user, document_id=self.kwargs['id']
-        )
 
     @action(
         detail=True,

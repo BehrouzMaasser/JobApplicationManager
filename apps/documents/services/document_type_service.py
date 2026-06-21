@@ -1,9 +1,9 @@
-from rest_framework.exceptions import ValidationError
-
 # Models
-
 from apps.accounts.models import User
 from apps.documents.models import DocumentType
+
+# Selectors
+from apps.documents.selectors.document_type_selector import DocumentTypeSelector
 
 # Services
 from apps.workspaces.services.base_service import BaseService
@@ -68,9 +68,4 @@ class DocumentTypeService(BaseService):
     @staticmethod
     def _resolve_document_type(user: User, document_type_id: int) -> DocumentType:
 
-        try:
-            return user.document_types.get(pk=document_type_id)
-        except DocumentType.DoesNotExist:
-            raise ValidationError(
-                {'Document Type': ["Document Type Not Found"]}
-            )
+        return DocumentTypeSelector.get(user=user, document_type_id=document_type_id)
