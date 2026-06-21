@@ -1,12 +1,13 @@
 from uuid import UUID
 
-# Models
-
-from rest_framework.exceptions import ValidationError
 from django.db import transaction
 
+# Models
 from apps.accounts.models import User
 from apps.workspaces.models import Workspace
+
+# Selectors
+from apps.workspaces.selectors.workspace_selector import WorkspaceSelector
 
 # Services
 from apps.workspaces.services.base_service import BaseService
@@ -70,10 +71,4 @@ class WorkspaceService(BaseService):
     @staticmethod
     def _resolve_workspace(*, user: User, workspace_id: UUID) -> Workspace:
 
-        try:
-            return Workspace.objects.get(
-                owner=user,
-                workspace_id=workspace_id
-            )
-        except Workspace.DoesNotExist:
-            raise ValidationError({"Workspace": "Workspace Not Found"})
+        return WorkspaceSelector.get(user=user, workspace_id=workspace_id)

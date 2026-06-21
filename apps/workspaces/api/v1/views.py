@@ -1,6 +1,11 @@
+# DRF
 from rest_framework import status
 from rest_framework.response import Response
+
+# DRF ViewSets
 from rest_framework.viewsets import ModelViewSet
+
+# DRF Permissions
 from rest_framework.permissions import IsAuthenticated
 
 # Serializers
@@ -27,6 +32,12 @@ class WorkspaceViewSet(ModelViewSet):
 
     lookup_field = 'workspace_id'
     lookup_url_kwarg = 'id'
+
+    def get_object(self):
+
+        return WorkspaceSelector.get(
+            user=self.request.user, workspace_id=self.kwargs['id']
+        )
 
     def get_queryset(self):
 

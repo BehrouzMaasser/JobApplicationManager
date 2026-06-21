@@ -1,5 +1,12 @@
+# Mixins
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import redirect, get_object_or_404
+from ..core.mixins.app_context_mixin import AppContextMixin
+
+# Django
+from django.shortcuts import redirect
+from django.urls import reverse_lazy, reverse
+
+# Generic Views
 from django.views.generic import (
     ListView,
     CreateView,
@@ -7,8 +14,6 @@ from django.views.generic import (
     UpdateView,
     DeleteView
 )
-
-from django.urls import reverse_lazy, reverse
 
 # Models
 from .models import Workspace
@@ -18,10 +23,13 @@ from .selectors.workspace_selector import WorkspaceSelector
 
 # Services
 from .services.workspace_service import WorkspaceService
-from ..companies.views import company_list_url
+
+# Contexts
 from ..core.contexts.app_context import AppContext
 from ..core.contexts.extra_context import ExtraContext
-from ..core.mixins.app_context_mixin import AppContextMixin
+
+# View Helpers
+from ..companies.views import company_list_url
 
 
 class WorkspaceListView(LoginRequiredMixin, ListView):
@@ -71,9 +79,8 @@ class WorkspaceDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
 
     def get_object(self, queryset=None):
 
-        return get_object_or_404(
-            Workspace,
-            owner=self.request.user,
+        return WorkspaceSelector.get(
+            user=self.request.user,
             workspace_id=self.kwargs["workspace_id"]
         )
 
@@ -94,9 +101,8 @@ class WorkspaceUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_object(self, queryset=None):
 
-        return get_object_or_404(
-            Workspace,
-            owner=self.request.user,
+        return WorkspaceSelector.get(
+            user=self.request.user,
             workspace_id=self.kwargs["workspace_id"]
         )
 
@@ -137,9 +143,8 @@ class WorkspaceDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_object(self, queryset=None):
 
-        return get_object_or_404(
-            Workspace,
-            owner=self.request.user,
+        return WorkspaceSelector.get(
+            user=self.request.user,
             workspace_id=self.kwargs["workspace_id"]
         )
 

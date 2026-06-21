@@ -1,7 +1,10 @@
 import django.db.models
-from rest_framework.exceptions import ValidationError
 
+# Models
 from apps.accounts.models import User
+
+# Exceptions
+from apps.core.exceptions.exceptions import BusinessRuleViolationError
 
 
 # Base Service
@@ -60,9 +63,10 @@ class BaseService:
                         continue
 
         if invalid_fields:
-            raise ValidationError(
-                {f"{field}": f"User Don't Own {field}" for
-                 field in invalid_fields}
+            raise BusinessRuleViolationError(
+                {
+                    f"{field}": f"User Don't Own {field}" for field in invalid_fields
+                 }
             )
 
     @staticmethod
@@ -77,7 +81,9 @@ class BaseService:
                 empty_required_fields.append(field)
 
         if empty_required_fields:
-            raise ValidationError(
-                {f"{field}": "Should not be empty" for
-                 field in empty_required_fields}
+            raise BusinessRuleViolationError(
+                {
+                    f"{field}": "Should not be empty" for
+                    field in empty_required_fields
+                }
             )
