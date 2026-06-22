@@ -28,8 +28,6 @@ class WorkspaceSelector:
             workspace = Workspace.objects.get(workspace_id=workspace_id)
         except Workspace.DoesNotExist:
             raise ResourceNotFoundError(f"Workspace {workspace_id} does not exist")
-        except Exception as e:
-            raise InfraStructureViolationError(str(e))
 
         if workspace.owner != user:
             raise AccessDeniedError(

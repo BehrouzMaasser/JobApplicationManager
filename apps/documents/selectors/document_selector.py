@@ -29,8 +29,6 @@ class DocumentSelector:
             document = Document.objects.get(pk=document_id)
         except Document.DoesNotExist:
             raise ResourceNotFoundError(f"Document {document_id} does not exist")
-        except Exception as e:
-            raise InfraStructureViolationError(str(e))
 
         if document.owner != user:
             raise AccessDeniedError(
