@@ -1,16 +1,26 @@
-from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.db import transaction
 
+# Models
 from apps.accounts.models import User
 from apps.applications.models import JobApplicationNote
 
-from apps.applications.services.application_service import (
-    JobApplicationService,
+# Selectors
+from apps.applications.selectors.application_note_selector import (
+    JobApplicationNoteSelector
 )
 
+# Services
+from apps.applications.services.application_service import (
+    JobApplicationService
+)
+
+# Contexts
 from apps.applications.services.contexts.application_context import (
     JobApplicationChildContext, JobApplicationContext
 )
+
+# Exceptions
+from apps.core.exceptions.exceptions import BusinessRuleViolationError
 
 
 class JobApplicationNoteService(JobApplicationService):
@@ -117,25 +127,35 @@ class JobApplicationNoteService(JobApplicationService):
             user: User, context: JobApplicationChildContext
     ) -> JobApplicationNote:
 
-        try:
+        job_application_note = JobApplicationNoteSelector.get(
+            user=user, application_note_id=context.id
+        )
 
-            job_application = JobApplicationNoteService._resolve_job_application(
-                user=user,
-                context=JobApplicationContext(
-                    id=context.job_application_id,
-                    workspace_id=context.workspace_id,
-                    company_id=context.company_id,
-                    job_position_id=context.job_position_id,
-                )
-            )
-        except ValidationError:
-            raise PermissionDenied(
-                {"Job Application Note": ["Access To Job Application Denied"]}
+        if job_application_note.job_application.pk != context.job_application_id:
+            raise BusinessRuleViolationError(
+                f"Job Application Note {job_application_note.pk} does not belong to"
+                f" Job Application {context.job_application_id}"
             )
 
-        try:
-            return job_application.job_application_notes.get(pk=context.id)
-        except JobApplicationNote.DoesNotExist:
-            raise ValidationError(
-                {"Job Application Note": ["Object Not Found"]}
+        if (job_application_note.job_application.job_position.pk !=
+                context.job_position_id):
+            raise BusinessRuleViolationError(
+                f"Job Position of Job Application Note {job_application_note.pk} "
+                f"does not match the Job Position given {context.job_position_id}"
             )
+
+        if (job_application_note.job_application.job_position.company.pk !=
+                context.company_id):
+            raise BusinessRuleViolationError(
+                f"Company of Job Application Note {job_application_note.pk} "
+                f"does not match the Company given {context.company_id}"
+            )
+
+        if (job_application_note.job_application.workspace.workspace_id !=
+                context.workspace_id):
+            raise BusinessRuleViolationError(
+                f"Workspace of Job Application Note {job_application_note.pk} "
+                f"does not match the Workspace given {context.workspace_id}"
+            )
+
+        return job_application_note
