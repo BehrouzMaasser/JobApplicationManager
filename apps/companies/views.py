@@ -448,7 +448,7 @@ class CompanyEmailUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
 
         return reverse(
             "company-detail-web",
-            kwargs={"pk": self.kwargs["company_id"]}
+            kwargs={"pk": self.email.company.pk}
         )
 
     def form_invalid(self, form):
@@ -663,7 +663,7 @@ class CompanyNoteUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
 
         return reverse(
             "company-detail-web",
-            kwargs={"pk": self.kwargs["company_id"]}
+            kwargs={"pk": self.company_note.company.pk}
         )
 
     def form_invalid(self, form):
@@ -980,7 +980,7 @@ class JobPositionDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
             )
         )
 
-        return redirect("company-detail-web", pk=self.kwargs["company_id"])
+        return redirect("company-detail-web", pk=self.job_position.company.pk)
 
     def build_app_context(self):
 

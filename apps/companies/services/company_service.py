@@ -125,7 +125,7 @@ class CompanyService(WorkspaceService):
 
         company = CompanySelector.get(user=user, company_id=company_id)
 
-        if company.workspace_id != workspace_id:
+        if company.workspace.workspace_id != workspace_id:
             raise BusinessRuleViolationError(
                 f"Company {company_id} does not belong to workspace {workspace_id}"
             )
