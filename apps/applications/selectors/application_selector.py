@@ -5,6 +5,7 @@ from django.db.models import QuerySet
 
 from apps.accounts.models import User
 from apps.applications.models import JobApplication
+from apps.core.exceptions.exceptions import ResourceNotFoundError, AccessDeniedError
 
 
 class JobApplicationSelector:
@@ -17,6 +18,23 @@ class JobApplicationSelector:
         id: int | None = None
         status_id: int | None = None
         date_applied: datetime | None = None
+
+    @staticmethod
+    def get(user: User, application_id: int) -> JobApplication | Exception:
+
+        try:
+            job_application = JobApplication.objects.get(pk=application_id)
+        except JobApplication.DoesNotExist:
+            raise ResourceNotFoundError(
+                f"Job Application {application_id} does not exist"
+            )
+
+        if job_application.owner != user:
+            raise AccessDeniedError(
+                f"Job Application {application_id} does not belong to {user}"
+            )
+
+        return job_application
 
     @staticmethod
     def list(

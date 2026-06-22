@@ -1,7 +1,7 @@
 from urllib.parse import urlencode
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     ListView,
@@ -173,8 +173,8 @@ class JobApplicationDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
 
     def get_object(self, queryset=None):
 
-        return get_object_or_404(
-            JobApplication, owner=self.request.user, pk=self.kwargs["pk"]
+        return JobApplicationSelector.get(
+            user=self.request.user, application_id=self.kwargs["pk"]
         )
 
     def build_app_context(self):
@@ -208,9 +208,11 @@ class JobApplicationUpdateView(
 
         return self.object
 
-    def get_queryset(self):
+    def get_object(self, queryset=None):
 
-        return JobApplicationSelector.list(user=self.request.user)
+        return JobApplicationSelector.get(
+            user=self.request.user, application_id=self.kwargs["pk"]
+        )
 
     def form_valid(self, form):
 
@@ -265,9 +267,11 @@ class JobApplicationDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
 
         return self.object
 
-    def get_queryset(self):
+    def get_object(self, queryset=None):
 
-        return JobApplicationSelector.list(user=self.request.user)
+        return JobApplicationSelector.get(
+            user=self.request.user, application_id=self.kwargs["pk"]
+        )
 
     def post(self, request, *args, **kwargs):
 
@@ -343,8 +347,8 @@ class JobApplicationNoteCreateView(LoginRequiredMixin, AppContextMixin, CreateVi
 
     def form_valid(self, form):
 
-        job_application = get_object_or_404(
-            JobApplication, pk=self.kwargs["job_application_id"]
+        job_application = JobApplicationSelector.get(
+            user=self.request.user, application_id=self.kwargs["job_application_id"]
         )
 
         JobApplicationNoteService.create(
@@ -402,9 +406,11 @@ class JobApplicationNoteDetailView(LoginRequiredMixin, AppContextMixin, DetailVi
 
         return self.object
 
-    def get_queryset(self):
+    def get_object(self, queryset=None):
 
-        return JobApplicationNoteSelector.list(user=self.request.user)
+        return JobApplicationNoteSelector.get(
+            user=self.request.user, application_note_id=self.kwargs["pk"]
+        )
 
     def build_app_context(self):
 
@@ -428,9 +434,11 @@ class JobApplicationNoteUpdateView(LoginRequiredMixin, AppContextMixin, UpdateVi
 
         return self.object
 
-    def get_queryset(self):
+    def get_object(self, queryset=None):
 
-        return JobApplicationNoteSelector.list(user=self.request.user)
+        return JobApplicationNoteSelector.get(
+            user=self.request.user, application_note_id=self.kwargs["pk"]
+        )
 
     def form_valid(self, form):
 
@@ -489,9 +497,11 @@ class JobApplicationNoteDeleteView(LoginRequiredMixin, AppContextMixin, DeleteVi
 
         return self.object
 
-    def get_queryset(self):
+    def get_object(self, queryset=None):
 
-        return JobApplicationNoteSelector.list(user=self.request.user)
+        return JobApplicationNoteSelector.get(
+            user=self.request.user, application_note_id=self.kwargs["pk"]
+        )
 
     def post(self, request, *args, **kwargs):
 

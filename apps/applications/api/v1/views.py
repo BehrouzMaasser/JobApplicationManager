@@ -46,6 +46,12 @@ class JobApplicationViewSet(
 
     lookup_url_kwarg = "id"
 
+    def get_object(self, queryset=None):
+
+        return JobApplicationSelector.get(
+            user=self.request.user, application_id=self.kwargs["id"]
+        )
+
     def get_queryset(self):
 
         return JobApplicationSelector.list(
@@ -73,6 +79,12 @@ class JobApplicationNestedViewSet(viewsets.ModelViewSet):
     serializer_class = JobApplicationSerializer
 
     lookup_url_kwarg = "id"
+
+    def get_object(self, queryset=None):
+
+        return JobApplicationSelector.get(
+            user=self.request.user, application_id=self.kwargs["id"]
+        )
 
     def get_queryset(self):
 
@@ -163,6 +175,12 @@ class JobApplicationNoteViewSet(
 
     lookup_url_kwarg = "id"
 
+    def get_object(self, queryset=None):
+
+        return JobApplicationNoteSelector.get(
+            user=self.request.user, application_note_id=self.kwargs["id"]
+        )
+
     def get_queryset(self):
 
         return JobApplicationNoteSelector.list(
@@ -189,6 +207,12 @@ class JobApplicationNoteNestedViewSet(viewsets.ModelViewSet):
     serializer_class = JobApplicationNoteSerializer
 
     lookup_url_kwarg = "id"
+
+    def get_object(self, queryset=None):
+
+        return JobApplicationNoteSelector.get(
+            user=self.request.user, application_note_id=self.kwargs["id"]
+        )
 
     def get_queryset(self):
 

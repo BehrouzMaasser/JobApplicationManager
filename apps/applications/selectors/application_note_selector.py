@@ -4,6 +4,7 @@ from django.db.models import QuerySet
 
 from apps.accounts.models import User
 from apps.applications.models import JobApplicationNote
+from apps.core.exceptions.exceptions import ResourceNotFoundError, AccessDeniedError
 
 
 class JobApplicationNoteSelector:
@@ -15,6 +16,24 @@ class JobApplicationNoteSelector:
         job_position_id: int | None = None
         job_application_id: int | None = None
         id: int | None = None
+
+    @staticmethod
+    def get(user: User, application_note_id: int) -> JobApplicationNote | Exception:
+
+        try:
+            application_note = JobApplicationNote.objects.get(pk=application_note_id)
+        except JobApplicationNote.DoesNotExist:
+            raise ResourceNotFoundError(
+                f"Job Application Note {application_note_id} does not exist"
+            )
+
+        if application_note.job_application.owner != user:
+            raise AccessDeniedError(
+                f"Job Application Note {application_note_id} does not belong to"
+                f" {user}"
+            )
+
+        return application_note
 
     @staticmethod
     def list(
