@@ -1,9 +1,13 @@
-from rest_framework.exceptions import ValidationError
 from django.db import transaction
 
+# Models
 from apps.accounts.models import User
 from apps.companies.models import JobTask
 
+# Selectors
+from apps.companies.selectors.job_task_selector import JobTaskSelector
+
+# Services
 from apps.workspaces.services.base_service import BaseService
 
 
@@ -80,7 +84,4 @@ class JobTaskService(BaseService):
     @staticmethod
     def _resolve_job_task(*, user: User, job_task_id: int) -> JobTask:
 
-        try:
-            return JobTask.objects.get(user=user, pk=job_task_id)
-        except JobTask.DoesNotExist:
-            raise ValidationError({"Job Task": ["Job task does not exist"]})
+        return JobTaskSelector.get(user=user, job_task_id=job_task_id)

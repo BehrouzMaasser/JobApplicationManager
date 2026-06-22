@@ -4,6 +4,7 @@ from django.db.models import QuerySet
 
 from apps.accounts.models import User
 from apps.companies.models import JobPosition
+from apps.core.exceptions.exceptions import ResourceNotFoundError, AccessDeniedError
 
 
 class JobPositionSelector:
@@ -13,6 +14,23 @@ class JobPositionSelector:
         workspace_id: str | None = None
         company_id: str | None = None
         id: int | None = None
+
+    @staticmethod
+    def get(*, user: User, job_position_id: int) -> JobPosition | Exception:
+
+        try:
+            job_position = JobPosition.objects.get(pk=job_position_id)
+        except JobPosition.DoesNotExist:
+            raise ResourceNotFoundError(
+                f"Job Position {job_position_id} does not exist"
+            )
+
+        if job_position.company.workspace.owner != user:
+            raise AccessDeniedError(
+                f"Job Position {job_position_id} does not belong to {user}"
+            )
+
+        return job_position
 
     @staticmethod
     def list(

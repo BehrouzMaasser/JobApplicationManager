@@ -1,9 +1,11 @@
-from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.db import transaction
 
 # Models
 from apps.accounts.models import User
 from apps.companies.models import JobPosition
+
+# Selectors
+from apps.companies.selectors.job_position_selector import JobPositionSelector
 
 # Services
 from apps.companies.services.company_service import CompanyService
@@ -12,6 +14,9 @@ from apps.companies.services.company_service import CompanyService
 from apps.companies.services.contexts.company_context import (
     CompanyChildContext
 )
+
+# Exceptions
+from apps.core.exceptions.exceptions import BusinessRuleViolationError
 
 
 class JobPositionService(CompanyService):
@@ -214,20 +219,21 @@ class JobPositionService(CompanyService):
             context: CompanyChildContext
     ) -> JobPosition:
 
-        try:
-            company = JobPositionService._resolve_company(
-                user=user,
-                workspace_id=context.workspace_id,
-                company_id=context.company_id
-            )
-        except ValidationError:
-            raise PermissionDenied({"Job Position": ["Access To Company Denied"]})
+        job_position = JobPositionSelector.get(user=user, job_position_id=context.id)
 
-        # Retrieve the existing Job Position and return it
-        try:
-            return company.job_positions.get(pk=context.id)
-        except JobPosition.DoesNotExist:
-            raise ValidationError({"Job Position": "Job Position not found"})
+        if job_position.company.pk != context.company_id:
+            raise BusinessRuleViolationError(
+                f"Job position {job_position.company_id} don't belong to "
+                f"company {context.company_id}"
+            )
+
+        if job_position.company.workspace.workspace_id != context.workspace_id:
+            raise BusinessRuleViolationError(
+                f"Workspace of Job position {job_position.company_id} don't match "
+                f"the given workspace_id {context.workspace_id}"
+            )
+
+        return job_position
 
     @staticmethod
     def _validate_date_posted(instance: JobPosition, validated_data: dict) -> None:
@@ -236,7 +242,7 @@ class JobPositionService(CompanyService):
             for job_application in instance.job_applications.all():
                 if (job_application.date_applied and
                         (job_application.date_applied < date_posted)):
-                    raise ValidationError(
+                    raise BusinessRuleViolationError(
                         {
                             "date_posted":
                                 "Date posted cannot be after the job application's "

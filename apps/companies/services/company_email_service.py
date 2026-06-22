@@ -1,5 +1,4 @@
 from django.db import transaction
-from rest_framework.exceptions import PermissionDenied, ValidationError
 
 # Models
 from apps.accounts.models import User
@@ -10,6 +9,12 @@ from apps.companies.services.company_service import CompanyService
 
 # Contexts
 from apps.companies.services.contexts.company_context import CompanyChildContext
+
+# Selectors
+from apps.companies.selectors.company_email_selector import CompanyEmailSelector
+
+# Exceptions
+from apps.core.exceptions.exceptions import BusinessRuleViolationError
 
 
 class CompanyEmailService(CompanyService):
@@ -112,16 +117,14 @@ class CompanyEmailService(CompanyService):
             context: CompanyChildContext,
     ):
 
-        try:
-            company = CompanyEmailService._resolve_company(
-                user=user,
-                workspace_id=context.workspace_id,
-                company_id=context.company_id
-            )
-        except ValidationError:
-            raise PermissionDenied({"Company Email": ["Access To Company Denied"]})
+        company_email = CompanyEmailSelector.get(
+            user=user, company_email_id=context.id
+        )
 
-        try:
-            return company.company_emails.get(pk=context.id)
-        except CompanyEmail.DoesNotExist:
-            raise ValidationError({"Company Email": ["Email not found"]})
+        if company_email.company.pk != context.company_id:
+            raise BusinessRuleViolationError(
+                f"Company Email {company_email.pk} does not belong to "
+                f"company {context.company_id}"
+            )
+
+        return company_email

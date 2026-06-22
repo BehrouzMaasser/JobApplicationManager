@@ -1,9 +1,13 @@
-from rest_framework.exceptions import ValidationError
 from django.db import transaction
 
+# Models
 from apps.accounts.models import User
 from apps.companies.models import JobRequirement
 
+# Selectors
+from apps.companies.selectors.job_requirement_selector import JobRequirementSelector
+
+# Services
 from apps.workspaces.services.base_service import BaseService
 
 
@@ -87,9 +91,6 @@ class JobRequirementService(BaseService):
             *, user: User, job_requirement_id: int
     ) -> JobRequirement:
 
-        try:
-            return JobRequirement.objects.get(user=user, pk=job_requirement_id)
-        except JobRequirement.DoesNotExist:
-            raise ValidationError(
-                {"Job Requirement": ["Job Requirement does not exist"]}
-            )
+        return JobRequirementSelector.get(
+            user=user, job_requirement_id=job_requirement_id
+        )

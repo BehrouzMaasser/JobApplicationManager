@@ -69,6 +69,12 @@ class CompanyViewSet(
 
     lookup_url_kwarg = "id"
 
+    def get_object(self, queryset=None):
+
+        return CompanySelector.get(
+            user=self.request.user, company_id=self.kwargs["id"],
+        )
+
     def get_queryset(self):
 
         return CompanySelector.list(
@@ -92,6 +98,12 @@ class NestedCompanyViewSet(ModelViewSet):
     serializer_class = CompanySerializer
 
     lookup_url_kwarg = "id"
+
+    def get_object(self, queryset=None):
+
+        return CompanySelector.get(
+            user=self.request.user, company_id=self.kwargs["id"],
+        )
 
     def get_queryset(self):
 
@@ -176,6 +188,12 @@ class CompanyNoteViewSet(
 
     lookup_url_kwarg = "id"
 
+    def get_object(self, queryset=None):
+
+        return CompanyNoteSelector.get(
+            user=self.request.user, company_note_id=self.kwargs["id"],
+        )
+
     def get_queryset(self):
 
         return CompanyNoteSelector.list(
@@ -200,6 +218,12 @@ class NestedCompanyNoteViewSet(ModelViewSet):
     serializer_class = CompanyNoteSerializer
 
     lookup_url_kwarg = "id"
+
+    def get_object(self, queryset=None):
+
+        return CompanyNoteSelector.get(
+            user=self.request.user, company_note_id=self.kwargs["id"],
+        )
 
     def get_queryset(self):
 
@@ -286,6 +310,12 @@ class CompanyEmailViewSet(
 
     lookup_url_kwarg = "id"
 
+    def get_object(self, queryset=None):
+
+        return CompanyEmailSelector.get(
+            user=self.request.user, company_email_id=self.kwargs["id"],
+        )
+
     def get_queryset(self):
 
         return CompanyEmailSelector.list(
@@ -310,6 +340,12 @@ class NestedCompanyEmailViewSet(ModelViewSet):
     serializer_class = CompanyEmailSerializer
 
     lookup_url_kwarg = "id"
+
+    def get_object(self, queryset=None):
+
+        return CompanyEmailSelector.get(
+            user=self.request.user, company_email_id=self.kwargs["id"],
+        )
 
     def get_queryset(self):
 
@@ -392,6 +428,12 @@ class JobBenefitViewSet(ModelViewSet):
 
     lookup_url_kwarg = "id"
 
+    def get_object(self, queryset=None):
+
+        return JobBenefitSelector.get(
+            user=self.request.user, job_benefit_id=self.kwargs["id"],
+        )
+
     def get_queryset(self):
 
         return JobBenefitSelector.list(self.request.user)
@@ -451,6 +493,12 @@ class JobTaskViewSet(ModelViewSet):
 
     lookup_url_kwarg = "id"
 
+    def get_object(self, queryset=None):
+
+        return JobTaskSelector.get(
+            user=self.request.user, job_task_id=self.kwargs["id"],
+        )
+
     def get_queryset(self):
 
         return JobTaskSelector.list(self.request.user)
@@ -509,6 +557,12 @@ class JobRequirementViewSet(ModelViewSet):
     serializer_class = JobRequirementSerializer
 
     lookup_url_kwarg = "id"
+
+    def get_object(self, queryset=None):
+
+        return JobRequirementSelector.get(
+            user=self.request.user, job_requirement_id=self.kwargs["id"],
+        )
 
     def get_queryset(self):
 
@@ -575,6 +629,12 @@ class JobPositionViewSet(
 
     lookup_url_kwarg = "id"
 
+    def get_object(self, queryset=None):
+
+        return JobPositionSelector.get(
+            user=self.request.user, job_position_id=self.kwargs["id"],
+        )
+
     def get_queryset(self):
 
         filters = JobPositionSelector.QueryFilter(
@@ -597,6 +657,12 @@ class NestedJobPositionViewSet(ModelViewSet):
     serializer_class = JobPositionSerializer
 
     lookup_url_kwarg = "id"
+
+    def get_object(self, queryset=None):
+
+        return JobPositionSelector.get(
+            user=self.request.user, job_position_id=self.kwargs["id"],
+        )
 
     def get_queryset(self):
 

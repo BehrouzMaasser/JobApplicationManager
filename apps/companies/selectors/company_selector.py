@@ -4,6 +4,7 @@ from django.db.models import QuerySet
 
 from apps.accounts.models import User
 from apps.companies.models import Company
+from apps.core.exceptions.exceptions import ResourceNotFoundError, AccessDeniedError
 
 
 class CompanySelector:
@@ -13,6 +14,21 @@ class CompanySelector:
 
         workspace_id: str | None = None
         id: int | None = None
+
+    @staticmethod
+    def get(*, user: User, company_id: int) -> Company | Exception:
+
+        try:
+            company = Company.objects.get(pk=company_id)
+        except Company.DoesNotExist:
+            raise ResourceNotFoundError(f"Company {company_id} does not exist")
+
+        if company.workspace.owner != user:
+            raise AccessDeniedError(
+                f"Company {company_id} does not belong to {user}"
+            )
+
+        return company
 
     @staticmethod
     def list(*, user: User, filters: None | QueryFilter = None) -> QuerySet[Company]:

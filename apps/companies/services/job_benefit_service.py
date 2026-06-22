@@ -1,10 +1,13 @@
-from rest_framework.exceptions import ValidationError
-
 from django.db import transaction
 
+# Models
 from apps.accounts.models import User
 from apps.companies.models import JobBenefit
 
+# Selectors
+from apps.companies.selectors.job_benefit_selector import JobBenefitSelector
+
+# Services
 from apps.workspaces.services.base_service import BaseService
 
 
@@ -88,7 +91,4 @@ class JobBenefitService(BaseService):
     @staticmethod
     def _resolve_job_benefit(*, user: User, job_benefit_id: int):
 
-        try:
-            return JobBenefit.objects.get(user=user, pk=job_benefit_id)
-        except JobBenefit.DoesNotExist:
-            raise ValidationError({"Job Benefit": ["Job Benefit does not exist"]})
+        return JobBenefitSelector.get(user=user, job_benefit_id=job_benefit_id)

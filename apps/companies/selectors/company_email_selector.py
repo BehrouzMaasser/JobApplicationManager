@@ -4,6 +4,7 @@ from django.db.models import QuerySet
 
 from apps.accounts.models import User
 from apps.companies.models import Company, CompanyEmail
+from apps.core.exceptions.exceptions import ResourceNotFoundError, AccessDeniedError
 
 
 class CompanyEmailSelector:
@@ -14,6 +15,23 @@ class CompanyEmailSelector:
         workspace_id: str | None = None
         company_id: int | None = None
         id: int | None = None
+
+    @staticmethod
+    def get(*, user: User, company_email_id: int) -> CompanyEmail | Exception:
+
+        try:
+            company_email = CompanyEmail.objects.get(pk=company_email_id)
+        except CompanyEmail.DoesNotExist:
+            raise ResourceNotFoundError(
+                f"Company Email {company_email_id} does not exist"
+            )
+
+        if company_email.company.workspace.owner != user:
+            raise AccessDeniedError(
+                f"Company Email {company_email_id} does not belong to {user}"
+            )
+
+        return company_email
 
     @staticmethod
     def list(*, user: User, filters: None | QueryFilter = None) -> QuerySet[Company]:

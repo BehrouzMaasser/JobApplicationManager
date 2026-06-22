@@ -4,6 +4,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 # Models
 from apps.accounts.models import User
 from apps.companies.models import CompanyNote
+from apps.companies.selectors.company_note_selector import CompanyNoteSelector
 
 # Services
 from apps.companies.services.company_service import CompanyService
@@ -12,6 +13,7 @@ from apps.companies.services.company_service import CompanyService
 from apps.companies.services.contexts.company_context import (
     CompanyChildContext
 )
+from apps.core.exceptions.exceptions import BusinessRuleViolationError
 
 
 # Company Note Service
@@ -116,16 +118,14 @@ class CompanyNoteService(CompanyService):
             user: User, context: CompanyChildContext
     ) -> CompanyNote:
 
-        try:
-            company = CompanyNoteService._resolve_company(
-                user=user,
-                workspace_id=context.workspace_id,
-                company_id=context.company_id
-            )
-        except ValidationError:
-            raise PermissionDenied({"Company Note": ["Access To Company Denied"]})
+        company_note = CompanyNoteSelector.get(
+            user=user, company_note_id=context.id
+        )
 
-        try:
-            return company.company_notes.get(pk=context.id)
-        except CompanyNote.DoesNotExist:
-            raise ValidationError({"Company Note": ["Company Note does not exist"]})
+        if company_note.company.pk != context.company_id:
+            raise BusinessRuleViolationError(
+                f"Company Note {company_note.pk} does not belong to "
+                f"company {context.company_id}"
+            )
+
+        return company_note

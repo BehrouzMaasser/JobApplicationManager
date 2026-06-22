@@ -1,7 +1,6 @@
 from uuid import UUID
 
-from rest_framework.exceptions import ValidationError, PermissionDenied
-
+# Django
 from django.db import transaction
 
 # Contexts
@@ -11,8 +10,14 @@ from apps.companies.services.contexts.company_context import CompanyContext
 from apps.companies.models import Company
 from apps.accounts.models import User
 
+# Exceptions
+from apps.core.exceptions.exceptions import BusinessRuleViolationError
+
 # Parent Service
 from apps.workspaces.services.workspace_service import WorkspaceService
+
+# Selectors
+from apps.companies.selectors.company_selector import CompanySelector
 
 
 # Services
@@ -116,17 +121,13 @@ class CompanyService(WorkspaceService):
     @staticmethod
     def _resolve_company(
             *, user: User, workspace_id: UUID, company_id: str
-    ) -> Company:
+    ) -> Company | Exception:
 
-        try:
-            workspace = CompanyService._resolve_workspace(
-                user=user,
-                workspace_id=workspace_id
+        company = CompanySelector.get(user=user, company_id=company_id)
+
+        if company.workspace_id != workspace_id:
+            raise BusinessRuleViolationError(
+                f"Company {company_id} does not belong to workspace {workspace_id}"
             )
-        except ValidationError:
-            raise PermissionDenied({"Company": ["Access To Workspace Denied"]})
 
-        try:
-            return workspace.companies.get(pk=company_id)
-        except Company.DoesNotExist:
-            raise ValidationError({"Company": "Company does not exist"})
+        return company

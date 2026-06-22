@@ -4,6 +4,7 @@ from django.db.models import QuerySet
 
 from apps.accounts.models import User
 from apps.companies.models import CompanyNote
+from apps.core.exceptions.exceptions import ResourceNotFoundError, AccessDeniedError
 
 
 class CompanyNoteSelector:
@@ -14,6 +15,23 @@ class CompanyNoteSelector:
         workspace_id: str | None = None
         company_id: int | None = None
         id: int | None = None
+
+    @staticmethod
+    def get(*, user: User, company_note_id: int) -> CompanyNote | Exception:
+
+        try:
+            company_note = CompanyNote.objects.get(pk=company_note_id)
+        except CompanyNote.DoesNotExist:
+            raise ResourceNotFoundError(
+                f"Company Note {company_note_id} does not exist"
+            )
+
+        if company_note.company.workspace.owner != user:
+            raise AccessDeniedError(
+                f"Company Note {company_note_id} does not belong to {user}"
+            )
+
+        return company_note
 
     @staticmethod
     def list(
