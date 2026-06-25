@@ -9,16 +9,16 @@ class ResourceNotFoundError(AppError):
     def __init__(self, resource: str, message: str | None = None):
 
         self.resource = resource
-        self._message_given = message
+        self._message = message
 
-        super().__init__(self._message_given)
+        super().__init__(self._message)
 
     @property
     def message(self):
 
-        if self._message_given is None:
+        if self._message is None:
             return f"Resource {self.resource} not found"
-        return self._message_given
+        return self._message
 
 
 class AccessDeniedError(AppError):
@@ -26,16 +26,16 @@ class AccessDeniedError(AppError):
     def __init__(self, resource: str, message: str | None = None):
 
         self.resource = resource
-        self._message_given = message
+        self._message = message
 
-        super().__init__(self._message_given)
+        super().__init__(self._message)
 
     @property
     def message(self):
 
-        if self._message_given is None:
+        if self._message is None:
             return f"Access to {self.resource} was denied"
-        return self._message_given
+        return self._message
 
 
 class BusinessRuleViolationError(AppError):
