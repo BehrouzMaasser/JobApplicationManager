@@ -47,7 +47,7 @@ class BusinessRuleViolationError(AppError):
             fields: None | list[str] = None
     ):
 
-        self._message_given = message
+        self._message = message
         self.messages = messages
         self.fields = fields
 
@@ -57,15 +57,15 @@ class BusinessRuleViolationError(AppError):
                 "fields do not match"
             )
 
-        super().__init__(self._message_given)
+        super().__init__(self._message)
 
     @property
     def message(self):
 
-        if self._message_given is None:
+        if self._message is None:
             return f"Business rule violated"
 
-        return f"Business rule violated: {self._message_given}"
+        return f"Business rule violated: {self._message}"
 
     @property
     def details(self):
