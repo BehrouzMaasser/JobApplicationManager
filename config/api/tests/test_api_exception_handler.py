@@ -2,7 +2,8 @@ from config.api.handler import api_exception_handler
 
 # Exceptions
 from django.core.exceptions import ValidationError
-from apps.core.exceptions.exceptions import ResourceNotFoundError, AccessDeniedError
+from apps.core.exceptions.exceptions import ResourceNotFoundError, AccessDeniedError, \
+    BusinessRuleViolationError
 
 
 def test_resource_not_found_error():
@@ -46,7 +47,33 @@ def test_access_denied_error():
 
 
 def test_business_rule_violation_error():
-    pass
+
+    exc = BusinessRuleViolationError(
+        fields=["emails", "documents"],
+        messages=[
+            "Emails should belong to current company",
+            "Documents should belong to current workspace"
+        ],
+    )
+
+    response = api_exception_handler(exc, context={})
+
+    assert response.status_code == 400
+
+    assert response.data == {
+        "error": {
+            "code": "business_rule_violation",
+            "message": "Business rule violated",
+            "details": {
+                "emails": [
+                    "Emails should belong to current company"
+                ],
+                "documents": [
+                    "Documents should belong to current workspace"
+                ]
+            }
+        }
+    }
 
 
 def test_django_validation_error():

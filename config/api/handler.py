@@ -1,4 +1,4 @@
-# config/api/exceptions.py
+# config/api/handler.py
 
 from django.core.exceptions import ValidationError
 
@@ -74,7 +74,7 @@ def api_exception_handler(exc, context):
 
         return _error_response(
             code="validation_error",
-            message=f"Validation failed",
+            message="Validation failed",
             details=details,
             status_code=status.HTTP_400_BAD_REQUEST,
         )

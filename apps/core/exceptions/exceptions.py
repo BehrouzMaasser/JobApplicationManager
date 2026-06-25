@@ -65,7 +65,7 @@ class BusinessRuleViolationError(AppError):
         if self._message is None:
             return f"Business rule violated"
 
-        return f"Business rule violated: {self._message}"
+        return self._message
 
     @property
     def details(self):
