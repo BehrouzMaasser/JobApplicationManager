@@ -40,6 +40,7 @@ from apps.core.contexts.app_context import AppContext
 from apps.core.contexts.extra_context import ExtraContext
 from apps.core.mixins.app_context_mixin import AppContextMixin
 from apps.core.mixins.job_application_form_mixin import JobApplicationFormMixin
+from apps.core.mixins.view_exception_handler import ViewExceptionHandlerMixin
 
 
 def application_list_url(workspace_id=None, company_id=None, job_position_id=None):
@@ -74,7 +75,9 @@ def application_note_list_url(
     return f"{reverse('job-application-note-list-web')}?{urlencode(params)}"
 
 
-class JobApplicationListView(LoginRequiredMixin, AppContextMixin, ListView):
+class JobApplicationListView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, ListView
+):
 
     model = JobApplication
     template_name = "applications/job_application/list.html"
@@ -101,7 +104,11 @@ class JobApplicationListView(LoginRequiredMixin, AppContextMixin, ListView):
 
 
 class JobApplicationCreateView(
-    LoginRequiredMixin, AppContextMixin, JobApplicationFormMixin, CreateView
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    AppContextMixin,
+    JobApplicationFormMixin,
+    CreateView
 ):
 
     model = JobApplication
@@ -156,7 +163,9 @@ class JobApplicationCreateView(
         )
 
 
-class JobApplicationDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
+class JobApplicationDetailView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, DetailView
+):
 
     model = JobApplication
     template_name = "applications/job_application/detail.html"
@@ -191,7 +200,11 @@ class JobApplicationDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
 
 
 class JobApplicationUpdateView(
-    LoginRequiredMixin, AppContextMixin, JobApplicationFormMixin, UpdateView
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    AppContextMixin,
+    JobApplicationFormMixin,
+    UpdateView
 ):
 
     model = JobApplication
@@ -257,7 +270,9 @@ class JobApplicationUpdateView(
         )
 
 
-class JobApplicationDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
+class JobApplicationDeleteView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, DeleteView
+):
 
     model = JobApplication
     template_name = "delete_confirm.html"
@@ -311,7 +326,9 @@ class JobApplicationDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
         )
 
 
-class JobApplicationNoteListView(LoginRequiredMixin, AppContextMixin, ListView):
+class JobApplicationNoteListView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, ListView
+):
 
     model = JobApplicationNote
     template_name = "applications/application_note/list.html"
@@ -339,7 +356,9 @@ class JobApplicationNoteListView(LoginRequiredMixin, AppContextMixin, ListView):
         )
 
 
-class JobApplicationNoteCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
+class JobApplicationNoteCreateView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, CreateView
+):
 
     model = JobApplicationNote
     template_name = "create_page.html"
@@ -395,7 +414,9 @@ class JobApplicationNoteCreateView(LoginRequiredMixin, AppContextMixin, CreateVi
         )
 
 
-class JobApplicationNoteDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
+class JobApplicationNoteDetailView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, DetailView
+):
 
     model = JobApplicationNote
     template_name = "applications/application_note/detail.html"
@@ -423,7 +444,9 @@ class JobApplicationNoteDetailView(LoginRequiredMixin, AppContextMixin, DetailVi
         )
 
 
-class JobApplicationNoteUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
+class JobApplicationNoteUpdateView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, UpdateView
+):
 
     model = JobApplicationNote
     template_name = "edit_page.html"
@@ -487,7 +510,9 @@ class JobApplicationNoteUpdateView(LoginRequiredMixin, AppContextMixin, UpdateVi
         )
 
 
-class JobApplicationNoteDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
+class JobApplicationNoteDeleteView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, DeleteView
+):
 
     model = JobApplicationNote
     template_name = "delete_confirm.html"

@@ -16,7 +16,10 @@ from apps.companies.services.contexts.company_context import (
 )
 
 # Exceptions
-from apps.core.exceptions.exceptions import BusinessRuleViolationError
+from apps.core.exceptions.exceptions import (
+    BusinessRuleViolationError,
+    DomainInvariantViolationError
+)
 
 
 class JobPositionService(CompanyService):
@@ -222,15 +225,15 @@ class JobPositionService(CompanyService):
         job_position = JobPositionSelector.get(user=user, job_position_id=context.id)
 
         if job_position.company.pk != context.company_id:
-            raise BusinessRuleViolationError(
-                f"Job position {job_position.company_id} don't belong to "
-                f"company {context.company_id}"
+            raise DomainInvariantViolationError(
+                f"Job position {context.id} don't belong to Company"
+                f" {context.company_id}"
             )
 
         if job_position.company.workspace.workspace_id != context.workspace_id:
-            raise BusinessRuleViolationError(
-                f"Workspace of Job position {job_position.company_id} don't match "
-                f"the given workspace_id {context.workspace_id}"
+            raise DomainInvariantViolationError(
+                f"Workspace of Job position {context.id} don't match the given"
+                f" workspace_id = {context.workspace_id}"
             )
 
         return job_position
@@ -243,9 +246,9 @@ class JobPositionService(CompanyService):
                 if (job_application.date_applied and
                         (job_application.date_applied < date_posted)):
                     raise BusinessRuleViolationError(
-                        {
-                            "date_posted":
-                                "Date posted cannot be after the job application's "
-                                "date applied"
-                        }
+                        fields=["date_posted"],
+                        messages=[
+                            "Date posted cannot be after the job application's "
+                            "date applied"
+                        ]
                     )

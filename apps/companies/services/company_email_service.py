@@ -14,7 +14,7 @@ from apps.companies.services.contexts.company_context import CompanyChildContext
 from apps.companies.selectors.company_email_selector import CompanyEmailSelector
 
 # Exceptions
-from apps.core.exceptions.exceptions import BusinessRuleViolationError
+from apps.core.exceptions.exceptions import DomainInvariantViolationError
 
 
 class CompanyEmailService(CompanyService):
@@ -122,9 +122,10 @@ class CompanyEmailService(CompanyService):
         )
 
         if company_email.company.pk != context.company_id:
-            raise BusinessRuleViolationError(
-                f"Company Email {company_email.pk} does not belong to "
-                f"company {context.company_id}"
+            raise DomainInvariantViolationError(
+                f"Company Email {context.id} does not belong to Company"
+                f" {context.company_id}"
+
             )
 
         return company_email

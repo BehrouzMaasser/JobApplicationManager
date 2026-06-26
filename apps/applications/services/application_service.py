@@ -14,7 +14,8 @@ from apps.applications.selectors.application_selector import JobApplicationSelec
 from apps.companies.services.contexts.company_context import CompanyChildContext
 
 # Exceptions
-from apps.core.exceptions.exceptions import BusinessRuleViolationError
+from apps.core.exceptions.exceptions import BusinessRuleViolationError, \
+    DomainInvariantViolationError
 
 from apps.companies.models import (
     JobPosition,
@@ -209,16 +210,14 @@ class JobApplicationService(JobPositionService):
         # Each Application Email belongs to User
         if any(user != email.company.workspace.owner for email in emails):
             raise BusinessRuleViolationError(
-                {"Invalid Email": "Email Does Not Belong To User"}
+                fields=["emails"], messages=["Not All Emails Belong To User"]
             )
 
         # Each Email belongs to the company of JobApplication's JobPosition
         if any(job_position.company != email.company for email in emails):
             raise BusinessRuleViolationError(
-                {
-                    "Invalid Email":
-                        ["Email must belong to the job application's company"]
-                }
+                fields=["emails"],
+                messages=["Not All Emails Belong To Job Application's Company"]
             )
 
     @staticmethod
@@ -229,7 +228,7 @@ class JobApplicationService(JobPositionService):
         # Each Application Document belongs to User
         if any(user != document.owner for document in documents):
             raise BusinessRuleViolationError(
-                {"Invalid Document": "Document Does Not Belong To User"}
+                fields=["documents"], messages=["Not All Documents Belong To User"]
             )
 
     @staticmethod
@@ -244,21 +243,21 @@ class JobApplicationService(JobPositionService):
         )
 
         if job_application.job_position.pk != context.job_position_id:
-            raise BusinessRuleViolationError(
+            raise DomainInvariantViolationError(
                 f"Job Application {job_application.pk} does not belong to the "
-                f"Job Position given {context.job_position_id}"
+                f"Job Position given = {context.job_position_id}"
             )
 
         if job_application.job_position.company.pk != context.company_id:
-            raise BusinessRuleViolationError(
+            raise DomainInvariantViolationError(
                 f"Company of Job Application {job_application.pk} does not match the"
-                f" Company given {context.company_id}"
+                f" Company given = {context.company_id}"
             )
 
         if job_application.workspace.workspace_id != context.workspace_id:
-            raise BusinessRuleViolationError(
+            raise DomainInvariantViolationError(
                 f"Workspace of Job Application {job_application.pk} does not match "
-                f"the Workspace given {context.workspace_id}"
+                f"the Workspace given = {context.workspace_id}"
             )
 
         return job_application

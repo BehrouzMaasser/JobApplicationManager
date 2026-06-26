@@ -30,9 +30,10 @@ from ..core.contexts.extra_context import ExtraContext
 
 # View Helpers
 from ..companies.views import company_list_url
+from ..core.mixins.view_exception_handler import ViewExceptionHandlerMixin
 
 
-class WorkspaceListView(LoginRequiredMixin, ListView):
+class WorkspaceListView(ViewExceptionHandlerMixin, LoginRequiredMixin, ListView):
 
     model = Workspace
     template_name = "workspaces/list.html"
@@ -43,7 +44,9 @@ class WorkspaceListView(LoginRequiredMixin, ListView):
         return WorkspaceSelector.list(user=self.request.user)
 
 
-class WorkspaceCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
+class WorkspaceCreateView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, CreateView
+):
 
     model = Workspace
     template_name = "create_page.html"
@@ -71,7 +74,9 @@ class WorkspaceCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
         )
 
 
-class WorkspaceDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
+class WorkspaceDetailView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, DetailView
+):
 
     model = Workspace
     template_name = "workspaces/detail.html"
@@ -93,7 +98,7 @@ class WorkspaceDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
         )
 
 
-class WorkspaceUpdateView(LoginRequiredMixin, UpdateView):
+class WorkspaceUpdateView(ViewExceptionHandlerMixin, LoginRequiredMixin, UpdateView):
 
     model = Workspace
     template_name = "edit_page.html"
@@ -135,7 +140,7 @@ class WorkspaceUpdateView(LoginRequiredMixin, UpdateView):
         )
 
 
-class WorkspaceDeleteView(LoginRequiredMixin, DeleteView):
+class WorkspaceDeleteView(ViewExceptionHandlerMixin, LoginRequiredMixin, DeleteView):
 
     model = Workspace
     template_name = "delete_confirm.html"

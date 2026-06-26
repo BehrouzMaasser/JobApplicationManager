@@ -20,7 +20,7 @@ from apps.applications.services.contexts.application_context import (
 )
 
 # Exceptions
-from apps.core.exceptions.exceptions import BusinessRuleViolationError
+from apps.core.exceptions.exceptions import DomainInvariantViolationError
 
 
 class JobApplicationNoteService(JobApplicationService):
@@ -132,30 +132,30 @@ class JobApplicationNoteService(JobApplicationService):
         )
 
         if job_application_note.job_application.pk != context.job_application_id:
-            raise BusinessRuleViolationError(
+            raise DomainInvariantViolationError(
                 f"Job Application Note {job_application_note.pk} does not belong to"
                 f" Job Application {context.job_application_id}"
             )
 
         if (job_application_note.job_application.job_position.pk !=
                 context.job_position_id):
-            raise BusinessRuleViolationError(
+            raise DomainInvariantViolationError(
                 f"Job Position of Job Application Note {job_application_note.pk} "
-                f"does not match the Job Position given {context.job_position_id}"
+                f"does not match the Job Position given = {context.job_position_id}"
             )
 
         if (job_application_note.job_application.job_position.company.pk !=
                 context.company_id):
-            raise BusinessRuleViolationError(
-                f"Company of Job Application Note {job_application_note.pk} "
-                f"does not match the Company given {context.company_id}"
+            raise DomainInvariantViolationError(
+                f"Company of Job Application Note {job_application_note.pk} does not"
+                f" match the Company given = {context.company_id}"
             )
 
         if (job_application_note.job_application.workspace.workspace_id !=
                 context.workspace_id):
-            raise BusinessRuleViolationError(
+            raise DomainInvariantViolationError(
                 f"Workspace of Job Application Note {job_application_note.pk} "
-                f"does not match the Workspace given {context.workspace_id}"
+                f"does not match the Workspace given = {context.workspace_id}"
             )
 
         return job_application_note

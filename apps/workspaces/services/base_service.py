@@ -64,9 +64,8 @@ class BaseService:
 
         if invalid_fields:
             raise BusinessRuleViolationError(
-                {
-                    f"{field}": f"User Don't Own {field}" for field in invalid_fields
-                 }
+                fields=invalid_fields,
+                messages=[f"User Don't Own {field}" for field in invalid_fields]
             )
 
     @staticmethod
@@ -82,8 +81,6 @@ class BaseService:
 
         if empty_required_fields:
             raise BusinessRuleViolationError(
-                {
-                    f"{field}": "Should not be empty" for
-                    field in empty_required_fields
-                }
+                fields=empty_required_fields,
+                messages=["Should not be empty" for _ in empty_required_fields]
             )

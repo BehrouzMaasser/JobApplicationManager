@@ -37,9 +37,11 @@ from ..applications.views import application_list_url
 # View Contexts and Mixins
 from ..core.contexts.app_context import AppContext
 from ..core.contexts.extra_context import ExtraContext
+from ..core.exceptions.exceptions import BusinessRuleViolationError
 from ..core.mixins.app_context_mixin import AppContextMixin
 from ..core.mixins.jop_position_form_mixin import JobPositionFormMixin
 from ..core.mixins.service_validation_error_mixin import ServiceValidationErrorMixin
+from ..core.mixins.view_exception_handler import ViewExceptionHandlerMixin
 
 
 def company_list_url(workspace_id=None):
@@ -90,7 +92,9 @@ def company_email_list_url(workspace_id=None, company_id=None):
     return f"{reverse('company-email-list-web')}?{urlencode(params)}"
 
 
-class CompanyListView(LoginRequiredMixin, AppContextMixin, ListView):
+class CompanyListView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, ListView
+):
 
     model = Company
     template_name = "companies/company/list.html"
@@ -112,7 +116,9 @@ class CompanyListView(LoginRequiredMixin, AppContextMixin, ListView):
         )
 
 
-class CompanyCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
+class CompanyCreateView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, CreateView
+):
 
     model = Company
     template_name = "create_page.html"
@@ -156,7 +162,9 @@ class CompanyCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
         )
 
 
-class CompanyDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
+class CompanyDetailView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, DetailView
+):
 
     model = Company
     template_name = "companies/company/detail.html"
@@ -194,7 +202,9 @@ class CompanyDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
         )
 
 
-class CompanyUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
+class CompanyUpdateView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, UpdateView
+):
 
     model = Company
     template_name = "edit_page.html"
@@ -253,7 +263,9 @@ class CompanyUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
         )
 
 
-class CompanyDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
+class CompanyDeleteView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, DeleteView
+):
 
     model = Company
     template_name = "delete_confirm.html"
@@ -303,7 +315,9 @@ class CompanyDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
         )
 
 
-class CompanyEmailListView(LoginRequiredMixin, AppContextMixin, ListView):
+class CompanyEmailListView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, ListView
+):
 
     model = CompanyEmail
     template_name = "companies/email/list.html"
@@ -341,7 +355,9 @@ class CompanyEmailListView(LoginRequiredMixin, AppContextMixin, ListView):
         )
 
 
-class CompanyEmailCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
+class CompanyEmailCreateView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, CreateView
+):
 
     model = CompanyEmail
     template_name = "create_page.html"
@@ -387,7 +403,9 @@ class CompanyEmailCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
         )
 
 
-class CompanyEmailDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
+class CompanyEmailDetailView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, DetailView
+):
 
     model = CompanyEmail
     template_name = "companies/email/detail.html"
@@ -413,7 +431,9 @@ class CompanyEmailDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
         )
 
 
-class CompanyEmailUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
+class CompanyEmailUpdateView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, UpdateView
+):
 
     model = CompanyEmail
     template_name = "edit_page.html"
@@ -471,7 +491,9 @@ class CompanyEmailUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
         )
 
 
-class CompanyEmailDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
+class CompanyEmailDeleteView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, DeleteView
+):
 
     model = CompanyEmail
     template_name = "delete_confirm.html"
@@ -518,7 +540,9 @@ class CompanyEmailDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
         )
 
 
-class CompanyNoteListView(LoginRequiredMixin, AppContextMixin, ListView):
+class CompanyNoteListView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, ListView
+):
 
     model = CompanyNote
     template_name = "companies/note/list.html"
@@ -556,7 +580,9 @@ class CompanyNoteListView(LoginRequiredMixin, AppContextMixin, ListView):
         )
 
 
-class CompanyNoteCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
+class CompanyNoteCreateView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, CreateView
+):
 
     model = CompanyNote
     template_name = "create_page.html"
@@ -602,7 +628,9 @@ class CompanyNoteCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
         )
 
 
-class CompanyNoteDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
+class CompanyNoteDetailView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, DetailView
+):
 
     model = CompanyNote
     template_name = "companies/note/detail.html"
@@ -628,7 +656,9 @@ class CompanyNoteDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
         )
 
 
-class CompanyNoteUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
+class CompanyNoteUpdateView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, UpdateView
+):
 
     model = CompanyNote
     template_name = "edit_page.html"
@@ -686,7 +716,9 @@ class CompanyNoteUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
         )
 
 
-class CompanyNoteDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
+class CompanyNoteDeleteView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, DeleteView
+):
 
     model = CompanyNote
     template_name = "delete_confirm.html"
@@ -733,7 +765,9 @@ class CompanyNoteDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
         )
 
 
-class JobPositionListView(LoginRequiredMixin, AppContextMixin, ListView):
+class JobPositionListView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, ListView
+):
 
     model = JobPosition
     template_name = "companies/job_position/list.html"
@@ -772,7 +806,11 @@ class JobPositionListView(LoginRequiredMixin, AppContextMixin, ListView):
 
 
 class JobPositionCreateView(
-    LoginRequiredMixin, AppContextMixin, JobPositionFormMixin, CreateView
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    AppContextMixin,
+    JobPositionFormMixin,
+    CreateView
 ):
 
     model = JobPosition
@@ -835,7 +873,9 @@ class JobPositionCreateView(
         )
 
 
-class JobPositionDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
+class JobPositionDetailView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, DetailView
+):
 
     model = JobPosition
     template_name = "companies/job_position/detail.html"
@@ -867,8 +907,12 @@ class JobPositionDetailView(LoginRequiredMixin, AppContextMixin, DetailView):
 
 
 class JobPositionUpdateView(
-    LoginRequiredMixin, AppContextMixin, JobPositionFormMixin,
-    ServiceValidationErrorMixin, UpdateView
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    AppContextMixin,
+    JobPositionFormMixin,
+    ServiceValidationErrorMixin,
+    UpdateView
 ):
 
     model = JobPosition
@@ -914,7 +958,7 @@ class JobPositionUpdateView(
                 ),
                 validated_data=form.cleaned_data
             )
-        except ValidationError as err:
+        except (ValidationError, BusinessRuleViolationError) as err:
 
             self.add_service_errors_to_form(
                 form=form,

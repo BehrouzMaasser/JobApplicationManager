@@ -11,7 +11,7 @@ from apps.companies.models import Company
 from apps.accounts.models import User
 
 # Exceptions
-from apps.core.exceptions.exceptions import BusinessRuleViolationError
+from apps.core.exceptions.exceptions import DomainInvariantViolationError
 
 # Parent Service
 from apps.workspaces.services.workspace_service import WorkspaceService
@@ -126,8 +126,8 @@ class CompanyService(WorkspaceService):
         company = CompanySelector.get(user=user, company_id=company_id)
 
         if company.workspace.workspace_id != workspace_id:
-            raise BusinessRuleViolationError(
-                f"Company {company_id} does not belong to workspace {workspace_id}"
+            raise DomainInvariantViolationError(
+                f"Company {company_id} does not belong to Workspace {workspace_id}"
             )
 
         return company

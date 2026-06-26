@@ -119,7 +119,7 @@ class UserSettingsView(LoginRequiredMixin, UpdateView):
     template_name = "accounts/settings.html"
     success_url = reverse_lazy("user-settings")
 
-    def get_object(self):
+    def get_object(self, queryset=None):
 
         return self.request.user
 

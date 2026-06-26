@@ -1,9 +1,10 @@
 from django.db import transaction
-from rest_framework.exceptions import PermissionDenied, ValidationError
 
 # Models
 from apps.accounts.models import User
 from apps.companies.models import CompanyNote
+
+# Selectors
 from apps.companies.selectors.company_note_selector import CompanyNoteSelector
 
 # Services
@@ -13,7 +14,7 @@ from apps.companies.services.company_service import CompanyService
 from apps.companies.services.contexts.company_context import (
     CompanyChildContext
 )
-from apps.core.exceptions.exceptions import BusinessRuleViolationError
+from apps.core.exceptions.exceptions import DomainInvariantViolationError
 
 
 # Company Note Service
@@ -123,9 +124,9 @@ class CompanyNoteService(CompanyService):
         )
 
         if company_note.company.pk != context.company_id:
-            raise BusinessRuleViolationError(
-                f"Company Note {company_note.pk} does not belong to "
-                f"company {context.company_id}"
+            raise DomainInvariantViolationError(
+                f"Company Note {context.id} does not belong to Company "
+                f"{context.company_id}"
             )
 
         return company_note

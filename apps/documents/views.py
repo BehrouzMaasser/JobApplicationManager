@@ -20,6 +20,7 @@ from django.views.generic import (
 
 # Contexts
 from apps.core.contexts.extra_context import ExtraContext
+from apps.core.mixins.view_exception_handler import ViewExceptionHandlerMixin
 
 # Models
 from apps.documents.models import DocumentType, Document
@@ -33,7 +34,7 @@ from apps.documents.services.document_type_service import DocumentTypeService
 from apps.documents.services.document_service import DocumentService
 
 
-class DocumentTypeListView(LoginRequiredMixin, ListView):
+class DocumentTypeListView(ViewExceptionHandlerMixin, LoginRequiredMixin, ListView):
 
     model = DocumentType
     template_name = "documents/document_type/list.html"
@@ -44,7 +45,9 @@ class DocumentTypeListView(LoginRequiredMixin, ListView):
         return DocumentTypeSelector.list(user=self.request.user)
 
 
-class DocumentTypeCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
+class DocumentTypeCreateView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, CreateView
+):
 
     model = DocumentType
     template_name = "create_page.html"
@@ -75,7 +78,9 @@ class DocumentTypeCreateView(LoginRequiredMixin, AppContextMixin, CreateView):
         )
 
 
-class DocumentTypeDetailView(LoginRequiredMixin, DetailView):
+class DocumentTypeDetailView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, DetailView
+):
 
     model = DocumentType
     template_name = "documents/document_type/detail.html"
@@ -88,7 +93,9 @@ class DocumentTypeDetailView(LoginRequiredMixin, DetailView):
         )
 
 
-class DocumentTypeUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
+class DocumentTypeUpdateView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, UpdateView
+):
 
     model = DocumentType
     template_name = "edit_page.html"
@@ -129,7 +136,9 @@ class DocumentTypeUpdateView(LoginRequiredMixin, AppContextMixin, UpdateView):
         )
 
 
-class DocumentTypeDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
+class DocumentTypeDeleteView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, DeleteView
+):
 
     model = DocumentType
     template_name = "delete_confirm.html"
@@ -157,7 +166,7 @@ class DocumentTypeDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
         )
 
 
-class DocumentListView(LoginRequiredMixin, ListView):
+class DocumentListView(ViewExceptionHandlerMixin, LoginRequiredMixin, ListView):
 
     model = Document
     template_name = "documents/document/list.html"
@@ -169,7 +178,11 @@ class DocumentListView(LoginRequiredMixin, ListView):
 
 
 class DocumentCreateView(
-    LoginRequiredMixin, AppContextMixin, DocumentFormMixin, CreateView
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    AppContextMixin,
+    DocumentFormMixin,
+    CreateView
 ):
 
     model = Document
@@ -201,7 +214,7 @@ class DocumentCreateView(
         )
 
 
-class DocumentDetailView(LoginRequiredMixin, DetailView):
+class DocumentDetailView(ViewExceptionHandlerMixin, LoginRequiredMixin, DetailView):
 
     model = Document
     template_name = "documents/document/detail.html"
@@ -215,7 +228,11 @@ class DocumentDetailView(LoginRequiredMixin, DetailView):
 
 
 class DocumentUpdateView(
-    LoginRequiredMixin, AppContextMixin, DocumentFormMixin, UpdateView
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    AppContextMixin,
+    DocumentFormMixin,
+    UpdateView
 ):
 
     model = Document
@@ -257,7 +274,9 @@ class DocumentUpdateView(
         )
 
 
-class DocumentDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
+class DocumentDeleteView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, DeleteView
+):
 
     model = Document
     template_name = "delete_confirm.html"
@@ -285,7 +304,9 @@ class DocumentDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
         )
 
 
-class BaseDocumentFileView(LoginRequiredMixin, DocumentFileResponseMixin, View):
+class BaseDocumentFileView(
+    ViewExceptionHandlerMixin, LoginRequiredMixin, DocumentFileResponseMixin, View
+):
 
     def get_document(self):
 
