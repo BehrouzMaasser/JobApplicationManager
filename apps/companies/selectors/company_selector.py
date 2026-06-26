@@ -24,11 +24,12 @@ class CompanySelector:
         try:
             company = Company.objects.get(pk=company_id)
         except Company.DoesNotExist:
-            raise ResourceNotFoundError(f"Company {company_id} does not exist")
+            raise ResourceNotFoundError(resource=f"Company {company_id}")
 
         if company.workspace.owner != user:
             raise AccessDeniedError(
-                f"Company {company_id} does not belong to {user}"
+                resource=f"Company {company_id}",
+                message=f"Company {company_id} does not belong to {user}"
             )
 
         return company

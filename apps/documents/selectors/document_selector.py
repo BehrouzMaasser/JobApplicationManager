@@ -27,15 +27,12 @@ class DocumentSelector:
         try:
             document = Document.objects.get(pk=document_id)
         except Document.DoesNotExist:
-            raise ResourceNotFoundError(
-                "Document",
-                f"Document {document_id} does not exist"
-            )
+            raise ResourceNotFoundError(resource=f"Document {document_id}")
 
         if document.owner != user:
             raise AccessDeniedError(
-                "Document",
-                f"Document {document_id} does not belong to {user}"
+                resource=f"Document {document_id}",
+                message=f"Document {document_id} does not belong to {user}"
             )
 
         return document

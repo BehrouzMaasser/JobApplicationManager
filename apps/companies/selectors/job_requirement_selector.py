@@ -17,12 +17,14 @@ class JobRequirementSelector:
             job_requirement = JobRequirement.objects.get(pk=job_requirement_id)
         except JobRequirement.DoesNotExist:
             raise ResourceNotFoundError(
-                f"Job Requirement {job_requirement_id} does not exist"
+                resource=f"Job Requirement {job_requirement_id}"
             )
 
         if job_requirement.user != user:
             raise AccessDeniedError(
-                f"Job Requirement {job_requirement_id} does not belong to {user}"
+                resource=f"Job Requirement {job_requirement_id}",
+                message=f"Job Requirement {job_requirement_id} does not belong to"
+                        f" {user}"
             )
 
         return job_requirement

@@ -26,12 +26,13 @@ class CompanyEmailSelector:
             company_email = CompanyEmail.objects.get(pk=company_email_id)
         except CompanyEmail.DoesNotExist:
             raise ResourceNotFoundError(
-                f"Company Email {company_email_id} does not exist"
+                resource=f"Company Email {company_email_id}"
             )
 
         if company_email.company.workspace.owner != user:
             raise AccessDeniedError(
-                f"Company Email {company_email_id} does not belong to {user}"
+                resource=f"Company Email {company_email_id}",
+                message=f"Company Email {company_email_id} does not belong to {user}"
             )
 
         return company_email

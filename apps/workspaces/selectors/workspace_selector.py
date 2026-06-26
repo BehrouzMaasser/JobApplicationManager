@@ -26,15 +26,12 @@ class WorkspaceSelector:
         try:
             workspace = Workspace.objects.get(workspace_id=workspace_id)
         except Workspace.DoesNotExist:
-            raise ResourceNotFoundError(
-                "Workspace",
-                f"Workspace {workspace_id} does not exist"
-            )
+            raise ResourceNotFoundError(resource=f"Workspace {workspace_id}")
 
         if workspace.owner != user:
             raise AccessDeniedError(
-                "Workspace",
-                f"Workspace {workspace_id} does not belong to {user}"
+                resource=f"Workspace {workspace_id}",
+                message=f"Workspace {workspace_id} does not belong to {user}"
             )
 
         return workspace

@@ -16,13 +16,12 @@ class JobTaskSelector:
         try:
             job_task = JobTask.objects.get(pk=job_task_id)
         except JobTask.DoesNotExist:
-            raise ResourceNotFoundError(
-                f"Job Task {job_task_id} does not exist"
-            )
+            raise ResourceNotFoundError(resource=f"Job Task {job_task_id}")
 
         if job_task.user != user:
             raise AccessDeniedError(
-                f"Job Task {job_task_id} does not belong to {user}"
+                resource=f"Job Task {job_task_id}",
+                message=f"Job Task {job_task_id} does not belong to {user}"
             )
 
         return job_task

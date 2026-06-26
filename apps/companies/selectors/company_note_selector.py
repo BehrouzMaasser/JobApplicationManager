@@ -26,12 +26,13 @@ class CompanyNoteSelector:
             company_note = CompanyNote.objects.get(pk=company_note_id)
         except CompanyNote.DoesNotExist:
             raise ResourceNotFoundError(
-                f"Company Note {company_note_id} does not exist"
+                resource=f"Company Note {company_note_id}",
             )
 
         if company_note.company.workspace.owner != user:
             raise AccessDeniedError(
-                f"Company Note {company_note_id} does not belong to {user}"
+                resource=f"Company Note {company_note_id}",
+                message=f"Company Note {company_note_id} does not belong to {user}"
             )
 
         return company_note

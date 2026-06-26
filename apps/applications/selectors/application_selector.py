@@ -26,14 +26,13 @@ class JobApplicationSelector:
             job_application = JobApplication.objects.get(pk=application_id)
         except JobApplication.DoesNotExist:
             raise ResourceNotFoundError(
-                "Job Application",
-                f"Job Application {application_id} does not exist"
+                resource=f"Job Application {application_id}",
             )
 
         if job_application.owner != user:
             raise AccessDeniedError(
-                "Job Application",
-                f"Job Application {application_id} does not belong to {user}"
+                resource=f"Job Application {application_id}",
+                message=f"Job Application {application_id} does not belong to {user}"
             )
 
         return job_application

@@ -16,13 +16,12 @@ class JobBenefitSelector:
         try:
             job_benefit = JobBenefit.objects.get(pk=job_benefit_id)
         except JobBenefit.DoesNotExist:
-            raise ResourceNotFoundError(
-                f"Job Benefit {job_benefit_id} does not exist"
-            )
+            raise ResourceNotFoundError(resource=f"Job Benefit {job_benefit_id}")
 
         if job_benefit.user != user:
             raise AccessDeniedError(
-                f"Job Benefit {job_benefit_id} does not belong to {user}"
+                resource=f"Job Benefit {job_benefit_id}",
+                message=f"Job Benefit {job_benefit_id} does not belong to {user}"
             )
 
         return job_benefit

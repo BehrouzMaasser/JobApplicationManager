@@ -25,12 +25,13 @@ class JobPositionSelector:
             job_position = JobPosition.objects.get(pk=job_position_id)
         except JobPosition.DoesNotExist:
             raise ResourceNotFoundError(
-                f"Job Position {job_position_id} does not exist"
+                resource=f"Job Position {job_position_id}"
             )
 
         if job_position.company.workspace.owner != user:
             raise AccessDeniedError(
-                f"Job Position {job_position_id} does not belong to {user}"
+                resource=f"Job Position {job_position_id}",
+                message=f"Job Position {job_position_id} does not belong to {user}"
             )
 
         return job_position
