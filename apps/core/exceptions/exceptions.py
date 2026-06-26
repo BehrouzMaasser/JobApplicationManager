@@ -4,6 +4,16 @@ class AppError(Exception):
     pass
 
 
+class DomainInvariantViolationError(AppError):
+    """The application's domain state is inconsistent."""
+
+    def __init__(self, message: str):
+
+        self.message = message
+
+        super().__init__(self.message)
+
+
 class ResourceNotFoundError(AppError):
 
     def __init__(self, resource: str, message: str | None = None):
@@ -42,12 +52,10 @@ class BusinessRuleViolationError(AppError):
 
     def __init__(
             self,
-            message: str | None = None,
             messages: None | list[str] = None,
             fields: None | list[str] = None
     ):
 
-        self._message = message
         self.messages = messages
         self.fields = fields
 
@@ -57,23 +65,17 @@ class BusinessRuleViolationError(AppError):
                 "fields do not match"
             )
 
-        super().__init__(self._message)
-
     @property
     def message(self):
 
-        if self._message is None:
-            return f"Business rule violated"
-
-        return self._message
+        return f"Business rule violated"
 
     @property
     def details(self):
 
         if self.messages is not None:
             return {
-                field: [self.messages[index]] for
-                index, field in enumerate(self.fields)
+                field: message for field, message in zip(self.fields, self.messages)
             }
 
         return None

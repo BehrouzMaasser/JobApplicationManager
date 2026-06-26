@@ -2,8 +2,11 @@ from dataclasses import dataclass
 
 from django.db.models import QuerySet
 
+# Models
 from apps.accounts.models import User
 from apps.companies.models import JobPosition
+
+# Exceptions
 from apps.core.exceptions.exceptions import ResourceNotFoundError, AccessDeniedError
 
 

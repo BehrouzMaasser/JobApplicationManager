@@ -1,23 +1,27 @@
-from rest_framework.exceptions import ValidationError
+from django.core.exceptions import ValidationError
+
+from apps.core.exceptions.exceptions import BusinessRuleViolationError
 
 
 class ServiceValidationErrorMixin:
 
     @staticmethod
-    def add_service_errors_to_form(*, form, exception: ValidationError):
+    def add_service_errors_to_form(*, form, exception):
 
-        details = exception.detail
+        if isinstance(exception, ValidationError):
 
-        if isinstance(details, dict):
+            if hasattr(exception, "message_dict"):
+                for field, errors in exception.message_dict.items():
+                    for error in errors:
+                        form.add_error(field, error)
 
-            for field, errors in details.items():
+            else:
+                for error in exception.messages:
+                    form.add_error(None, error)
 
-                if not isinstance(errors, list):
-                    errors = [errors]
+            return
 
-                for error in errors:
-                    form.add_error(field, str(error))
+        if isinstance(exception, BusinessRuleViolationError):
 
-        else:
-
-            form.add_error(None, str(details))
+            for field, message in zip(exception.fields, exception.messages):
+                form.add_error(field, message)

@@ -9,7 +9,6 @@ from apps.documents.models import Document
 # Exceptions
 from apps.core.exceptions.exceptions import (
     ResourceNotFoundError,
-    InfraStructureViolationError,
     AccessDeniedError
 )
 
@@ -28,10 +27,14 @@ class DocumentSelector:
         try:
             document = Document.objects.get(pk=document_id)
         except Document.DoesNotExist:
-            raise ResourceNotFoundError(f"Document {document_id} does not exist")
+            raise ResourceNotFoundError(
+                "Document",
+                f"Document {document_id} does not exist"
+            )
 
         if document.owner != user:
             raise AccessDeniedError(
+                "Document",
                 f"Document {document_id} does not belong to {user}"
             )
 

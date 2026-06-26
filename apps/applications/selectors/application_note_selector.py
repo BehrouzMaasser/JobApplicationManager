@@ -24,13 +24,15 @@ class JobApplicationNoteSelector:
             application_note = JobApplicationNote.objects.get(pk=application_note_id)
         except JobApplicationNote.DoesNotExist:
             raise ResourceNotFoundError(
+                "Job Application Note",
                 f"Job Application Note {application_note_id} does not exist"
             )
 
         if application_note.job_application.owner != user:
             raise AccessDeniedError(
-                f"Job Application Note {application_note_id} does not belong to"
-                f" {user}"
+                "Job Application Note",
+                f"Job Application Note {application_note_id} does not "
+                f"belong to {user}"
             )
 
         return application_note

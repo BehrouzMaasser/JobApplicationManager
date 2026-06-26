@@ -10,7 +10,6 @@ from apps.workspaces.models import Workspace
 # Exceptions
 from apps.core.exceptions.exceptions import (
     ResourceNotFoundError,
-    InfraStructureViolationError,
     AccessDeniedError
 )
 
@@ -27,10 +26,14 @@ class WorkspaceSelector:
         try:
             workspace = Workspace.objects.get(workspace_id=workspace_id)
         except Workspace.DoesNotExist:
-            raise ResourceNotFoundError(f"Workspace {workspace_id} does not exist")
+            raise ResourceNotFoundError(
+                "Workspace",
+                f"Workspace {workspace_id} does not exist"
+            )
 
         if workspace.owner != user:
             raise AccessDeniedError(
+                "Workspace",
                 f"Workspace {workspace_id} does not belong to {user}"
             )
 

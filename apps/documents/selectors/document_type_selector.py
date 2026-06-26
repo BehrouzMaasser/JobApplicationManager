@@ -9,7 +9,6 @@ from apps.documents.models import DocumentType
 # Exceptions
 from apps.core.exceptions.exceptions import (
     ResourceNotFoundError,
-    InfraStructureViolationError,
     AccessDeniedError
 )
 
@@ -27,14 +26,14 @@ class DocumentTypeSelector:
             document_type = DocumentType.objects.get(pk=document_type_id)
         except DocumentType.DoesNotExist:
             raise ResourceNotFoundError(
-                f"Document {document_type_id} does not exist"
+                "Document Type",
+                f"Document Type {document_type_id} does not exist"
             )
-        except Exception as e:
-            raise InfraStructureViolationError(str(e))
 
         if document_type.owner != user:
             raise AccessDeniedError(
-                f"Document {document_type_id} does not belong to {user}"
+                "Document Type",
+                f"Document Type {document_type_id} does not belong to {user}"
             )
 
         return document_type
