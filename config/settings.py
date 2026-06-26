@@ -83,7 +83,7 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
 
     "EXCEPTION_HANDLER":
-        "config.api.exceptions.api_exception_handler",
+        "config.api.handler.api_exception_handler",
 }
 
 SIMPLE_JWT = {
