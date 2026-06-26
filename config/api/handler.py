@@ -1,5 +1,7 @@
 # config/api/handler.py
 
+import logging
+
 from django.core.exceptions import ValidationError
 
 from rest_framework import status
@@ -9,8 +11,11 @@ from rest_framework.views import exception_handler
 from apps.core.exceptions.exceptions import (
     ResourceNotFoundError,
     AccessDeniedError,
-    BusinessRuleViolationError,
+    BusinessRuleViolationError, DomainInvariantViolationError,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 def _error_response(
@@ -37,6 +42,14 @@ def api_exception_handler(exc, context):
     #
     # Custom application exceptions
     #
+
+    if isinstance(exc, DomainInvariantViolationError):
+        logger.exception(exc)
+        return _error_response(
+            code="internal_server_error",
+            message="An unexpected error occurred.",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
     if isinstance(exc, ResourceNotFoundError):
         return _error_response(
