@@ -1,3 +1,10 @@
+"""
+Shared service-layer utilities.
+
+Provides reusable helper methods for updating model fields and performing
+common business-rule validations used across domain services.
+"""
+
 import django.db.models
 
 # Models
@@ -9,12 +16,18 @@ from apps.core.exceptions.exceptions import BusinessRuleViolationError
 
 # Base Service
 class BaseService:
+    """
+    Base class providing reusable helper methods for domain services.
+
+    The class centralizes common update operations and validation logic
+    shared by multiple service implementations.
+    """
 
     @staticmethod
     def _update_non_m2m_fields(
             instance: django.db.models.Model,
             validated_data: dict,
-            fields_to_update: list
+            fields_to_update: list[str]
     ) -> None:
 
         for field in fields_to_update:
@@ -26,7 +39,7 @@ class BaseService:
     def _update_m2m_fields(
             instance: django.db.models.Model,
             validated_data: dict,
-            fields_to_update: list
+            fields_to_update: list[str]
     ) -> None:
 
         for field in fields_to_update:
@@ -38,7 +51,7 @@ class BaseService:
     def _add_m2m_fields(
             instance: django.db.models.Model,
             validated_data: dict,
-            m2m_fields: list
+            m2m_fields: list[str]
     ) -> None:
 
         for field in m2m_fields:
@@ -47,7 +60,7 @@ class BaseService:
 
     @staticmethod
     def _m2m_ownership_validation(
-            user: User, validated_data: dict, ownership_map: dict
+            user: User, validated_data: dict, ownership_map: dict[str, str]
     ) -> None:
 
         # Make sure the m2m fields are associated to the user
@@ -56,6 +69,10 @@ class BaseService:
         for field_name, ownership in ownership_map.items():
             if field_name in validated_data:
                 for data in validated_data[field_name]:
+                    # Some related models may not expose the configured ownership
+                    # attribute.
+                    # Those objects are ignored because ownership cannot be
+                    # validated for them.
                     try:
                         if getattr(data, ownership) != user:
                             invalid_fields.append(field_name)
@@ -70,7 +87,7 @@ class BaseService:
 
     @staticmethod
     def _m2m_non_empty_validation(
-            instance: django.db.models.Model, required_fields
+            instance: django.db.models.Model, required_fields: list[str]
     ) -> None:
 
         empty_required_fields = []

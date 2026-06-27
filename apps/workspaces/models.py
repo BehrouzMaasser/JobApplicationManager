@@ -1,13 +1,24 @@
+"""
+Workspace domain models.
+
+A workspace represents an isolated environment owned by a single user.
+All companies, job positions, applications and related resources belong to
+a workspace.
+"""
+
 import uuid
 
 from django.db import models
 from django.conf import settings
 
 
-# Create your models here.
-
-
 class Workspace(models.Model):
+    """
+    Represents a user's workspace.
+
+    A workspace acts as the top-level container for all job tracking resources and
+     isolates one user's data from another's.
+    """
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,

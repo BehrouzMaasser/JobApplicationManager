@@ -1,3 +1,10 @@
+"""
+Business services for managing workspaces.
+
+Contains operations responsible for creating, updating, and deleting
+workspace instances while enforcing business rules.
+"""
+
 from uuid import UUID
 
 from django.db import transaction
@@ -15,6 +22,12 @@ from apps.workspaces.services.base_service import BaseService
 
 # Workspace Service
 class WorkspaceService(BaseService):
+    """
+    Implements business operations for the Workspace domain.
+
+    All persistence and business-rule validation related to workspaces
+    should be performed through this service.
+    """
 
     CREATE_REQUIRED_FIELDS = {"name"}
 
@@ -23,6 +36,11 @@ class WorkspaceService(BaseService):
     @staticmethod
     @transaction.atomic
     def create(*, user: User, validated_data: dict) -> Workspace:
+        """
+        Create a workspace for a user.
+
+        Validates the supplied data before persisting the workspace.
+        """
 
         instance = Workspace(
             owner=user,
@@ -42,6 +60,11 @@ class WorkspaceService(BaseService):
             workspace_id: UUID,
             validated_data: dict
     ) -> Workspace:
+        """
+        Update a workspace for a user.
+
+        Validates the supplied data before persisting the workspace.
+        """
 
         instance = WorkspaceService._resolve_workspace(
             user=user, workspace_id=workspace_id
@@ -61,6 +84,9 @@ class WorkspaceService(BaseService):
     @staticmethod
     @transaction.atomic
     def remove(*, user: User, workspace_id: UUID) -> None:
+        """
+        Remove a workspace for a user.
+        """
 
         instance = WorkspaceService._resolve_workspace(
             user=user, workspace_id=workspace_id
