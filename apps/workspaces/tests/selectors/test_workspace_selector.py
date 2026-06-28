@@ -1,36 +1,78 @@
+import uuid
+
 import pytest
 
+# Exceptions
+from apps.core.exceptions.exceptions import (
+    AccessDeniedError,
+    ResourceNotFoundError
+)
+
+# Selectors
 from apps.workspaces.selectors.workspace_selector import WorkspaceSelector
 
 
 @pytest.mark.django_db
-class TestWorkspaceSelector:
+class TestWorkspaceSelectorList:
 
-    def test_list_returns_only_user_notes(
+    def test_list_returns_only_user_workspaces(
             self,
-            user,
-            workspace_user1,
-            other_workspace_user1,
-            workspace_user2,
+            user1,
+            workspace1_user1,
+            workspace2_user1,
+            workspace1_user2,
     ):
 
-        result = WorkspaceSelector.list(user=user)
+        result = WorkspaceSelector.list(user=user1)
 
-        assert len(result) == 2
-        assert set(result) == {workspace_user1, other_workspace_user1}
+        assert set(result) == {workspace1_user1, workspace2_user1}
 
     def test_list_filters_by_workspace_id(
             self,
-            user,
-            workspace_user1,
-            other_workspace_user1,
-            workspace_user2,
+            user1,
+            workspace1_user1,
+            workspace2_user1,
     ):
 
         filters = WorkspaceSelector.QueryFilter(
-            workspace_id=workspace_user1.workspace_id,
+            workspace_id=workspace1_user1.workspace_id,
         )
 
-        result = WorkspaceSelector.list(user=user, filters=filters)
+        result = WorkspaceSelector.list(user=user1, filters=filters)
 
-        assert list(result) == [workspace_user1]
+        assert list(result) == [workspace1_user1]
+
+    def test_filter_by_id_dont_force_accessing_to_another_user_workspace(
+            self,
+            user1,
+            workspace1_user1,
+            workspace1_user2,
+    ):
+
+        filters = WorkspaceSelector.QueryFilter(
+            workspace_id=workspace1_user2.workspace_id,
+        )
+
+        result = WorkspaceSelector.list(user=user1, filters=filters)
+
+        assert list(result) == []
+
+
+@pytest.mark.django_db
+class TestWorkspaceSelectorGet:
+
+    def test_access_to_someone_else_workspace_raise_error(
+            self,
+            user1,
+            workspace1_user2,
+    ):
+
+        with pytest.raises(AccessDeniedError):
+            WorkspaceSelector.get(
+                user=user1, workspace_id=workspace1_user2.workspace_id
+            )
+
+    def test_access_to_non_existence_workspace_raise_error(self, user1):
+
+        with pytest.raises(ResourceNotFoundError):
+            WorkspaceSelector.get(user=user1, workspace_id=str(uuid.uuid4()))
