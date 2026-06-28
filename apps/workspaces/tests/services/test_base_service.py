@@ -1,28 +1,57 @@
 from datetime import timedelta
 from unittest.mock import patch
 
+import pytest
+
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
+
+from apps.core.exceptions.exceptions import (
+    BusinessRuleViolationError,
+    DomainInvariantViolationError
+)
 
 from apps.workspaces.services.base_service import BaseService
-
-from apps.applications.tests.conftest import *
-from apps.documents.tests.conftest import *
 
 #   ----------------------------------- ****** -----------------------------------
 
 
-class FakeObjectWithNonM2Fields:
+class FakeObjectWithFields:
     def __init__(self, **fields):
         for key, value in fields.items():
             setattr(self, key, value)
+
+
+class FakeField:
+    def __init__(self, value, owner: list[str] | None = None):
+        self.value = value
+        if owner and len(owner) == 2:
+            setattr(self, owner[0], owner[1])
+
+
+class FakeM2MField:
+    def __init__(self, *values):
+        self.values = [*values]
+
+    def set(self, values):
+        self.values = values
+
+    def add(self, *values):
+        for value in values:
+            if value not in self.values:
+                self.values.append(value)
+
+    def exists(self):
+        return bool(len(self.values))
+
+    def all(self):
+        return self.values
 
 
 class TestBaseService:
 
     def test_update_non_m2m_fields_updates_given_fields_successfully(self):
 
-        instance = FakeObjectWithNonM2Fields(status="Status1", date_applied=None)
+        instance = FakeObjectWithFields(status="Status1", date_applied=None)
 
         update_non_m2m_data = {
             "status": "Status Updated",
@@ -38,10 +67,9 @@ class TestBaseService:
         assert instance.status == update_non_m2m_data["status"]
         assert instance.date_applied == update_non_m2m_data["date_applied"]
 
-
     def test_update_non_m2m_fields_updates_only_the_updatable_fields(self):
 
-        instance = FakeObjectWithNonM2Fields(status="Status1", created_at="H:M")
+        instance = FakeObjectWithFields(status="Status1", created_at="H:M")
 
         update_non_m2m_data = {
             "status": "Updated",
@@ -57,187 +85,172 @@ class TestBaseService:
         assert instance.status == update_non_m2m_data["status"]
         assert instance.created_at == "H:M"
 
+    def test_update_m2m_fields_updates_calls_set_function_of_that_field(self):
 
-@pytest.mark.django_db
-def test_update_m2m_fields_updates_calls_set_function_of_that_field(
-        job_application1, email1_co1_ws1_user1, email2_co1_ws1_user1
-):
+        instance = FakeObjectWithFields(
+            emails=FakeM2MField("Email1", "Email2"),
+        )
 
-    update_non_m2m_data = {
-        "emails": [email1_co1_ws1_user1, email2_co1_ws1_user1],
-    }
+        update_m2m_data = {"emails": ["E1", "E2"]}
 
-    with (
-        patch.object(type(job_application1.emails), "set") as
-        mock_emails_set
-    ):
+        with patch.object(type(instance.emails), "set") as mock_set:
+
+            BaseService._update_m2m_fields(
+                instance=instance,
+                validated_data=update_m2m_data,
+                fields_to_update={"emails"}
+            )
+
+            mock_set.assert_called()
+
+    def test_update_m2m_fields_updates_successfully(self):
+
+        instance = FakeObjectWithFields(
+            emails=FakeM2MField("Email1", "Email2"),
+        )
+
+        update_non_m2m_data = {
+            "emails": ["E2", "E2"],
+        }
 
         BaseService._update_m2m_fields(
-            instance=job_application1,
+            instance=instance,
             validated_data=update_non_m2m_data,
             fields_to_update={"emails"}
         )
 
-        mock_emails_set.assert_called()
+        assert instance.emails.all() == update_non_m2m_data["emails"]
 
+    def test_update_m2m_fields_updates_only_the_updatable_fields(self):
 
-@pytest.mark.django_db
-def test_update_m2m_fields_updates_given_fields_in_validated_data_successfully(
-        job_application1, email1_co1_ws1_user1, email2_co1_ws1_user1
-):
+        instance = FakeObjectWithFields(
+            documents=FakeM2MField("D1", "D2"),
+            jobs=FakeM2MField(1, 2),
+            emails=FakeM2MField("E1", "E2"),
+        )
 
-    update_non_m2m_data = {
-        "emails": [email1_co1_ws1_user1, email2_co1_ws1_user1],
-    }
+        update_non_m2m_data = {
+            "documents": [],
+            "jobs": [12, 23, 34]
+        }
 
-    assert list(job_application1.emails.all()) != update_non_m2m_data["emails"]
+        BaseService._update_m2m_fields(
+            instance=instance,
+            validated_data=update_non_m2m_data,
+            fields_to_update={"documents", "emails"}
+        )
 
-    BaseService._update_m2m_fields(
-        instance=job_application1,
-        validated_data=update_non_m2m_data,
-        fields_to_update={"emails"}
-    )
+        assert instance.documents.all() == update_non_m2m_data["documents"]
+        assert instance.emails.all() == ["E1", "E2"]
+        assert instance.jobs.all() != update_non_m2m_data["jobs"]
 
-    job_application1.refresh_from_db()
+    def test_add_m2m_fields_adds_given_fields_successfully(self):
 
-    assert list(job_application1.emails.all()) == update_non_m2m_data["emails"]
+        # instance with empty emails
+        instance = FakeObjectWithFields(emails=FakeM2MField())
 
-
-@pytest.mark.django_db
-def test_update_m2m_fields_updates_only_the_updatable_fields(
-        job_application1, doc1_user1
-):
-
-    update_non_m2m_data = {
-        "documents": [doc1_user1],
-        "jobs": [12, 23, 34]
-    }
-
-    assert list(job_application1.documents.all()) != update_non_m2m_data["documents"]
-
-    BaseService._update_m2m_fields(
-        instance=job_application1,
-        validated_data=update_non_m2m_data,
-        fields_to_update={"documents", "emails"}
-    )
-
-    job_application1.refresh_from_db()
-
-    assert list(job_application1.documents.all()) == update_non_m2m_data["documents"]
-    with pytest.raises(AttributeError):
-        assert list(job_application1.jobs.all()) == update_non_m2m_data["jobs"]
-
-
-@pytest.mark.django_db
-def test_add_m2m_fields_adds_given_fields_in_validated_data_successfully(
-        job_application1, email1_co1_ws1_user1, email2_co1_ws1_user1
-):
-
-    update_non_m2m_data = {
-        "emails": [email1_co1_ws1_user1, email2_co1_ws1_user1],
-    }
-
-    assert list(job_application1.emails.all()) == []
-
-    BaseService._add_m2m_fields(
-        instance=job_application1,
-        validated_data=update_non_m2m_data,
-        m2m_fields={"emails", "documents"}
-    )
-
-    job_application1.refresh_from_db()
-
-    assert list(job_application1.emails.all()) == update_non_m2m_data["emails"]
-
-
-@pytest.mark.django_db
-def test_add_m2m_fields_calls_add_function_of_that_field(
-        job_application1, doc1_user1
-):
-
-    update_non_m2m_data = {
-        "documents": [doc1_user1],
-    }
-
-    with (
-        patch.object(type(job_application1.documents), "add") as
-        mock_documents_set
-    ):
+        update_non_m2m_data = {"emails": ["E1 U", "E2 U", "E3 U"]}
 
         BaseService._add_m2m_fields(
-            instance=job_application1,
+            instance=instance,
             validated_data=update_non_m2m_data,
-            m2m_fields={"emails", "documents"}
+            m2m_fields=["emails"]
         )
 
-        mock_documents_set.assert_called_once()
+        assert instance.emails.all() == update_non_m2m_data["emails"]
 
+        # instance with non-empty emails
+        instance = FakeObjectWithFields(emails=FakeM2MField("E1"))
 
-@pytest.mark.django_db
-def test_m2m_non_empty_validation_calls_exists_function_of_that_field(
-        job_application1
-):
+        update_non_m2m_data = {"emails": ["E1 U", "E2 U", "E3 U"]}
 
-    with (
-        patch.object(type(job_application1.emails), "exists") as
-        mock_emails_exists
-    ):
-
-        BaseService._m2m_non_empty_validation(
-            instance=job_application1,
-            required_fields={"emails"},
+        BaseService._add_m2m_fields(
+            instance=instance,
+            validated_data=update_non_m2m_data,
+            m2m_fields=["emails"]
         )
 
-        mock_emails_exists.assert_called_once()
+        assert instance.emails.all() == ["E1", *update_non_m2m_data["emails"]]
 
+    def test_add_m2m_fields_calls_add_function_of_that_field(self):
 
-@pytest.mark.django_db
-def test_m2m_non_empty_validation_raise_error_if_required_fields_are_empty(
-        job_application1
-):
+        instance = FakeObjectWithFields(documents=FakeM2MField("D1", "D2"))
 
-    assert list(job_application1.documents.all()) == []
+        update_non_m2m_data = {"documents": ["D3"]}
 
-    with pytest.raises(ValidationError):
-        BaseService._m2m_non_empty_validation(
-            instance=job_application1,
-            required_fields={"documents"},
-        )
+        with patch.object(type(instance.documents), "add") as mock_add:
 
+            BaseService._add_m2m_fields(
+                instance=instance,
+                validated_data=update_non_m2m_data,
+                m2m_fields=["emails", "documents"]
+            )
 
-@pytest.mark.django_db
-def test_m2m_ownership_validation_passes_for_owned_items(doc1_user1):
+            mock_add.assert_called_once()
 
-    BaseService._m2m_ownership_validation(
-        user=doc1_user1.owner,
-        validated_data={"documents": [doc1_user1]},
-        ownership_map={"documents": "owner"},
-    )
+    def test_m2m_non_empty_validation_calls_exists_function_of_that_field(self):
 
+        instance = FakeObjectWithFields(emails=FakeM2MField("E1", "E2"))
 
-@pytest.mark.django_db
-def test_m2m_ownership_validation_raises_if_any_item_unowned(
-    other_user, doc1_user1
-):
+        with patch.object(type(instance.emails), "exists") as mock_exists:
 
-    with pytest.raises(ValidationError) as e:
+            BaseService._m2m_non_empty_validation(
+                instance=instance,
+                required_fields=["emails"]
+            )
+
+            mock_exists.assert_called_once()
+
+    def test_m2m_non_empty_validation_raise_error_if_required_fields_are_empty(self):
+
+        instance = FakeObjectWithFields(documents=FakeM2MField())
+
+        with pytest.raises(BusinessRuleViolationError):
+            BaseService._m2m_non_empty_validation(
+                instance=instance,
+                required_fields=["documents"]
+            )
+
+    def test_m2m_ownership_validation_passes_for_owned_items(self):
+
         BaseService._m2m_ownership_validation(
-            user=other_user,
+            user="U1",
             validated_data={
-                "documents": [doc1_user1]
+                "documents": [
+                    FakeField(owner=["owner", "U1"], value="D1"),
+                    FakeField(owner=["owner", "U1"], value="D2")
+                ]
             },
             ownership_map={"documents": "owner"},
         )
 
-    assert "documents" in e.value.detail
+    def test_m2m_ownership_validation_raises_if_any_item_unowned(self):
 
+        with pytest.raises(DomainInvariantViolationError) as e:
+            BaseService._m2m_ownership_validation(
+                user="U1",
+                validated_data={
+                    "documents": [
+                        FakeField(owner=["owner", "U1"], value="D1"),
+                        FakeField(owner=["owner", "U2"], value="D2")
+                    ]
+                },
+                ownership_map={"documents": "owner"},
+            )
 
-def test_m2m_ownership_validation_ignores_attribute_error(doc1_user1):
+        assert "User Don't Own documents" in e.value.message
 
-    BaseService._m2m_ownership_validation(
-        user=doc1_user1.owner,
-        validated_data={"documents": [doc1_user1]},
-        ownership_map={"documents": "user"},    # Wrong ownership attribute
-    )
+    def test_m2m_ownership_ignores_if_matching_ownership_dont_exist_for_field(self):
+
+        BaseService._m2m_ownership_validation(
+            user="U1",
+            validated_data={
+                "documents": [
+                    FakeField(owner=["owner", "U1"], value="D1"),
+                    FakeField(owner=["user", "U1"], value="D2")
+                ]
+            },
+            ownership_map={"documents": "user"},    # Wrong ownership attribute
+        )
 
 #   ----------------------------------- ****** -----------------------------------
