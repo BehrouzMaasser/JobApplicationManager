@@ -10,12 +10,12 @@ User = get_user_model()
 
 
 @pytest.fixture
-def user(db):
+def user1(db):
     return User.objects.create_user(email="user1@gmail.com", password="pass")
 
 
 @pytest.fixture
-def other_user(db):
+def user2(db):
     return User.objects.create_user(email="user2@gmail.com", password="pass")
 
 
@@ -32,26 +32,26 @@ def workspace1_user1_updated_valid_data():
 
 
 @pytest.fixture
-def workspace_user1(db, user):
+def workspace1_user1(db, user1):
     return Workspace.objects.create(
         name="Test Workspace",
-        owner=user
+        owner=user1
     )
 
 
 @pytest.fixture
-def other_workspace_user1(db, user):
+def workspace2_user1(db, user1):
     return Workspace.objects.create(
         name="Other Workspace",
-        owner=user
+        owner=user1
     )
 
 
 @pytest.fixture
-def workspace_user2(db, other_user):
+def workspace1_user2(db, user2):
     return Workspace.objects.create(
         name="Test Workspace",
-        owner=other_user
+        owner=user2
     )
 
 
@@ -62,9 +62,9 @@ def api_client():
 
 
 @pytest.fixture
-def authenticated_client(api_client, user):
+def authenticated_client(api_client, user1):
 
-    api_client.force_authenticate(user=user)
+    api_client.force_authenticate(user=user1)
     return api_client
 
 
