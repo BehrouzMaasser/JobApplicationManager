@@ -11,7 +11,10 @@ import django.db.models
 from apps.accounts.models import User
 
 # Exceptions
-from apps.core.exceptions.exceptions import BusinessRuleViolationError
+from apps.core.exceptions.exceptions import (
+    BusinessRuleViolationError,
+    DomainInvariantViolationError
+)
 
 
 # Base Service
@@ -80,9 +83,8 @@ class BaseService:
                         continue
 
         if invalid_fields:
-            raise BusinessRuleViolationError(
-                fields=invalid_fields,
-                messages=[f"User Don't Own {field}" for field in invalid_fields]
+            raise DomainInvariantViolationError(
+                message=[f"User Don't Own {field}" for field in invalid_fields]
             )
 
     @staticmethod
