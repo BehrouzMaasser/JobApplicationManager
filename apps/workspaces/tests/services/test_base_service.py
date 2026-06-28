@@ -12,57 +12,50 @@ from apps.documents.tests.conftest import *
 #   ----------------------------------- ****** -----------------------------------
 
 
-@pytest.mark.django_db
-def test_update_non_m2m_fields_updates_given_fields_in_validated_data_successfully(
-        job_application1, status2
-):
-
-    update_non_m2m_data = {
-        "status": status2,
-        "date_applied": timezone.now() + timedelta(hours=1),
-    }
-
-    assert job_application1.status != update_non_m2m_data["status"]
-    assert job_application1.date_applied != update_non_m2m_data["date_applied"]
-
-    BaseService._update_non_m2m_fields(
-        instance=job_application1,
-        validated_data=update_non_m2m_data,
-        fields_to_update={"status", "date_applied"}
-    )
-
-    job_application1.save()
-    job_application1.refresh_from_db()
-
-    assert job_application1.status == update_non_m2m_data["status"]
-    assert job_application1.date_applied == update_non_m2m_data["date_applied"]
+class FakeObjectWithNonM2Fields:
+    def __init__(self, **fields):
+        for key, value in fields.items():
+            setattr(self, key, value)
 
 
-@pytest.mark.django_db
-def test_update_non_m2m_fields_updates_only_the_updatable_fields(job_application1):
+class TestBaseService:
 
-    old_created_at = job_application1.created_at
+    def test_update_non_m2m_fields_updates_given_fields_successfully(self):
 
-    update_non_m2m_data = {
-        "date_applied": timezone.now() + timedelta(hours=1),
-        "created_at":  timezone.now() + timedelta(hours=1)
-    }
+        instance = FakeObjectWithNonM2Fields(status="Status1", date_applied=None)
 
-    assert job_application1.date_applied != update_non_m2m_data["date_applied"]
-    assert job_application1.created_at != update_non_m2m_data["created_at"]
+        update_non_m2m_data = {
+            "status": "Status Updated",
+            "date_applied": timezone.now() + timedelta(hours=1),
+        }
 
-    BaseService._update_non_m2m_fields(
-        instance=job_application1,
-        validated_data=update_non_m2m_data,
-        fields_to_update={"date_applied", "status"}
-    )
+        BaseService._update_non_m2m_fields(
+            instance=instance,
+            validated_data=update_non_m2m_data,
+            fields_to_update={"status", "date_applied"}
+        )
 
-    job_application1.save()
-    job_application1.refresh_from_db()
+        assert instance.status == update_non_m2m_data["status"]
+        assert instance.date_applied == update_non_m2m_data["date_applied"]
 
-    assert job_application1.date_applied == update_non_m2m_data["date_applied"]
-    assert job_application1.created_at != update_non_m2m_data["created_at"]
-    assert job_application1.created_at == old_created_at
+
+    def test_update_non_m2m_fields_updates_only_the_updatable_fields(self):
+
+        instance = FakeObjectWithNonM2Fields(status="Status1", created_at="H:M")
+
+        update_non_m2m_data = {
+            "status": "Updated",
+            "created_at": "Updated"
+        }
+
+        BaseService._update_non_m2m_fields(
+            instance=instance,
+            validated_data=update_non_m2m_data,
+            fields_to_update={"date_applied", "status"}
+        )
+
+        assert instance.status == update_non_m2m_data["status"]
+        assert instance.created_at == "H:M"
 
 
 @pytest.mark.django_db
