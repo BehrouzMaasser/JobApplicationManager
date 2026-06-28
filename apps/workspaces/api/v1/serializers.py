@@ -1,3 +1,7 @@
+"""
+REST API serializers for the Workspace domain.
+"""
+
 from rest_framework import serializers
 
 # Models
@@ -6,6 +10,9 @@ from apps.workspaces.models import Workspace
 
 # Serializers
 class WorkspaceSerializer(serializers.ModelSerializer):
+    """
+    Serialize workspace data for API requests and responses.
+    """
 
     class Meta:
 

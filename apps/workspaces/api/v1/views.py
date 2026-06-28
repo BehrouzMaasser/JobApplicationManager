@@ -1,3 +1,7 @@
+"""
+REST API views for managing workspaces.
+"""
+
 # DRF
 from rest_framework import status
 from rest_framework.response import Response
@@ -24,6 +28,11 @@ from apps.workspaces.services.workspace_service import WorkspaceService
 # ViewSets
 
 class WorkspaceViewSet(ModelViewSet):
+    """
+    Expose CRUD endpoints for Workspace resources.
+
+    Delegates business operations to services and read operations to selectors.
+    """
 
     # URL Path:
     # workspaces/{id}

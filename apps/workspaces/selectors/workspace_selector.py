@@ -1,3 +1,10 @@
+"""
+Read-only query helpers for the Workspace domain.
+
+Selectors encapsulate data retrieval logic while keeping business logic
+inside services.
+"""
+
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -15,6 +22,9 @@ from apps.core.exceptions.exceptions import (
 
 
 class WorkspaceSelector:
+    """
+    Provides reusable read operations for Workspace objects.
+    """
 
     @dataclass
     class QueryFilter:
@@ -22,6 +32,21 @@ class WorkspaceSelector:
 
     @staticmethod
     def get(user: User, workspace_id: UUID) -> Workspace | Exception:
+        """
+        Retrieve a Workspace from the Workspaces database.
+
+        Returns:
+            Workspace:
+                Workspace of the provided user from the database.
+
+        Raises:
+            ResourceNotFoundError:
+                If the Workspace does not exist.
+
+            AccessDeniedError:
+                If the Workspace does not belong to this user.
+
+        """
 
         try:
             workspace = Workspace.objects.get(workspace_id=workspace_id)
@@ -40,6 +65,16 @@ class WorkspaceSelector:
     def list(
             *, user: User, filters: QueryFilter | None = None
     ) -> QuerySet[Workspace]:
+        """
+        Retrieve a list of Workspaces from the Workspaces database.
+
+        Args:
+            user (User):
+                User who owns the Workspaces.
+
+            filters (QueryFilter | None = None):
+                Query filters applied to the Workspaces.
+        """
 
         queryset = Workspace.objects.filter(owner=user)
 
