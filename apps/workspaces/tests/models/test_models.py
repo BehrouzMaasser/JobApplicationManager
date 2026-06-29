@@ -38,6 +38,14 @@ class TestWorkspaceConstraint:
         with pytest.raises(IntegrityError):
             Workspace.objects.create(name="Workspace 1", owner=user1)
 
+    def test_same_workspace_for_user_raise_error_when_call_full_clean(self, user1):
+        Workspace.objects.create(name="Workspace 1", owner=user1)
+
+        with pytest.raises(ValidationError) as e:
+            Workspace(name="Workspace 1", owner=user1).full_clean()
+
+            assert e.error_dict["__all__"][0].code == "duplicate_workspace_name"
+
 
 #   ----------------------------------- ****** -----------------------------------
 
