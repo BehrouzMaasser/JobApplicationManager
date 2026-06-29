@@ -8,6 +8,7 @@ inside services.
 from dataclasses import dataclass
 from uuid import UUID
 
+from django.core.exceptions import ValidationError
 from django.db.models import QuerySet
 
 # Models
@@ -17,7 +18,7 @@ from apps.workspaces.models import Workspace
 # Exceptions
 from apps.core.exceptions.exceptions import (
     ResourceNotFoundError,
-    AccessDeniedError
+    AccessDeniedError, InfraStructureViolationError
 )
 
 
@@ -46,12 +47,18 @@ class WorkspaceSelector:
             AccessDeniedError:
                 If the Workspace does not belong to this user.
 
+            InfraStructureViolationError:
+                If an unexpected internal error is encountered while retrieving the
+                Workspace.
+
         """
 
         try:
             workspace = Workspace.objects.get(workspace_id=workspace_id)
         except Workspace.DoesNotExist:
             raise ResourceNotFoundError(resource=f"Workspace {workspace_id}")
+        except ValidationError as e:
+            raise InfraStructureViolationError(e) from e
 
         if workspace.owner != user:
             raise AccessDeniedError(
@@ -66,7 +73,7 @@ class WorkspaceSelector:
             *, user: User, filters: QueryFilter | None = None
     ) -> QuerySet[Workspace]:
         """
-        Retrieve a list of Workspaces from the Workspaces database.
+        Retrieve a queryset of Workspaces from the Workspaces database.
 
         Args:
             user (User):
@@ -74,6 +81,13 @@ class WorkspaceSelector:
 
             filters (QueryFilter | None = None):
                 Query filters applied to the Workspaces.
+
+        Returns:
+            QuerySet[Workspace]:
+                - A queryset of the Workspaces owned by the user based on
+                filters provided.
+                - An Empty queryset if user owned no workspaces and nothing matches
+                the filters provided.
         """
 
         queryset = Workspace.objects.filter(owner=user)
