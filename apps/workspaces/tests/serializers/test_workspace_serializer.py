@@ -4,79 +4,87 @@ from apps.workspaces.api.v1.serializers import (
 )
 
 
-class TestWorkspaceSerializer:
+class TestWorkspaceSerializerValidation:
 
-    def test_valid_data(self):
+    def test_accepts_valid_data(self):
 
-        data = {
-            "name": "Backend Job Tracker",
-        }
-
-        serializer = WorkspaceSerializer(data=data)
+        serializer = WorkspaceSerializer(
+            data={"name": "Backend Tracker"}
+        )
 
         assert serializer.is_valid(), serializer.errors
+        assert serializer.validated_data["name"] == "Backend Tracker"
 
-    def test_requires_name(self):
+    def test_name_is_required(self):
 
         serializer = WorkspaceSerializer(data={})
 
         assert not serializer.is_valid()
         assert "name" in serializer.errors
 
-    def test_rejects_blank_name(self):
+    def test_name_cannot_be_blank(self):
 
-        serializer = WorkspaceSerializer(data={
-            "name": "",
-        })
+        serializer = WorkspaceSerializer(
+            data={"name": ""}
+        )
 
         assert not serializer.is_valid()
         assert "name" in serializer.errors
 
-    def test_read_only_fields_are_ignored(self):
+    def test_name_cannot_exceed_max_length(self):
 
-        data = {
-            "name": "My Workspace",
-            "id": 999,
-            "owner": 999,
-            "workspace_id": "fake-id",
-            "created_at": "2026-01-01T00:00:00Z",
-            "updated_at": "2026-01-01T00:00:00Z",
-        }
+        serializer = WorkspaceSerializer(
+            data={
+                "name": "a" * 256
+            }
+        )
 
-        serializer = WorkspaceSerializer(data=data)
+        assert not serializer.is_valid()
+        assert "name" in serializer.errors
+
+
+class TestWorkspaceSerializerReadOnlyFields:
+
+    def test_ignores_read_only_fields(self):
+
+        serializer = WorkspaceSerializer(
+            data={
+                "id": 10,
+                "owner": 50,
+                "workspace_id": "fake",
+                "created_at": "2026-01-01",
+                "updated_at": "2026-01-01",
+                "name": "Workspace",
+            }
+        )
 
         assert serializer.is_valid(), serializer.errors
 
-        assert set(serializer.validated_data.keys()) == {"name"}
-
-        assert "id" not in serializer.validated_data
-        assert "owner" not in serializer.validated_data
-        assert "workspace_id" not in serializer.validated_data
-        assert "created_at" not in serializer.validated_data
-        assert "updated_at" not in serializer.validated_data
+        assert serializer.validated_data == {
+            "name": "Workspace",
+        }
 
 
 class TestDisplayWorkspaceSerializer:
 
-    def test_all_fields_are_read_only(self):
+    def test_input_fields_are_ignored(self):
 
-        data = {
-            "name": "Should be ignored",
-            "owner": 1,
-            "workspace_id": "abc123",
-        }
+        serializer = DisplayWorkspaceSerializer(
+            data={
+                "name": "Ignored",
+                "workspace_id": "abc",
+            }
+        )
 
-        serializer = DisplayWorkspaceSerializer(data=data)
-
-        assert serializer.is_valid(), serializer.errors
+        assert serializer.is_valid()
         assert serializer.validated_data == {}
 
-    def test_serializes_workspace_instance(self, workspace_user1):
+    def test_serializes_workspace(self, workspace1_user1):
 
-        serializer = DisplayWorkspaceSerializer(instance=workspace_user1)
+        serializer = DisplayWorkspaceSerializer(
+            instance=workspace1_user1
+        )
 
-        data = serializer.data
-
-        assert data["id"] == workspace_user1.id
-        assert data["name"] == workspace_user1.name
-        assert data["workspace_id"] == str(workspace_user1.workspace_id)
+        assert serializer.data["id"] == workspace1_user1.id
+        assert serializer.data["workspace_id"] == str(workspace1_user1.workspace_id)
+        assert serializer.data["name"] == workspace1_user1.name
