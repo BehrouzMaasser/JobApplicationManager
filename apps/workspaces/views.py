@@ -62,10 +62,6 @@ class WorkspaceCreateView(
 
         return redirect(self.success_url)
 
-    def form_invalid(self, form):
-
-        return super().form_invalid(form)
-
     def build_extra_context(self):
 
         return ExtraContext(
@@ -127,10 +123,6 @@ class WorkspaceUpdateView(ViewExceptionHandlerMixin, LoginRequiredMixin, UpdateV
             "workspace-detail-web",
             kwargs={"workspace_id": self.kwargs["workspace_id"]}
         )
-
-    def form_invalid(self, form):
-
-        return super().form_invalid(form)
 
     def build_extra_context(self):
 
