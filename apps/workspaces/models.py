@@ -36,7 +36,10 @@ class Workspace(models.Model):
         ordering = ["name"]
         constraints = [
             models.UniqueConstraint(
-                fields=["owner", "name"], name="unique_workspace_name_per_user"
+                fields=["owner", "name"],
+                name="unique_workspace_name_per_user",
+                violation_error_message="A workspace already exists with this name",
+                violation_error_code="duplicate_workspace_name",
             )
         ]
         indexes = [
