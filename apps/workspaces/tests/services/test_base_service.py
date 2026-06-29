@@ -3,13 +3,16 @@ from unittest.mock import patch
 
 import pytest
 
+# Django
 from django.utils import timezone
 
+# Exceptions
 from apps.core.exceptions.exceptions import (
     BusinessRuleViolationError,
     DomainInvariantViolationError
 )
 
+# Services
 from apps.workspaces.services.base_service import BaseService
 
 #   ----------------------------------- ****** -----------------------------------
@@ -22,7 +25,11 @@ class FakeObjectWithFields:
 
 
 class FakeField:
+    ID = 0
+
     def __init__(self, value, owner: list[str] | None = None):
+        self.pk = FakeField.ID + 1
+        FakeField.ID += 1
         self.value = value
         if owner and len(owner) == 2:
             setattr(self, owner[0], owner[1])
@@ -226,21 +233,23 @@ class TestBaseService:
 
     def test_m2m_ownership_validation_raises_if_any_item_unowned(self):
 
+        validated_data = {
+            "documents": [
+                FakeField(owner=["owner", "U1"], value="D1"),
+                FakeField(owner=["owner", "U2"], value="D2")
+            ]
+        }
         with pytest.raises(DomainInvariantViolationError) as e:
             BaseService._m2m_ownership_validation(
                 user="U1",
-                validated_data={
-                    "documents": [
-                        FakeField(owner=["owner", "U1"], value="D1"),
-                        FakeField(owner=["owner", "U2"], value="D2")
-                    ]
-                },
+                validated_data=validated_data,
                 ownership_map={"documents": "owner"},
             )
 
-        assert "User Don't Own documents" in e.value.message
+        assert "documents" in str(e.value.message)
+        assert f"{validated_data["documents"][1].pk}" in str(e.value.message)
 
-    def test_m2m_ownership_ignores_if_matching_ownership_dont_exist_for_field(self):
+    def test_m2m_ownership_validation_ignores_missing_ownership_attribute(self):
 
         BaseService._m2m_ownership_validation(
             user="U1",
