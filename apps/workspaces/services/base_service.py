@@ -67,7 +67,7 @@ class BaseService:
     ) -> None:
 
         # Make sure the m2m fields are associated to the user
-        invalid_fields = []
+        invalid_fields_with_ids: dict[str, list[str]] = dict()
 
         for field_name, ownership in ownership_map.items():
             if field_name in validated_data:
@@ -78,13 +78,18 @@ class BaseService:
                     # validated for them.
                     try:
                         if getattr(data, ownership) != user:
-                            invalid_fields.append(field_name)
+                            invalid_fields_with_ids.setdefault(
+                                field_name, []
+                            ).append(data.pk)
                     except AttributeError:
                         continue
 
-        if invalid_fields:
+        if invalid_fields_with_ids:
             raise DomainInvariantViolationError(
-                message=[f"User Don't Own {field}" for field in invalid_fields]
+                message=[
+                    f"The current user does not own the following {field}: {ids}"
+                    for field, ids in invalid_fields_with_ids.items()
+                ]
             )
 
     @staticmethod
