@@ -1,6 +1,15 @@
+"""
+REST API views for managing companies app.
+"""
+
+# DRF
 from rest_framework import mixins, viewsets, status
 from rest_framework.response import Response
+
+# DRF ViewSets
 from rest_framework.viewsets import ModelViewSet
+
+# DRF Permissions
 from rest_framework.permissions import IsAuthenticated
 
 # Serializers
@@ -60,6 +69,16 @@ class CompanyViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
+    """
+    Expose List/Retrieve endpoints for Company resources.
+
+    Supports Filtering.
+
+    Delegates read operations to selectors.
+
+    Note:
+        Workspace ID of that company is not needed.
+    """
 
     # URL Path:
     # companies/{id}
@@ -90,6 +109,14 @@ class CompanyViewSet(
 
 
 class NestedCompanyViewSet(ModelViewSet):
+    """
+    Expose CRUD endpoints for Company resources.
+
+    Delegates business operations to services and read operations to selectors.
+
+    Note:
+        Workspace ID of that company is necessary.
+    """
 
     # URL Path:
     # workspaces/{workspace_id}/companies/{id}
@@ -127,29 +154,11 @@ class NestedCompanyViewSet(ModelViewSet):
 
     def update(self, request, *args, **kwargs):
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = CompanyService.update(
-            user=self.request.user,
-            context=self._get_context(self.kwargs["id"]),
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
+        return self._update(request, partial=False, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
 
-        serializer = self.get_serializer(data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-
-        instance = CompanyService.update(
-            user=self.request.user,
-            context=self._get_context(self.kwargs["id"]),
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
+        return self._update(request, partial=True, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
 
@@ -159,6 +168,19 @@ class NestedCompanyViewSet(ModelViewSet):
         )
 
         return Response(status=status.HTTP_200_OK)
+
+    def _update(self, request, *, partial: bool,  **kwargs):
+
+        serializer = self.get_serializer(data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+
+        instance = CompanyService.update(
+            user=self.request.user,
+            context=self._get_context(kwargs["id"]),
+            validated_data=serializer.validated_data,
+        )
+
+        return Response(self.get_serializer(instance).data)
 
     def _get_context(self, company_id: int | None) -> CompanyContext:
 
@@ -179,6 +201,16 @@ class CompanyNoteViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
+    """
+    Expose List/Retrieve endpoints for Company Note resources.
+
+    Supports Filtering.
+
+    Delegates read operations to selectors.
+
+    Note:
+        Company ID of that company note is not needed.
+    """
 
     # URL Path:
     # company-notes/{id}
@@ -210,6 +242,14 @@ class CompanyNoteViewSet(
 
 
 class NestedCompanyNoteViewSet(ModelViewSet):
+    """
+    Expose CRUD endpoints for Company Note resources.
+
+    Delegates business operations to services and read operations to selectors.
+
+    Note:
+        Workspace ID and Company ID of that company note is necessary.
+    """
 
     # URL Path:
     # workspaces/workspace_id/companies/company_id/company-notes/{id}
@@ -247,29 +287,11 @@ class NestedCompanyNoteViewSet(ModelViewSet):
 
     def update(self, request, *args, **kwargs):
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = CompanyNoteService.update(
-            user=self.request.user,
-            context=self._get_context(self.kwargs["id"]),
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
+        return self._update(request, partial=False, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
 
-        serializer = self.get_serializer(data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-
-        instance = CompanyNoteService.update(
-            user=self.request.user,
-            context=self._get_context(self.kwargs["id"]),
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
+        return self._update(request, partial=True, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
 
@@ -279,6 +301,19 @@ class NestedCompanyNoteViewSet(ModelViewSet):
         )
 
         return Response(status=status.HTTP_200_OK)
+
+    def _update(self, request, *partial: bool, **kwargs):
+
+        serializer = self.get_serializer(data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+
+        instance = CompanyNoteService.update(
+            user=self.request.user,
+            context=self._get_context(kwargs["id"]),
+            validated_data=serializer.validated_data,
+        )
+
+        return Response(self.get_serializer(instance).data)
 
     def _get_context(self, company_note_id: int | None) -> CompanyChildContext:
 
@@ -301,6 +336,16 @@ class CompanyEmailViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
+    """
+    Expose List/Retrieve endpoints for Company Email resources.
+
+    Supports Filtering.
+
+    Delegates read operations to selectors.
+
+    Note:
+        Company ID of that company email is not needed.
+    """
 
     # URL Path:
     # company-emails/{id}
@@ -332,6 +377,16 @@ class CompanyEmailViewSet(
 
 
 class NestedCompanyEmailViewSet(ModelViewSet):
+    """
+    Expose CRUD endpoints for Company Email resources.
+
+    Delegates business operations to services and read operations to selectors.
+
+    Supports Filtering.
+
+    Note:
+        Workspace ID and Company ID of that company email is necessary.
+    """
 
     # URL Path:
     # workspaces/workspace_id/companies/company_id/company-emails/{id}
@@ -419,6 +474,11 @@ class NestedCompanyEmailViewSet(ModelViewSet):
 
 
 class JobBenefitViewSet(ModelViewSet):
+    """
+    Expose CRUD endpoints for Job Benefit resources.
+
+    Delegates write operations to services and read operations to selectors.
+    """
 
     # URL Path:
     # job-benefits/{id}
@@ -484,6 +544,11 @@ class JobBenefitViewSet(ModelViewSet):
 
 
 class JobTaskViewSet(ModelViewSet):
+    """
+    Expose CRUD endpoints for Job Task resources.
+
+    Delegates write operations to services and read operations to selectors.
+    """
 
     # URL Path:
     # job-tasks/{id}
@@ -549,6 +614,11 @@ class JobTaskViewSet(ModelViewSet):
 
 
 class JobRequirementViewSet(ModelViewSet):
+    """
+    Expose CRUD endpoints for Job Requirement resources.
+
+    Delegates write operations to services and read operations to selectors.
+    """
 
     # URL Path:
     # job-requirements/{id}
@@ -620,6 +690,16 @@ class JobPositionViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
+    """
+    Expose List/Retrieve endpoints for Job Position resources.
+
+    Supports Filtering.
+
+    Delegates read operations to selectors.
+
+    Note:
+        Company ID of that job position is not needed.
+    """
 
     # URL Path:
     # job-positions/{id}
@@ -649,6 +729,16 @@ class JobPositionViewSet(
 
 
 class NestedJobPositionViewSet(ModelViewSet):
+    """
+    Expose List/Retrieve endpoints for Job Position resources.
+
+    Supports Filtering.
+
+    Delegates write operations to services and read operations to selectors.
+
+    Note:
+        Workspace ID and Company ID of that job position is not needed.
+    """
 
     # URL Path:
     # workspaces/workspace_id/companies/company_id/job-positions/{id}
