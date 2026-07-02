@@ -1,46 +1,40 @@
 """
-REST API views for managing companies app.
+REST API views for managing the Companies domain.
+
+This module defines DRF ViewSets that:
+- Delegate read operations to selector layer
+- Delegate write operations to service layer
+- Enforce consistent lookup behavior for nested and flat resources
 """
 
-# DRF
-from rest_framework import mixins, viewsets, status
-from rest_framework.response import Response
-
-# DRF ViewSets
-from rest_framework.viewsets import ModelViewSet
-
-# DRF Permissions
-from rest_framework.permissions import IsAuthenticated
+from django.db.models import QuerySet
 
 # Serializers
 from apps.companies.api.v1.serializers import (
-
-    # Company Serializers:
     CompanySerializer,
-
-    # Company Note Serializers:
     CompanyNoteSerializer,
-
-    # Company Email Serializers:
     CompanyEmailSerializer,
-
-    # Job Benefit Serializers:
     JobBenefitSerializer,
-
-    # Job Task Serializers:
     JobTaskSerializer,
-
-    # Job Requirement Serializers:
     JobRequirementSerializer,
-
-    # Job Position Serializers:
     JobPositionSerializer,
 )
 
+# Models (for typing only)
+from apps.companies.models import (
+    Company,
+    CompanyNote,
+    CompanyEmail,
+    JobPosition,
+    JobBenefit,
+    JobTask,
+    JobRequirement,
+)
+
 # Selectors
-from apps.companies.selectors.company_email_selector import CompanyEmailSelector
-from apps.companies.selectors.company_note_selector import CompanyNoteSelector
 from apps.companies.selectors.company_selector import CompanySelector
+from apps.companies.selectors.company_note_selector import CompanyNoteSelector
+from apps.companies.selectors.company_email_selector import CompanyEmailSelector
 from apps.companies.selectors.job_benefit_selector import JobBenefitSelector
 from apps.companies.selectors.job_position_selector import JobPositionSelector
 from apps.companies.selectors.job_requirement_selector import JobRequirementSelector
@@ -58,771 +52,392 @@ from apps.companies.services.job_task_service import JobTaskService
 # Contexts
 from apps.companies.services.contexts.company_context import (
     CompanyContext,
-    CompanyChildContext
+    CompanyChildContext,
+)
+
+# Base ViewSets
+from apps.core.common.api.viewsets import (
+    BaseReadOnlyViewSet,
+    BaseContextServiceViewSet,
+    BaseIdServiceViewSet,
 )
 
 
-# ViewSets
+# =========================================================
+# Company (root)
+# =========================================================
 
-class CompanyViewSet(
-    mixins.RetrieveModelMixin,
-    mixins.ListModelMixin,
-    viewsets.GenericViewSet,
-):
+class CompanyViewSet(BaseReadOnlyViewSet):
     """
-    Expose List/Retrieve endpoints for Company resources.
+    Read-only API for Company resources.
 
-    Supports Filtering.
-
-    Delegates read operations to selectors.
-
-    Note:
-        Workspace ID of that company is not needed.
+    Responsibilities:
+    - Listing and retrieving companies
+    - Delegating queries to CompanySelector
+    - Supporting optional workspace filtering
     """
-
-    # URL Path:
-    # companies/{id}
 
     serializer_class = CompanySerializer
-    permission_classes = [IsAuthenticated]
+
+    selector_class = CompanySelector
+    selector_lookup_field = "company_id"
 
     lookup_url_kwarg = "id"
 
-    def get_object(self, queryset=None):
+    def get_queryset(self) -> QuerySet[Company]:
+        """
+        Return filtered companies for the authenticated user.
+        """
 
-        return CompanySelector.get(
-            user=self.request.user, company_id=self.kwargs["id"],
-        )
-
-    def get_queryset(self):
-
-        return CompanySelector.list(
+        return self.selector.list(
             user=self.request.user,
             filters=self._get_queryset_filters(),
         )
 
     def _get_queryset_filters(self) -> CompanySelector.QueryFilter:
+        """
+        Build selector filter object from query parameters.
+        """
 
-        return CompanySelector.QueryFilter(
+        return self.selector.QueryFilter(
             workspace_id=self.request.query_params.get("workspace_id"),
         )
 
 
-class NestedCompanyViewSet(ModelViewSet):
+class NestedCompanyViewSet(BaseContextServiceViewSet):
     """
-    Expose CRUD endpoints for Company resources.
+    Full CRUD API for Company resources in nested workspace context.
 
-    Delegates business operations to services and read operations to selectors.
-
-    Note:
-        Workspace ID of that company is necessary.
+    Responsibilities:
+    - Create/Update/Delete via CompanyService
+    - Read via CompanySelector
+    - Requires workspace context
     """
 
-    # URL Path:
-    # workspaces/{workspace_id}/companies/{id}
+    service_class = CompanyService
+    selector_class = CompanySelector
 
-    permission_classes = [IsAuthenticated]
-    serializer_class = CompanySerializer
+    read_serializer_class = CompanySerializer
+    write_serializer_class = CompanySerializer
 
     lookup_url_kwarg = "id"
+    selector_lookup_field = "company_id"
 
-    def get_object(self, queryset=None):
+    def get_queryset(self) -> QuerySet[Company]:
+        """
+        Return companies scoped to a workspace.
+        """
 
-        return CompanySelector.get(
-            user=self.request.user, company_id=self.kwargs["id"],
-        )
-
-    def get_queryset(self):
-
-        return CompanySelector.list(
+        return self.selector.list(
             user=self.request.user,
-            filters=self._get_queryset_filters()
+            filters=self._get_queryset_filters(),
         )
 
-    def create(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = CompanyService.create(
-            user=self.request.user,
-            context=self._get_context(None),
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
-
-    def update(self, request, *args, **kwargs):
-
-        return self._update(request, partial=False, **kwargs)
-
-    def partial_update(self, request, *args, **kwargs):
-
-        return self._update(request, partial=True, **kwargs)
-
-    def destroy(self, request, *args, **kwargs):
-
-        CompanyService.remove(
-            user=self.request.user,
-            context=self._get_context(self.kwargs["id"]),
-        )
-
-        return Response(status=status.HTTP_200_OK)
-
-    def _update(self, request, *, partial: bool,  **kwargs):
-
-        serializer = self.get_serializer(data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-
-        instance = CompanyService.update(
-            user=self.request.user,
-            context=self._get_context(kwargs["id"]),
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
-
-    def _get_context(self, company_id: int | None) -> CompanyContext:
+    def get_create_context(self) -> CompanyContext:
+        """
+        Context used when creating a company.
+        """
 
         return CompanyContext(
             workspace_id=self.kwargs["workspace_id"],
-            id=company_id
+            id=None,
         )
 
-    def _get_queryset_filters(self):
+    def get_update_context(self) -> CompanyContext:
+        """
+        Context used when updating/deleting a company.
+        """
 
+        return CompanyContext(
+            workspace_id=self.kwargs["workspace_id"],
+            id=self.kwargs["id"],
+        )
+
+    def _get_queryset_filters(self) -> CompanySelector.QueryFilter:
         return CompanySelector.QueryFilter(
             workspace_id=self.kwargs["workspace_id"],
         )
 
 
-class CompanyNoteViewSet(
-    mixins.RetrieveModelMixin,
-    mixins.ListModelMixin,
-    viewsets.GenericViewSet,
-):
+# =========================================================
+# Company Note
+# =========================================================
+
+class CompanyNoteViewSet(BaseReadOnlyViewSet):
     """
-    Expose List/Retrieve endpoints for Company Note resources.
+    Read-only API for Company Notes.
 
-    Supports Filtering.
-
-    Delegates read operations to selectors.
-
-    Note:
-        Company ID of that company note is not needed.
+    Notes:
+    - Company context is optional for listing
     """
-
-    # URL Path:
-    # company-notes/{id}
 
     serializer_class = CompanyNoteSerializer
-    permission_classes = [IsAuthenticated]
+
+    selector_class = CompanyNoteSelector
+    selector_lookup_field = "company_note_id"
 
     lookup_url_kwarg = "id"
 
-    def get_object(self, queryset=None):
-
-        return CompanyNoteSelector.get(
-            user=self.request.user, company_note_id=self.kwargs["id"],
-        )
-
-    def get_queryset(self):
-
-        return CompanyNoteSelector.list(
+    def get_queryset(self) -> QuerySet[CompanyNote]:
+        return self.selector.list(
             user=self.request.user,
-            filters=self._get_queryset_filters()
+            filters=self._get_queryset_filters(),
         )
 
     def _get_queryset_filters(self) -> CompanyNoteSelector.QueryFilter:
-
         return CompanyNoteSelector.QueryFilter(
             workspace_id=self.request.query_params.get("workspace_id"),
             company_id=self.request.query_params.get("company_id"),
         )
 
 
-class NestedCompanyNoteViewSet(ModelViewSet):
+class NestedCompanyNoteViewSet(BaseContextServiceViewSet):
     """
-    Expose CRUD endpoints for Company Note resources.
+    Full CRUD API for Company Notes in nested context.
 
-    Delegates business operations to services and read operations to selectors.
-
-    Note:
-        Workspace ID and Company ID of that company note is necessary.
+    Requires:
+    - workspace_id
+    - company_id
     """
 
-    # URL Path:
-    # workspaces/workspace_id/companies/company_id/company-notes/{id}
+    service_class = CompanyNoteService
+    selector_class = CompanyNoteSelector
 
-    permission_classes = [IsAuthenticated]
-    serializer_class = CompanyNoteSerializer
+    read_serializer_class = CompanyNoteSerializer
+    write_serializer_class = CompanyNoteSerializer
 
     lookup_url_kwarg = "id"
+    selector_lookup_field = "company_note_id"
 
-    def get_object(self, queryset=None):
-
-        return CompanyNoteSelector.get(
-            user=self.request.user, company_note_id=self.kwargs["id"],
-        )
-
-    def get_queryset(self):
-
-        return CompanyNoteSelector.list(
+    def get_queryset(self) -> QuerySet[CompanyNote]:
+        return self.selector.list(
             user=self.request.user,
-            filters=self._get_queryset_filters()
+            filters=self._get_queryset_filters(),
         )
 
-    def create(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = CompanyNoteService.create(
-            user=self.request.user,
-            context=self._get_context(None),
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
-
-    def update(self, request, *args, **kwargs):
-
-        return self._update(request, partial=False, **kwargs)
-
-    def partial_update(self, request, *args, **kwargs):
-
-        return self._update(request, partial=True, **kwargs)
-
-    def destroy(self, request, *args, **kwargs):
-
-        CompanyNoteService.remove(
-            user=self.request.user,
-            context=self._get_context(self.kwargs["id"]),
-        )
-
-        return Response(status=status.HTTP_200_OK)
-
-    def _update(self, request, *partial: bool, **kwargs):
-
-        serializer = self.get_serializer(data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-
-        instance = CompanyNoteService.update(
-            user=self.request.user,
-            context=self._get_context(kwargs["id"]),
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
-
-    def _get_context(self, company_note_id: int | None) -> CompanyChildContext:
-
+    def get_create_context(self) -> CompanyChildContext:
         return CompanyChildContext(
             workspace_id=self.kwargs["workspace_id"],
             company_id=self.kwargs["company_id"],
-            id=company_note_id
+            id=None,
+        )
+
+    def get_update_context(self) -> CompanyChildContext:
+        return CompanyChildContext(
+            workspace_id=self.kwargs["workspace_id"],
+            company_id=self.kwargs["company_id"],
+            id=self.kwargs["id"],
         )
 
     def _get_queryset_filters(self) -> CompanyNoteSelector.QueryFilter:
-
         return CompanyNoteSelector.QueryFilter(
             workspace_id=self.request.query_params.get("workspace_id"),
             company_id=self.request.query_params.get("company_id"),
         )
 
 
-class CompanyEmailViewSet(
-    mixins.RetrieveModelMixin,
-    mixins.ListModelMixin,
-    viewsets.GenericViewSet,
-):
+# =========================================================
+# Company Email
+# =========================================================
+
+class CompanyEmailViewSet(BaseReadOnlyViewSet):
     """
-    Expose List/Retrieve endpoints for Company Email resources.
-
-    Supports Filtering.
-
-    Delegates read operations to selectors.
-
-    Note:
-        Company ID of that company email is not needed.
+    Read-only API for Company Emails.
     """
-
-    # URL Path:
-    # company-emails/{id}
 
     serializer_class = CompanyEmailSerializer
-    permission_classes = [IsAuthenticated]
+
+    selector_class = CompanyEmailSelector
+    selector_lookup_field = "company_email_id"
 
     lookup_url_kwarg = "id"
 
-    def get_object(self, queryset=None):
-
-        return CompanyEmailSelector.get(
-            user=self.request.user, company_email_id=self.kwargs["id"],
-        )
-
-    def get_queryset(self):
-
-        return CompanyEmailSelector.list(
+    def get_queryset(self) -> QuerySet[CompanyEmail]:
+        return self.selector.list(
             user=self.request.user,
-            filters=self._get_queryset_filters()
+            filters=self._get_queryset_filters(),
         )
 
     def _get_queryset_filters(self) -> CompanyEmailSelector.QueryFilter:
-
         return CompanyEmailSelector.QueryFilter(
             workspace_id=self.request.query_params.get("workspace_id"),
             company_id=self.request.query_params.get("company_id"),
         )
 
 
-class NestedCompanyEmailViewSet(ModelViewSet):
+class NestedCompanyEmailViewSet(BaseContextServiceViewSet):
     """
-    Expose CRUD endpoints for Company Email resources.
-
-    Delegates business operations to services and read operations to selectors.
-
-    Supports Filtering.
-
-    Note:
-        Workspace ID and Company ID of that company email is necessary.
+    Full CRUD API for Company Emails in nested context.
     """
 
-    # URL Path:
-    # workspaces/workspace_id/companies/company_id/company-emails/{id}
+    service_class = CompanyEmailService
+    selector_class = CompanyEmailSelector
 
-    permission_classes = [IsAuthenticated]
-    serializer_class = CompanyEmailSerializer
+    read_serializer_class = CompanyEmailSerializer
+    write_serializer_class = CompanyEmailSerializer
 
     lookup_url_kwarg = "id"
+    selector_lookup_field = "company_email_id"
 
-    def get_object(self, queryset=None):
-
-        return CompanyEmailSelector.get(
-            user=self.request.user, company_email_id=self.kwargs["id"],
-        )
-
-    def get_queryset(self):
-
-        return CompanyEmailSelector.list(
+    def get_queryset(self) -> QuerySet[CompanyEmail]:
+        return self.selector.list(
             user=self.request.user,
-            filters=self._get_queryset_filters()
+            filters=self._get_queryset_filters(),
         )
 
-    def create(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = CompanyEmailService.create(
-            user=self.request.user,
-            context=self._get_context(None),
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(CompanyEmailSerializer(instance).data)
-
-    def update(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = CompanyEmailService.update(
-            user=self.request.user,
-            context=self._get_context(self.kwargs["id"]),
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(CompanyEmailSerializer(instance).data)
-
-    def partial_update(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-
-        instance = CompanyEmailService.update(
-            user=self.request.user,
-            context=self._get_context(self.kwargs["id"]),
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(CompanyEmailSerializer(instance).data)
-
-    def destroy(self, request, *args, **kwargs):
-
-        CompanyEmailService.remove(
-            user=request.user,
-            context=self._get_context(self.kwargs["id"]),
-        )
-
-        return Response(status=status.HTTP_200_OK)
-
-    def _get_context(self, company_note_id: int | None) -> CompanyChildContext:
-
+    def get_create_context(self) -> CompanyChildContext:
         return CompanyChildContext(
             workspace_id=self.kwargs["workspace_id"],
             company_id=self.kwargs["company_id"],
-            id=company_note_id
+            id=None,
+        )
+
+    def get_update_context(self) -> CompanyChildContext:
+        return CompanyChildContext(
+            workspace_id=self.kwargs["workspace_id"],
+            company_id=self.kwargs["company_id"],
+            id=self.kwargs["id"],
         )
 
     def _get_queryset_filters(self) -> CompanyEmailSelector.QueryFilter:
-
         return CompanyEmailSelector.QueryFilter(
             workspace_id=self.request.query_params.get("workspace_id"),
             company_id=self.request.query_params.get("company_id"),
         )
 
 
-class JobBenefitViewSet(ModelViewSet):
+# =========================================================
+# Job Benefit
+# =========================================================
+
+class JobBenefitViewSet(BaseIdServiceViewSet):
     """
-    Expose CRUD endpoints for Job Benefit resources.
-
-    Delegates write operations to services and read operations to selectors.
+    CRUD API for Job Benefits.
     """
 
-    # URL Path:
-    # job-benefits/{id}
+    service_class = JobBenefitService
+    selector_class = JobBenefitSelector
 
-    permission_classes = [IsAuthenticated]
-    serializer_class = JobBenefitSerializer
+    read_serializer_class = JobBenefitSerializer
+    write_serializer_class = JobBenefitSerializer
 
     lookup_url_kwarg = "id"
+    selector_lookup_field = "job_benefit_id"
+    service_lookup_id = "job_benefit_id"
 
-    def get_object(self, queryset=None):
-
-        return JobBenefitSelector.get(
-            user=self.request.user, job_benefit_id=self.kwargs["id"],
-        )
-
-    def get_queryset(self):
-
-        return JobBenefitSelector.list(self.request.user)
-
-    def create(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = JobBenefitService.create(
-            user=self.request.user,
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
-
-    def update(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = JobBenefitService.update(
-            user=self.request.user,
-            job_benefit_id=self.kwargs["id"],
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
-
-    def partial_update(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-
-        instance = JobBenefitService.update(
-            user=self.request.user,
-            job_benefit_id=self.kwargs["id"],
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
-
-    def destroy(self, request, *args, **kwargs):
-
-        JobBenefitService.remove(user=request.user, job_benefit_id=self.kwargs["id"])
-
-        return Response(status=status.HTTP_200_OK)
+    def get_queryset(self) -> QuerySet[JobBenefit]:
+        return self.selector.list(user=self.request.user)
 
 
-class JobTaskViewSet(ModelViewSet):
+# =========================================================
+# Job Task
+# =========================================================
+
+class JobTaskViewSet(BaseIdServiceViewSet):
     """
-    Expose CRUD endpoints for Job Task resources.
-
-    Delegates write operations to services and read operations to selectors.
+    CRUD API for Job Tasks.
     """
 
-    # URL Path:
-    # job-tasks/{id}
+    service_class = JobTaskService
+    selector_class = JobTaskSelector
 
-    permission_classes = [IsAuthenticated]
-    serializer_class = JobTaskSerializer
+    read_serializer_class = JobTaskSerializer
+    write_serializer_class = JobTaskSerializer
 
     lookup_url_kwarg = "id"
+    selector_lookup_field = "job_task_id"
+    service_lookup_id = "job_task_id"
 
-    def get_object(self, queryset=None):
-
-        return JobTaskSelector.get(
-            user=self.request.user, job_task_id=self.kwargs["id"],
-        )
-
-    def get_queryset(self):
-
-        return JobTaskSelector.list(self.request.user)
-
-    def create(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = JobTaskService.create(
-            user=self.request.user,
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
-
-    def update(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = JobTaskService.update(
-            user=self.request.user,
-            job_task_id=self.kwargs["id"],
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
-
-    def partial_update(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-
-        instance = JobTaskService.update(
-            user=self.request.user,
-            job_task_id=self.kwargs["id"],
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
-
-    def destroy(self, request, *args, **kwargs):
-
-        JobTaskService.remove(user=request.user, job_task_id=self.kwargs["id"])
-
-        return Response(status=status.HTTP_200_OK)
+    def get_queryset(self) -> QuerySet[JobTask]:
+        return self.selector.list(user=self.request.user)
 
 
-class JobRequirementViewSet(ModelViewSet):
+# =========================================================
+# Job Requirement
+# =========================================================
+
+class JobRequirementViewSet(BaseIdServiceViewSet):
     """
-    Expose CRUD endpoints for Job Requirement resources.
-
-    Delegates write operations to services and read operations to selectors.
+    CRUD API for Job Requirements.
     """
 
-    # URL Path:
-    # job-requirements/{id}
+    service_class = JobRequirementService
+    selector_class = JobRequirementSelector
 
-    permission_classes = [IsAuthenticated]
-    serializer_class = JobRequirementSerializer
+    read_serializer_class = JobRequirementSerializer
+    write_serializer_class = JobRequirementSerializer
 
     lookup_url_kwarg = "id"
+    selector_lookup_field = "job_requirement_id"
+    service_lookup_id = "job_requirement_id"
 
-    def get_object(self, queryset=None):
-
-        return JobRequirementSelector.get(
-            user=self.request.user, job_requirement_id=self.kwargs["id"],
-        )
-
-    def get_queryset(self):
-
-        return JobRequirementSelector.list(self.request.user)
-
-    def create(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = JobRequirementService.create(
-            user=self.request.user,
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
-
-    def update(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = JobRequirementService.update(
-            user=self.request.user,
-            job_requirement_id=self.kwargs["id"],
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
-
-    def partial_update(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-
-        instance = JobRequirementService.update(
-            user=self.request.user,
-            job_requirement_id=self.kwargs["id"],
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
-
-    def destroy(self, request, *args, **kwargs):
-
-        JobRequirementService.remove(
-            user=request.user, job_requirement_id=self.kwargs["id"]
-        )
-
-        return Response(status=status.HTTP_200_OK)
+    def get_queryset(self) -> QuerySet[JobRequirement]:
+        return self.selector.list(user=self.request.user)
 
 
-class JobPositionViewSet(
-    mixins.RetrieveModelMixin,
-    mixins.ListModelMixin,
-    viewsets.GenericViewSet,
-):
+# =========================================================
+# Job Position
+# =========================================================
+
+class JobPositionViewSet(BaseReadOnlyViewSet):
     """
-    Expose List/Retrieve endpoints for Job Position resources.
-
-    Supports Filtering.
-
-    Delegates read operations to selectors.
-
-    Note:
-        Company ID of that job position is not needed.
+    Read-only API for Job Positions.
     """
-
-    # URL Path:
-    # job-positions/{id}
 
     serializer_class = JobPositionSerializer
-    permission_classes = [IsAuthenticated]
+
+    selector_class = JobPositionSelector
+    selector_lookup_field = "job_position_id"
 
     lookup_url_kwarg = "id"
 
-    def get_object(self, queryset=None):
-
-        return JobPositionSelector.get(
-            user=self.request.user, job_position_id=self.kwargs["id"],
-        )
-
-    def get_queryset(self):
-
-        filters = JobPositionSelector.QueryFilter(
+    def get_queryset(self) -> QuerySet[JobPosition]:
+        filters = self.selector.QueryFilter(
             workspace_id=self.request.query_params.get("workspace_id"),
             company_id=self.request.query_params.get("company_id"),
         )
 
-        return JobPositionSelector.list(
+        return self.selector.list(
             user=self.request.user,
-            filters=filters
+            filters=filters,
         )
 
 
-class NestedJobPositionViewSet(ModelViewSet):
+class NestedJobPositionViewSet(BaseContextServiceViewSet):
     """
-    Expose List/Retrieve endpoints for Job Position resources.
-
-    Supports Filtering.
-
-    Delegates write operations to services and read operations to selectors.
-
-    Note:
-        Workspace ID and Company ID of that job position is not needed.
+    Full CRUD API for Job Positions in nested context.
     """
 
-    # URL Path:
-    # workspaces/workspace_id/companies/company_id/job-positions/{id}
+    service_class = JobPositionService
+    selector_class = JobPositionSelector
 
-    permission_classes = [IsAuthenticated]
-    serializer_class = JobPositionSerializer
+    read_serializer_class = JobPositionSerializer
+    write_serializer_class = JobPositionSerializer
 
     lookup_url_kwarg = "id"
+    selector_lookup_field = "job_position_id"
 
-    def get_object(self, queryset=None):
-
-        return JobPositionSelector.get(
-            user=self.request.user, job_position_id=self.kwargs["id"],
-        )
-
-    def get_queryset(self):
-
-        return JobPositionSelector.list(
+    def get_queryset(self) -> QuerySet[JobPosition]:
+        return self.selector.list(
             user=self.request.user,
-            filters=self._get_queryset_filters()
+            filters=self._get_queryset_filters(),
         )
 
-    def create(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = JobPositionService.create(
-            user=self.request.user,
-            context=self._get_context(None),
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
-
-    def update(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        context = self._get_context(self.kwargs["id"])
-
-        instance = JobPositionService.update(
-            user=request.user,
-            context=context,
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
-
-    def partial_update(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-
-        context = self._get_context(self.kwargs["id"])
-
-        instance = JobPositionService.update(
-            user=request.user,
-            context=context,
-            validated_data=serializer.validated_data,
-        )
-
-        return Response(self.get_serializer(instance).data)
-
-    def destroy(self, request, *args, **kwargs):
-
-        JobPositionService.remove(
-            user=request.user,
-            context=self._get_context(self.kwargs["id"]),
-        )
-
-        return Response(status=status.HTTP_200_OK)
-
-    def _get_context(self, job_position_id: int | None) -> CompanyChildContext:
-
+    def get_create_context(self) -> CompanyChildContext:
         return CompanyChildContext(
             workspace_id=self.kwargs["workspace_id"],
             company_id=self.kwargs["company_id"],
-            id=job_position_id
+            id=None,
         )
 
-    def _get_queryset_filters(self):
+    def get_update_context(self) -> CompanyChildContext:
+        return CompanyChildContext(
+            workspace_id=self.kwargs["workspace_id"],
+            company_id=self.kwargs["company_id"],
+            id=self.kwargs["id"],
+        )
 
+    def _get_queryset_filters(self) -> JobPositionSelector.QueryFilter:
         return JobPositionSelector.QueryFilter(
             workspace_id=self.kwargs["workspace_id"],
             company_id=self.kwargs["company_id"],
