@@ -2,15 +2,8 @@
 REST API views for managing workspaces.
 """
 
-# DRF
-from rest_framework import status
-from rest_framework.response import Response
-
-# DRF ViewSets
-from rest_framework.viewsets import ModelViewSet
-
-# DRF Permissions
-from rest_framework.permissions import IsAuthenticated
+# Custom DRF Views
+from apps.core.common.api.viewsets import BaseIdServiceViewSet
 
 # Serializers
 from apps.workspaces.api.v1.serializers import (
@@ -27,67 +20,27 @@ from apps.workspaces.services.workspace_service import WorkspaceService
 
 # ViewSets
 
-class WorkspaceViewSet(ModelViewSet):
+class WorkspaceViewSet(BaseIdServiceViewSet):
     """
     Expose CRUD endpoints for Workspace resources.
 
-    Delegates business operations to services and read operations to selectors.
+    Read operations are delegated to selectors and write operations to services.
     """
 
     # URL Path:
     # workspaces/{id}
 
-    permission_classes = [IsAuthenticated]
+    selector_class = WorkspaceSelector
+    service_class = WorkspaceService
 
-    lookup_field = 'workspace_id'
+    service_lookup_id = 'workspace_id'
+    selector_lookup_field = "workspace_id"
     lookup_url_kwarg = 'id'
 
-    def get_object(self):
-
-        return WorkspaceSelector.get(
-            user=self.request.user, workspace_id=self.kwargs['id']
-        )
+    read_serializer_class = DisplayWorkspaceSerializer
+    write_serializer_class = WorkspaceSerializer
 
     def get_queryset(self):
+        """Return workspaces accessible to the authenticated user."""
 
-        return WorkspaceSelector.list(user=self.request.user)
-
-    def get_serializer_class(self):
-
-        if self.action in ['create', 'update', 'partial_update']:
-            return WorkspaceSerializer
-
-        return DisplayWorkspaceSerializer
-
-    def create(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = WorkspaceService.create(
-            user=request.user, validated_data=serializer.validated_data
-        )
-
-        return Response(DisplayWorkspaceSerializer(instance).data)
-
-    def update(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = WorkspaceService.update(
-            user=request.user,
-            workspace_id=self.kwargs['id'],
-            validated_data=serializer.validated_data
-        )
-
-        return Response(DisplayWorkspaceSerializer(instance).data)
-
-    def destroy(self, request, *args, **kwargs):
-
-        WorkspaceService.remove(
-            user=request.user,
-            workspace_id=self.kwargs['id'],
-        )
-
-        return Response(status=status.HTTP_200_OK)
+        return self.selector.list(user=self.request.user)
