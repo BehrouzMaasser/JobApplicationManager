@@ -197,7 +197,7 @@ class TestWorkspaceDeleteAPIView:
             f"{workspace_url_path}{workspace1_user1.workspace_id}/"
         )
 
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
         assert not Workspace.objects.filter(
             workspace_id=workspace1_user1.workspace_id
