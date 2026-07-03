@@ -1,191 +1,170 @@
 import pytest
 
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 
 from apps.companies.models import CompanyEmail
 
 
+pytestmark = pytest.mark.django_db
+
 #   ----------------------------------- ****** -----------------------------------
 
-# Invalid Creation:
 
-@pytest.mark.django_db
-def test_company_email_requires_company():
+@pytest.fixture
+def email_address1() -> str:
 
-    # Company is None
-    with pytest.raises(ValidationError):
-        CompanyEmail(
-            company=None, title="HR 1", email="email@gmail.com"
-        ).full_clean()
-
-    # Company is not provided
-    with pytest.raises(ValidationError):
-        CompanyEmail(title="HR 1", email="email@gmail.com").full_clean()
+    return "email1@gmail.com"
 
 
-@pytest.mark.django_db
-def test_company_email_requires_title(co1_ws1_user1):
+class TestCompanyEmailValidation:
 
-    # Title is None
-    with pytest.raises(ValidationError):
-        CompanyEmail(
-            title=None,
+    def test_company_email_requires_company(self, email_address1):
+        with pytest.raises(ValidationError):
+            CompanyEmail(
+                title="Test", email=email_address1, company=None
+            ).full_clean()
+
+    def test_company_email_requires_title(self, co1_ws1_user1, email_address1):
+        with pytest.raises(ValidationError):
+            CompanyEmail(
+                title=None, company=co1_ws1_user1, email=email_address1
+            ).full_clean()
+
+    def test_company_email_requires_email(self, co1_ws1_user1):
+        with pytest.raises(ValidationError):
+            CompanyEmail(
+                title="Test", company=co1_ws1_user1, email=None
+            ).full_clean()
+
+    def test_company_email_requires_non_empty_email(self, co1_ws1_user1):
+        with pytest.raises(ValidationError):
+            CompanyEmail(
+                title="Title", company=co1_ws1_user1, email=""
+            ).full_clean()
+
+    def test_company_email_requires_non_empty_title(
+            self, co1_ws1_user1, email_address1
+    ):
+        with pytest.raises(ValidationError):
+            CompanyEmail(
+                title="", company=co1_ws1_user1, email=email_address1
+            ).full_clean()
+
+
+class TestCompanyEmailConstraint:
+
+    def test_email_title_and_address_is_unique_per_company(
+            self, co1_ws1_user1, email_address1
+    ):
+        CompanyEmail.objects.create(
+            title="Test 1", company=co1_ws1_user1, email=email_address1
+        )
+
+        with pytest.raises(IntegrityError):
+            CompanyEmail.objects.create(
+                title="Test 1", company=co1_ws1_user1, email=email_address1
+            )
+
+    def test_same_email_title_and_address_raise_error_when_call_full_clean(
+            self, co1_ws1_user1, email_address1
+    ):
+        CompanyEmail.objects.create(
+            title="Test 1", company=co1_ws1_user1, email=email_address1
+        )
+
+        with pytest.raises(ValidationError) as e:
+            CompanyEmail(
+                title="Test 1", company=co1_ws1_user1, email=email_address1
+            ).full_clean()
+
+            assert e.error_dict["__all__"][0].code == "duplicate_company_email"
+
+#   ----------------------------------- ****** -----------------------------------
+
+
+class TestCompanyEmailCreation:
+
+    def test_valid_company_email_creation(self, co1_ws1_user1, email_address1):
+        company_email = CompanyEmail.objects.create(
+            title="Title 1",
             company=co1_ws1_user1,
-            email="email@gmail.com"
-        ).full_clean()
+            email=email_address1
+        )
 
-    # Title is not provided
-    with pytest.raises(ValidationError):
-        CompanyEmail(
-            company=co1_ws1_user1,
-            email="email@gmail.com"
-        ).full_clean()
+        assert company_email.company == co1_ws1_user1
+        assert company_email.title == "Title 1"
+        assert company_email.email == email_address1
 
+    def test_ordering(self, co1_ws1_user1, email_address1):
+        company_email1 = CompanyEmail.objects.create(
+            title="A", company=co1_ws1_user1, email=email_address1
+        )
+        company_email2 = CompanyEmail.objects.create(
+            title="C", company=co1_ws1_user1, email=email_address1
+        )
+        company_email3 = CompanyEmail.objects.create(
+            title="B", company=co1_ws1_user1, email=email_address1
+        )
+        company_email4 = CompanyEmail.objects.create(
+            title="C-Email 2", company=co1_ws1_user1, email=email_address1
+        )
+        company_email5 = CompanyEmail.objects.create(
+            title="C-Email 1", company=co1_ws1_user1, email=email_address1
+        )
 
-@pytest.mark.django_db
-def test_company_email_requires_non_empty_title(co1_ws1_user1):
+        correct_name_order = [
+            company_email1,
+            company_email3,
+            company_email2,
+            company_email5,
+            company_email4
+        ]
 
-    with pytest.raises(ValidationError):
-        CompanyEmail(
-            title="", company=co1_ws1_user1, email="email@gmail.com"
-        ).full_clean()
+        company_emails = CompanyEmail.objects.all()
 
+        for ems_correct_order, ems_given in zip(correct_name_order, company_emails):
+            assert ems_correct_order == ems_given
 
-@pytest.mark.django_db
-def test_company_email_requires_email(co1_ws1_user1):
+    def test_other_users_with_same_email_title_and_address_is_valid(
+            self, co1_ws1_user1, co1_ws1_user2, email_address1
+    ):
 
-    # Email is None
-    with pytest.raises(ValidationError):
-        CompanyEmail(title="HR 1", company=co1_ws1_user1, email=None).full_clean()
+        email1 = CompanyEmail.objects.create(
+            title="Email 1", company=co1_ws1_user1, email=email_address1
+        )
+        email2 = CompanyEmail.objects.create(
+            title="Email 1", company=co1_ws1_user2, email=email_address1
+        )
 
-    # Email is not provided
-    with pytest.raises(ValidationError):
-        CompanyEmail(title="HR 1", company=co1_ws1_user1).full_clean()
+        assert email1.title == "Email 1"
+        assert email1.title == email2.title
 
+        assert email1.email == email_address1
+        assert email1.email == email2.email
 
-@pytest.mark.django_db
-def test_company_email_requires_non_empty_email(co1_ws1_user1):
+    def test_different_companies_with_same_email_title_and_address_is_valid(
+            self, co1_ws1_user1, co1_ws2_user1, email_address1
+    ):
 
-    with pytest.raises(ValidationError):
-        CompanyEmail(title="Title", company=co1_ws1_user1, email="").full_clean()
+        email1 = CompanyEmail.objects.create(
+            title="Email 1", company=co1_ws1_user1, email=email_address1
+        )
+        email2 = CompanyEmail.objects.create(
+            title="Email 1", company=co1_ws2_user1, email=email_address1
+        )
 
-
-#   ----------------------------------- ****** -----------------------------------
-
-# Constraint Check:
-
-@pytest.mark.django_db
-def test_lower_case_title_and_email_should_be_unique_per_company(co1_ws1_user1):
-
-    CompanyEmail.objects.create(
-        title="Title",
-        company=co1_ws1_user1,
-        email="email@gmail.com"
-    )
-
-    with transaction.atomic():
-        with pytest.raises(IntegrityError):
-            CompanyEmail.objects.create(
-                title="tiTLE",
-                company=co1_ws1_user1,
-                email="email@gmail.com"
-            )
-
-    with transaction.atomic():
-        with pytest.raises(IntegrityError):
-            CompanyEmail.objects.create(
-                title="title",
-                company=co1_ws1_user1,
-                email="EMAIL@gmail.com"
-            )
-
-    with transaction.atomic():
-        with pytest.raises(IntegrityError):
-            CompanyEmail.objects.create(
-                title="tiTLE",
-                company=co1_ws1_user1,
-                email="EMAIl@gmail.com"
-            )
+        assert email1.title == "Email 1"
+        assert email1.title == email2.title
 
 
-#   ----------------------------------- ****** -----------------------------------
+class TestCompanyRepresentation:
 
+    def test_company_string_representation(self, co1_ws1_user1, email_address1):
+        email = CompanyEmail.objects.create(
+            title="Email 1", company=co1_ws1_user1, email=email_address1
+        )
 
-# Valid Creation:
-@pytest.mark.django_db
-def test_valid_company_email(co1_ws1_user1):
-
-    c_email = CompanyEmail(
-        title="HR 1", company=co1_ws1_user1, email="email@gmail.com"
-    )
-
-    c_email.full_clean()
-    c_email.save()
-
-    assert c_email.id is not None
-    assert c_email.company == co1_ws1_user1
-    assert c_email.title == "HR 1"
-    assert c_email.email == "email@gmail.com"
-
-
-@pytest.mark.django_db
-def test_same_title_in_same_company_is_allowed(co1_ws1_user1):
-
-    c_email_1 = CompanyEmail.objects.create(
-        title="Title", company=co1_ws1_user1, email="email@gmail.com"
-    )
-
-    c_email_2 = CompanyEmail.objects.create(
-        title="Title", company=co1_ws1_user1, email="email2@gmail.com"
-    )
-
-    assert c_email_1.title == c_email_2.title
-    assert c_email_1.email != c_email_2.email
-
-
-@pytest.mark.django_db
-def test_same_email_with_different_title_in_same_company_is_allowed(co1_ws1_user1):
-
-    c_email_1 = CompanyEmail.objects.create(
-        title="HR 1", company=co1_ws1_user1, email="email@gmail.com"
-    )
-
-    c_email_2 = CompanyEmail.objects.create(
-        title="HR 2", company=co1_ws1_user1, email="email@gmail.com"
-    )
-
-    assert c_email_1.title != c_email_2.title
-    assert c_email_1.email == c_email_2.email
-
-
-@pytest.mark.django_db
-def test_same_title_and_email_in_different_company_is_allowed(
-        co1_ws1_user1, co1_ws2_user1, co2_ws1_user1, co1_ws1_user2
-):
-
-    c_email_1 = CompanyEmail.objects.create(
-        title="HR 1", company=co1_ws1_user1, email="email@gmail.com"
-    )
-
-    c_email_2 = CompanyEmail.objects.create(
-        title="HR 1", company=co2_ws1_user1, email="email@gmail.com"
-    )
-
-    c_email_3 = CompanyEmail.objects.create(
-        title="HR 1", company=co1_ws2_user1, email="email@gmail.com"
-    )
-
-    c_email_4 = CompanyEmail.objects.create(
-        title="HR 1", company=co1_ws1_user2, email="email@gmail.com"
-    )
-
-    assert c_email_1.title == c_email_2.title
-    assert c_email_1.title == c_email_3.title
-    assert c_email_1.title == c_email_4.title
-
-    assert c_email_1.email == c_email_2.email
-    assert c_email_1.email == c_email_3.email
-    assert c_email_1.email == c_email_4.email
+        assert str(email) == email.title
 
 #   ----------------------------------- ****** -----------------------------------

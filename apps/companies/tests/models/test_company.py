@@ -13,7 +13,7 @@ pytestmark = pytest.mark.django_db
 
 class TestCompanyValidation:
 
-    def test_company_requires_company(self):
+    def test_company_requires_workspace(self):
         with pytest.raises(ValidationError):
             Company(name="Test", workspace=None).full_clean()
 
@@ -93,8 +93,8 @@ class TestCompanyCreation:
 
         companies = Company.objects.all()
 
-        for co_correct_order, ws_given in zip(correct_name_order, companies):
-            assert co_correct_order == ws_given
+        for co_correct_order, co_given in zip(correct_name_order, companies):
+            assert co_correct_order == co_given
 
     def test_other_users_with_same_company_name_is_valid(
             self, workspace1_user1, workspace1_user2
