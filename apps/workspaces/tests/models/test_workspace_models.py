@@ -77,7 +77,7 @@ class TestWorkspaceCreation:
         for ws_correct_order, ws_given in zip(correct_name_order, workspaces):
             assert ws_correct_order == ws_given
 
-    def test_other_user1s_with_same_workspace_name_is_valid(self, user1, user2):
+    def test_other_users_with_same_workspace_name_is_valid(self, user1, user2):
 
         workspace1 = Workspace.objects.create(name="Workspace 1", owner=user1)
         workspace2 = Workspace.objects.create(name="Workspace 1", owner=user2)
