@@ -8,7 +8,7 @@ resources in a workspace-aware manner.
 from dataclasses import dataclass
 
 
-@dataclass(frozen=True)
+@dataclass
 class CompanyContext:
     """
     Base context for company-related operations.
@@ -23,7 +23,7 @@ class CompanyContext:
     workspace_id: str
 
 
-@dataclass(frozen=True)
+@dataclass
 class CompanyChildContext(CompanyContext):
     """
     Extended context for company child entities.
