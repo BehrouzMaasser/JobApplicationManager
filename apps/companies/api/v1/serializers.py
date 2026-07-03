@@ -1,3 +1,7 @@
+"""
+REST API serializers for the Companies domain.
+"""
+
 from rest_framework import serializers
 
 # Models
@@ -15,7 +19,15 @@ from apps.companies.models import (
 
 
 # Serializers
+
+# =========================================================
+# Company
+# =========================================================
+
 class CompanySerializer(serializers.ModelSerializer):
+    """
+    Serialize company data for API requests and responses.
+    """
 
     name = serializers.CharField(
         required=True,
@@ -50,7 +62,15 @@ class CompanySerializer(serializers.ModelSerializer):
         ]
 
 
+# =========================================================
+# Company Note
+# =========================================================
+
+
 class CompanyNoteSerializer(serializers.ModelSerializer):
+    """
+    Serialize company note data for API requests and responses.
+    """
 
     title = serializers.CharField(
         max_length=40,
@@ -82,7 +102,15 @@ class CompanyNoteSerializer(serializers.ModelSerializer):
         ]
 
 
+# =========================================================
+# Company Email
+# =========================================================
+
+
 class CompanyEmailSerializer(serializers.ModelSerializer):
+    """
+    Serialize company email data for API requests and responses.
+    """
 
     title = serializers.CharField(
         max_length=60,
@@ -114,7 +142,15 @@ class CompanyEmailSerializer(serializers.ModelSerializer):
         ]
 
 
+# =========================================================
+# Job Benefit
+# =========================================================
+
+
 class JobBenefitSerializer(serializers.ModelSerializer):
+    """
+    Serialize job benefit data for API requests and responses.
+    """
 
     name = serializers.CharField(
         max_length=25,
@@ -145,7 +181,15 @@ class JobBenefitSerializer(serializers.ModelSerializer):
         ]
 
 
+# =========================================================
+# Company Task
+# =========================================================
+
+
 class JobTaskSerializer(serializers.ModelSerializer):
+    """
+    Serialize job task data for API requests and responses.
+    """
 
     title = serializers.CharField(
         max_length=25,
@@ -176,7 +220,15 @@ class JobTaskSerializer(serializers.ModelSerializer):
         ]
 
 
+# =========================================================
+# Job Requirement
+# =========================================================
+
+
 class JobRequirementSerializer(serializers.ModelSerializer):
+    """
+    Serialize job requirement data for API requests and responses.
+    """
 
     title = serializers.CharField(
         max_length=50,
@@ -206,7 +258,15 @@ class JobRequirementSerializer(serializers.ModelSerializer):
         ]
 
 
+# =========================================================
+# Job Position
+# =========================================================
+
+
 class JobPositionSerializer(serializers.ModelSerializer):
+    """
+    Serialize job position data for API requests and responses.
+    """
 
     # For Many-To-Many relations
     employment_types = serializers.PrimaryKeyRelatedField(
