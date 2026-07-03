@@ -26,11 +26,11 @@ def co1_ws1_user1_context_no_id(db, workspace_user1):
 
 
 @pytest.fixture
-def co1_ws1_user1(db, workspace_user1):
+def co1_ws1_user1(db, workspace1_user1):
 
     return Company.objects.create(
         name="co1",
-        workspace=workspace_user1,
+        workspace=workspace1_user1,
     )
 
 
@@ -56,11 +56,11 @@ def co1_ws1_user1_context_with_id(db, co1_ws1_user1):
 
 
 @pytest.fixture
-def co1_ws2_user1(db, other_workspace_user1):
+def co1_ws2_user1(db, workspace2_user1):
 
     return Company.objects.create(
         name="co1",
-        workspace=other_workspace_user1,
+        workspace=workspace2_user1,
     )
 
 
@@ -74,11 +74,11 @@ def co2_ws1_user1(db, workspace_user1):
 
 
 @pytest.fixture
-def co1_ws1_user2(db, workspace_user2):
+def co1_ws1_user2(db, workspace1_user2):
 
     return Company.objects.create(
         name="co2",
-        workspace=workspace_user2,
+        workspace=workspace1_user2,
     )
 
 
