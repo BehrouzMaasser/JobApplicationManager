@@ -1,3 +1,12 @@
+"""
+Service layer for JobPosition domain logic.
+
+This module handles creation, update, and deletion of job position records
+associated with a company while enforcing workspace and company-level
+ownership rules.
+"""
+
+from typing import Any
 from django.db import transaction
 
 # Models
@@ -22,7 +31,13 @@ from apps.core.exceptions.exceptions import (
 )
 
 
+# Job Position Service
 class JobPositionService(CompanyService):
+    """
+    Service responsible for managing JobPosition domain operations.
+
+    Ensures strict workspace and company ownership validation for all operations.
+    """
 
     REQUIRED_M2M_FIELDS = {
         "employment_types",
@@ -74,8 +89,33 @@ class JobPositionService(CompanyService):
         *,
         user: User,
         context: CompanyChildContext,
-        validated_data: dict
+        validated_data: dict[str, Any],
     ) -> JobPosition:
+        """
+        Create a new JobPosition under a company.
+
+        Calls:
+            - _resolve_company() to retrieve the company context.
+            - _m2m_ownership_validation() to validate the job position ownership.
+            - django.db.models.base.Model.full_clean()
+            - django.db.models.base.Model.save()
+            - _add_m2m_fields() to add m2m fields.
+            - _m2m_non_empty_validation() to validate the job position non-empty
+            fields.
+
+        Raises:
+            ValidationError:
+                If model validation fails.
+
+            DomainInvariantViolationError:
+                - If the job position does not belong to the company.
+
+                - If the company does not belong to the workspace.
+
+        Returns:
+            JobPosition:
+                The created job position instance.
+        """
 
         # Check if Context follows business rules and resolve Company
         company = JobPositionService._resolve_company(
@@ -142,8 +182,44 @@ class JobPositionService(CompanyService):
         *,
         user: User,
         context: CompanyChildContext,
-        validated_data: dict
+        validated_data: dict[str, Any],
     ) -> JobPosition:
+        """
+        Update an existing JobPosition instance.
+
+        Calls:
+            - _resolve_job_position() to retrieve the target instance.
+            - _validate_date_posted() to validate the date posted.
+            - _m2m_ownership_validation() to validate the job position ownership.
+            - _update_non_m2m_fields() to update non-m2m fields.
+            - django.db.models.base.Model.full_clean()
+            - django.db.models.base.Model.save()
+            - _update_m2m_fields() to update m2m fields.
+            - _m2m_non_empty_validation() to validate the job position non-empty
+            fields.
+
+        Raises:
+            ValidationError:
+                If model validation fails.
+
+            ResourceNotFoundError:
+                If the JobPosition does not exist.
+
+            AccessDeniedError:
+                If the user does not own the resource
+
+            BusinessRuleViolationError:
+                If the date_posted validation fails.
+
+            DomainInvariantViolationError:
+                - If the job position does not belong to the company.
+
+                - If the company does not belong to the workspace.
+
+        Returns:
+            JobPosition:
+                The updated job position instance.
+        """
 
         # Check if Context follows business rules and resolve job position
         instance = JobPositionService._resolve_job_position(
@@ -202,6 +278,29 @@ class JobPositionService(CompanyService):
 
     @staticmethod
     def remove(*, user: User, context: CompanyChildContext) -> None:
+        """
+        Remove a JobPosition instance.
+
+        Calls:
+            - _resolve_job_position() to retrieve the target instance.
+            - django.db.models.base.Model.delete()
+
+        Raises:
+            ResourceNotFoundError:
+                If the JobPosition does not exist.
+
+            AccessDeniedError:
+                If the user does not own the resource
+
+            DomainInvariantViolationError:
+                - If the job position does not belong to the company.
+
+                - If the company does not belong to the workspace.
+
+        Returns:
+            JobPosition:
+                The updated job position instance.
+        """
 
         # Domain Correctness Validation:
 
