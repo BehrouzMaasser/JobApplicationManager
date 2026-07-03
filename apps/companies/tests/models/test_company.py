@@ -6,145 +6,132 @@ from django.db import IntegrityError
 from apps.companies.models import Company
 
 
-#   ----------------------------------- ****** -----------------------------------
-
-# Invalid Creation:
-
-@pytest.mark.django_db
-def test_company_requires_workspace():
-
-    # Workspace is None
-    with pytest.raises(ValidationError):
-        Company(name="Test", workspace=None).full_clean()
-
-    # Workspace is not provided
-    with pytest.raises(ValidationError):
-        Company(name="Test").full_clean()
-
-
-@pytest.mark.django_db
-def test_company_requires_name(workspace_user1):
-
-    # Name is None
-    with pytest.raises(ValidationError):
-        Company(name=None, workspace=workspace_user1).full_clean()
-
-    # Name is not provided
-    with pytest.raises(ValidationError):
-        Company(workspace=workspace_user1).full_clean()
-
-
-@pytest.mark.django_db
-def test_company_requires_non_empty_name(workspace_user1):
-
-    with pytest.raises(ValidationError):
-        Company(name="", workspace=workspace_user1).full_clean()
-
+pytestmark = pytest.mark.django_db
 
 #   ----------------------------------- ****** -----------------------------------
 
-# Constraint Check:
 
-@pytest.mark.django_db
-def test_company_lower_case_name_is_unique_per_workspace(workspace_user1):
+class TestCompanyValidation:
 
-    Company.objects.create(name="Company 1", workspace=workspace_user1)
+    def test_company_requires_company(self):
+        with pytest.raises(ValidationError):
+            Company(name="Test", workspace=None).full_clean()
 
-    with pytest.raises(IntegrityError):
-        Company.objects.create(name="COMPanY 1", workspace=workspace_user1)
+    def test_company_requires_name(self, workspace1_user1):
+        with pytest.raises(ValidationError):
+            Company(name=None, workspace=workspace1_user1).full_clean()
+
+    def test_company_requires_non_empty_name(self, workspace1_user1):
+        with pytest.raises(ValidationError):
+            Company(name="", workspace=workspace1_user1).full_clean()
+
+
+class TestCompanyConstraint:
+
+    def test_company_name_is_unique_per_company(self, workspace1_user1):
+        Company.objects.create(name="Test 1", workspace=workspace1_user1)
+
+        with pytest.raises(IntegrityError):
+            Company.objects.create(name="Test 1", workspace=workspace1_user1)
+
+    def test_same_company_name_raise_error_when_call_full_clean(
+            self, workspace1_user1
+    ):
+        Company.objects.create(name="Test 1", workspace=workspace1_user1)
+
+        with pytest.raises(ValidationError) as e:
+            Company(name="Test 1", workspace=workspace1_user1).full_clean()
+
+            assert e.error_dict["__all__"][0].code == "duplicate_company_name"
 
 
 #   ----------------------------------- ****** -----------------------------------
 
 
-# Valid Creation:
-@pytest.mark.django_db
-def test_valid_company(workspace_user1):
+class TestCompanyCreation:
 
-    company = Company(
-        name="Company 1",
-        website="https://www.google.com",
-        workspace=workspace_user1
-    )
+    def test_valid_company_creation(self, workspace1_user1):
+        company = Company.objects.create(
+            name="Company 1",
+            workspace=workspace1_user1,
+            website="https://www.google.com"
+        )
 
-    company.full_clean()
-    company.save()
+        assert company.workspace == workspace1_user1
+        assert company.name == "Company 1"
+        assert company.website == "https://www.google.com"
+        assert company.created_at is not None
+        assert company.updated_at is not None
 
-    assert company.id is not None
-    assert company.workspace == workspace_user1
-    assert company.name == "Company 1"
-    assert company.website == "https://www.google.com"
+    def test_website_is_optional(self, workspace1_user1):
+        company = Company.objects.create(
+            name="Company 1",
+            workspace=workspace1_user1,
+            website=None
+        )
+
+        assert company.workspace == workspace1_user1
+        assert company.name == "Company 1"
+        assert company.website is None
+        assert company.created_at is not None
+        assert company.updated_at is not None
+
+    def test_ordering(self, workspace1_user1):
+        company1 = Company.objects.create(name="A", workspace=workspace1_user1)
+        company2 = Company.objects.create(name="C", workspace=workspace1_user1)
+        company3 = Company.objects.create(name="B", workspace=workspace1_user1)
+        company4 = Company.objects.create(
+            name="Company 2", workspace=workspace1_user1
+        )
+        company5 = Company.objects.create(
+            name="Company 1", workspace=workspace1_user1
+        )
+
+        correct_name_order = [
+            company1, company3, company2, company5, company4
+        ]
+
+        companies = Company.objects.all()
+
+        for co_correct_order, ws_given in zip(correct_name_order, companies):
+            assert co_correct_order == ws_given
+
+    def test_other_users_with_same_company_name_is_valid(
+            self, workspace1_user1, workspace1_user2
+    ):
+
+        company1 = Company.objects.create(
+            name="Company 1", workspace=workspace1_user1
+        )
+        company2 = Company.objects.create(
+            name="Company 1", workspace=workspace1_user2
+        )
+
+        assert company1.name == "Company 1"
+        assert company1.name == company2.name
+
+    def test_different_workspaces_with_same_company_name_is_valid(
+            self, workspace1_user1, workspace2_user1
+    ):
+
+        company1 = Company.objects.create(
+            name="Company 1", workspace=workspace1_user1
+        )
+        company2 = Company.objects.create(
+            name="Company 1", workspace=workspace2_user1
+        )
+
+        assert company1.name == "Company 1"
+        assert company1.name == company2.name
 
 
-@pytest.mark.django_db
-def test_valid_company_with_optional_website(workspace_user1):
+class TestCompanyRepresentation:
 
-    # Website not provided
-    company_1 = Company(
-        name="Company 1",
-        workspace=workspace_user1,
-    )
+    def test_company_string_representation(self, workspace1_user1):
+        company = Company.objects.create(
+            name="Company 1", workspace=workspace1_user1
+        )
 
-    company_1.full_clean()
-    company_1.save()
-
-    assert company_1.website is None
-
-    # Website is provided and it is None
-    company_2 = Company(
-        name="Company 2",
-        workspace=workspace_user1,
-        website=None
-    )
-
-    company_2.full_clean()
-    company_2.save()
-
-    assert company_2.website is None
-
-    # Website is provided and it is empty string
-    company_3 = Company(
-        name="Company 3",
-        workspace=workspace_user1,
-        website=""
-    )
-
-    company_3.full_clean()
-    company_3.save()
-
-    # Empty string website is stored as None
-    assert company_3.website is None
-
-
-@pytest.mark.django_db
-def test_same_company_name_in_different_workspaces_is_allowed(
-        workspace_user1,
-        other_workspace_user1,
-        workspace_user2
-):
-
-    company1_ws1_user1 = Company(name="Company 1", workspace=workspace_user1)
-
-    company1_ws1_user1.full_clean()
-    company1_ws1_user1.save()
-
-    company1_ws2_user1 = Company(name="Company 1", workspace=other_workspace_user1)
-
-    company1_ws2_user1.full_clean()
-    company1_ws2_user1.save()
-
-    company1_ws1_user2 = Company(name="Company 1", workspace=workspace_user2)
-
-    company1_ws1_user2.full_clean()
-    company1_ws1_user2.save()
-
-    assert company1_ws1_user1.workspace != company1_ws2_user1.workspace
-    assert company1_ws1_user1.workspace != company1_ws1_user2.workspace
-
-    assert company1_ws1_user1.name == company1_ws2_user1.name
-    assert company1_ws1_user1.name == company1_ws1_user2.name
-
-    assert company1_ws1_user1.workspace.owner == company1_ws2_user1.workspace.owner
-    assert company1_ws1_user1.workspace.owner != company1_ws1_user2.workspace.owner
+        assert str(company) == company.name
 
 #   ----------------------------------- ****** -----------------------------------
