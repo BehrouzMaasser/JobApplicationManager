@@ -18,7 +18,8 @@ from apps.workspaces.models import Workspace
 # Exceptions
 from apps.core.exceptions.exceptions import (
     ResourceNotFoundError,
-    AccessDeniedError, InfraStructureViolationError
+    AccessDeniedError,
+    InfraStructureViolationError
 )
 
 
@@ -29,6 +30,7 @@ class WorkspaceSelector:
 
     @dataclass
     class QueryFilter:
+
         workspace_id: str | None = None
 
     @staticmethod
@@ -70,7 +72,9 @@ class WorkspaceSelector:
 
     @staticmethod
     def list(
-            *, user: User, filters: QueryFilter | None = None
+            *,
+            user: User,
+            filters: QueryFilter | None = None
     ) -> QuerySet[Workspace]:
         """
         Retrieve a queryset of Workspaces from the Workspaces database.
