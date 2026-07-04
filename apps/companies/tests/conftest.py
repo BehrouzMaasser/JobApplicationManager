@@ -65,11 +65,11 @@ def co1_ws2_user1(db, workspace2_user1):
 
 
 @pytest.fixture
-def co2_ws1_user1(db, workspace_user1):
+def co2_ws1_user1(db, workspace1_user1):
 
     return Company.objects.create(
         name="co2",
-        workspace=workspace_user1,
+        workspace=workspace1_user1,
     )
 
 
@@ -233,20 +233,30 @@ def job_benefit1_user1_updated_valid_data():
 
 
 @pytest.fixture
-def job_benefit_user1(db, user):
+def job_benefit1_user1(db, user1):
 
     return JobBenefit.objects.create(
-        user=user,
+        user=user1,
         name="Name1",
         description="Description1",
     )
 
 
 @pytest.fixture
-def job_benefit_user2(db, other_user):
+def job_benefit2_user1(db, user1):
 
     return JobBenefit.objects.create(
-        user=other_user,
+        user=user1,
+        name="Name2",
+        description="Description2",
+    )
+
+
+@pytest.fixture
+def job_benefit1_user2(db, user2):
+
+    return JobBenefit.objects.create(
+        user=user2,
         name="Name1",
         description="Description1",
     )
@@ -267,30 +277,30 @@ def job_task_user1_updated_valid_data():
 
 
 @pytest.fixture
-def job_task_user1(db, user):
+def job_task1_user1(db, user1):
 
     return JobTask.objects.create(
-        user=user,
+        user=user1,
         title="Title1",
         description="Description1",
     )
 
 
 @pytest.fixture
-def job_task_user2(db, other_user):
+def job_task1_user2(db, user2):
 
     return JobTask.objects.create(
-        user=other_user,
+        user=user2,
         title="Title1",
         description="Description1",
     )
 
 
 @pytest.fixture
-def job_task2_user1(db, user):
+def job_task2_user1(db, user1):
 
     return JobTask.objects.create(
-        user=user,
+        user=user1,
         title="Title2",
         description="Descriptions2",
     )
@@ -311,30 +321,30 @@ def job_requirement_user1_updated_valid_data():
 
 
 @pytest.fixture
-def job_requirement_user1(db, user):
+def job_requirement1_user1(db, user1):
 
     return JobRequirement.objects.create(
-        user=user,
+        user=user1,
         title="Title1",
         description="Description1",
     )
 
 
 @pytest.fixture
-def job_requirement_user2(db, other_user):
+def job_requirement1_user2(db, user2):
 
     return JobRequirement.objects.create(
-        user=other_user,
+        user=user2,
         title="Title1",
         description="Description1",
     )
 
 
 @pytest.fixture
-def job_requirement2_user1(db, user):
+def job_requirement2_user1(db, user1):
 
     return JobRequirement.objects.create(
-        user=user,
+        user=user1,
         title="Title2",
         description="Description2",
     )
@@ -383,8 +393,8 @@ def job_position1_user1(
         db,
         co1_ws1_user1,
         empl_type1,
-        job_requirement_user1,
-        job_task_user1,
+        job_requirement1_user1,
+        job_task1_user1,
         job_site1,
 ):
 
@@ -396,8 +406,8 @@ def job_position1_user1(
 
     job_position.employment_types.set([empl_type1.id])
     job_position.job_sites.set([job_site1.id])
-    job_position.tasks.set([job_task_user1.id])
-    job_position.requirements.set([job_requirement_user1.id])
+    job_position.tasks.set([job_task1_user1.id])
+    job_position.requirements.set([job_requirement1_user1.id])
 
     return job_position
 
@@ -407,8 +417,8 @@ def job_position1_user2(
         db,
         co1_ws1_user2,
         empl_type1,
-        job_requirement_user2,
-        job_task_user2,
+        job_requirement1_user2,
+        job_task1_user2,
         job_site1,
 ):
 
@@ -420,8 +430,8 @@ def job_position1_user2(
 
     job_position.employment_types.set([empl_type1.id])
     job_position.job_sites.set([job_site1.id])
-    job_position.tasks.set([job_task_user2.id])
-    job_position.requirements.set([job_requirement_user2.id])
+    job_position.tasks.set([job_task1_user2.id])
+    job_position.requirements.set([job_requirement1_user2.id])
 
     return job_position
 
@@ -431,8 +441,8 @@ def job_pos1_co2_ws1_user1(
         db,
         co2_ws1_user1,
         empl_type1,
-        job_requirement_user1,
-        job_task_user1,
+        job_requirement1_user1,
+        job_task1_user1,
         job_site1,
 ):
 
@@ -444,8 +454,8 @@ def job_pos1_co2_ws1_user1(
 
     job_position.employment_types.set([empl_type1.id])
     job_position.job_sites.set([job_site1.id])
-    job_position.tasks.set([job_task_user1.id])
-    job_position.requirements.set([job_requirement_user1.id])
+    job_position.tasks.set([job_task1_user1.id])
+    job_position.requirements.set([job_requirement1_user1.id])
 
     return job_position
 
@@ -455,8 +465,8 @@ def job_pos1_co1_ws2_user1(
         db,
         co1_ws2_user1,
         empl_type1,
-        job_requirement_user1,
-        job_task_user1,
+        job_requirement1_user1,
+        job_task1_user1,
         job_site1,
 ):
 
@@ -468,8 +478,8 @@ def job_pos1_co1_ws2_user1(
 
     job_position.employment_types.set([empl_type1.id])
     job_position.job_sites.set([job_site1.id])
-    job_position.tasks.set([job_task_user1.id])
-    job_position.requirements.set([job_requirement_user1.id])
+    job_position.tasks.set([job_task1_user1.id])
+    job_position.requirements.set([job_requirement1_user1.id])
 
     return job_position
 
