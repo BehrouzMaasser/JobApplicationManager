@@ -558,7 +558,7 @@ def job_pos_user1_api_updated_valid_data(
         job_site2,
         job_task2_user1,
         job_requirement2_user1,
-        job_benefit_user1,
+        job_benefit1_user1,
 ):
 
     return {
@@ -568,5 +568,5 @@ def job_pos_user1_api_updated_valid_data(
         "job_sites": [job_site2.id],
         "tasks": [job_task2_user1.id],
         "requirements": [job_requirement2_user1.id],
-        "benefits": [job_benefit_user1.id],
+        "benefits": [job_benefit1_user1.id],
     }

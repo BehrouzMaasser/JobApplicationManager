@@ -12,25 +12,28 @@ class TestJobPositionSerializer:
 
         assert serializer.is_valid(), serializer.errors
 
-    def test_required_m2m_fields(self, job_pos_user1_api_updated_valid_data):
+    def test_required_m2m_field_missing(self, job_pos_user1_api_updated_valid_data):
 
-        job_pos_user1_api_updated_valid_data.pop("requirements")
+        payload = job_pos_user1_api_updated_valid_data.copy()
+        payload.pop("requirements")
 
-        serializer = JobPositionSerializer(data=job_pos_user1_api_updated_valid_data)
+        serializer = JobPositionSerializer(data=payload)
 
         assert not serializer.is_valid()
         assert "requirements" in serializer.errors
 
-    def test_empty_required_m2m_not_allowed(
+    def test_required_m2m_fields_cannot_be_empty(
             self, job_pos_user1_api_updated_valid_data
     ):
 
-        job_pos_user1_api_updated_valid_data["employment_types"] = []
-        job_pos_user1_api_updated_valid_data["job_sites"] = []
-        job_pos_user1_api_updated_valid_data["tasks"] = []
-        job_pos_user1_api_updated_valid_data["requirements"] = []
+        payload = job_pos_user1_api_updated_valid_data.copy()
 
-        serializer = JobPositionSerializer(data=job_pos_user1_api_updated_valid_data)
+        payload["employment_types"] = []
+        payload["job_sites"] = []
+        payload["tasks"] = []
+        payload["requirements"] = []
+
+        serializer = JobPositionSerializer(data=payload)
 
         assert not serializer.is_valid()
 
@@ -39,28 +42,33 @@ class TestJobPositionSerializer:
         assert "tasks" in serializer.errors
         assert "requirements" in serializer.errors
 
-    def test_benefits_can_be_empty(self, job_pos_user1_api_updated_valid_data):
+    def test_optional_m2m_benefits_can_be_empty(
+            self, job_pos_user1_api_updated_valid_data
+    ):
 
-        job_pos_user1_api_updated_valid_data["benefits"] = []
+        payload = job_pos_user1_api_updated_valid_data.copy()
+        payload["benefits"] = []
 
-        serializer = JobPositionSerializer(data=job_pos_user1_api_updated_valid_data)
+        serializer = JobPositionSerializer(data=payload)
 
         assert serializer.is_valid(), serializer.errors
 
-    def test_title_required(self, job_pos_user1_api_updated_valid_data):
+    def test_title_is_required(self, job_pos_user1_api_updated_valid_data):
 
-        job_pos_user1_api_updated_valid_data.pop("title")
+        payload = job_pos_user1_api_updated_valid_data.copy()
+        payload.pop("title")
 
-        serializer = JobPositionSerializer(data=job_pos_user1_api_updated_valid_data)
+        serializer = JobPositionSerializer(data=payload)
 
         assert not serializer.is_valid()
         assert "title" in serializer.errors
 
-    def test_description_required(self, job_pos_user1_api_updated_valid_data):
+    def test_description_is_required(self, job_pos_user1_api_updated_valid_data):
 
-        job_pos_user1_api_updated_valid_data.pop("description")
+        payload = job_pos_user1_api_updated_valid_data.copy()
+        payload.pop("description")
 
-        serializer = JobPositionSerializer(data=job_pos_user1_api_updated_valid_data)
+        serializer = JobPositionSerializer(data=payload)
 
         assert not serializer.is_valid()
         assert "description" in serializer.errors

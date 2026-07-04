@@ -10,13 +10,53 @@ class TestJobTaskSerializer:
 
         serializer = JobTaskSerializer(data=job_task_user1_valid_data)
 
-        assert serializer.is_valid()
+        assert serializer.is_valid(), serializer.errors
 
     def test_title_required(self, job_task_user1_valid_data):
 
-        job_task_user1_valid_data.pop("title")
+        payload = job_task_user1_valid_data.copy()
+        payload.pop("title")
 
-        serializer = JobTaskSerializer(data=job_task_user1_valid_data)
+        serializer = JobTaskSerializer(data=payload)
 
         assert not serializer.is_valid()
         assert "title" in serializer.errors
+
+    def test_title_cannot_be_blank(self, job_task_user1_valid_data):
+
+        payload = job_task_user1_valid_data.copy()
+        payload["title"] = ""
+
+        serializer = JobTaskSerializer(data=payload)
+
+        assert not serializer.is_valid()
+        assert "title" in serializer.errors
+
+    def test_description_is_optional(self, job_task_user1_valid_data):
+
+        payload = job_task_user1_valid_data.copy()
+        payload.pop("description", None)
+
+        serializer = JobTaskSerializer(data=payload)
+
+        assert serializer.is_valid(), serializer.errors
+
+    def test_description_cannot_be_null_if_provided(self, job_task_user1_valid_data):
+
+        payload = job_task_user1_valid_data.copy()
+        payload["description"] = None
+
+        serializer = JobTaskSerializer(data=payload)
+
+        assert not serializer.is_valid()
+        assert "description" in serializer.errors
+
+    def test_read_only_fields_ignored_on_input(self, job_task_user1_valid_data):
+
+        payload = job_task_user1_valid_data.copy()
+        payload["id"] = 999
+
+        serializer = JobTaskSerializer(data=payload)
+
+        assert serializer.is_valid(), serializer.errors
+        assert "id" not in serializer.validated_data
