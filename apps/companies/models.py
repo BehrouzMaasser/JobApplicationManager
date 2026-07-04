@@ -163,6 +163,7 @@ class EmploymentType(models.Model):
                 violation_error_code="duplicate_employment_type_name"
             )
         ]
+        ordering = ("name", )
 
     def __str__(self):
         """Return the employment type name."""
@@ -186,6 +187,8 @@ class JobSite(models.Model):
                 violation_error_code="duplicate_job_site_name"
             )
         ]
+
+        ordering = ("name", )
 
     def __str__(self):
         """Return the job site name."""
@@ -367,11 +370,11 @@ class JobPosition(models.Model):
     class Meta:
         """Model metadata."""
 
-        ordering = ("company", "title")
         indexes = [
             models.Index(fields=["company"]),
             models.Index(fields=["company", "title"]),
         ]
+        ordering = ("company", "title")
 
     def clean(self):
 
