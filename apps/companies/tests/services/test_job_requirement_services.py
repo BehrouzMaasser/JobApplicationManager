@@ -1,179 +1,177 @@
-from unittest.mock import patch
-
 import pytest
-
-from rest_framework.exceptions import ValidationError
+from unittest.mock import patch
 
 from apps.companies.services.job_requirement_service import JobRequirementService
 
-#   ----------------------------------- ****** -----------------------------------
+from apps.core.exceptions.exceptions import AccessDeniedError
 
 
-# Creation:
-
-@pytest.mark.django_db
-def test_create_job_requirement_successfully_returns_job_requirement(
-        user, job_requirement_user1_valid_data
-):
-
-    job_requirement = JobRequirementService.create(
-        user=user,
-        validated_data=job_requirement_user1_valid_data,
-    )
-
-    assert job_requirement.id is not None
-    assert job_requirement.title == job_requirement_user1_valid_data["title"]
-
-    assert (job_requirement.description ==
-            job_requirement_user1_valid_data["description"])
-
+# -----------------------------------
+# CREATE
+# -----------------------------------
 
 @pytest.mark.django_db
-def test_create_job_requirement_calls_full_clean(
-        user, job_requirement_user1_valid_data
-):
+class TestJobRequirementServiceCreate:
 
-    with patch(
-            "apps.companies.models.JobRequirement.full_clean"
-    ) as mock_full_clean:
-
-        JobRequirementService.create(
-            user=user, validated_data=job_requirement_user1_valid_data
+    def test_create_returns_job_requirement_successfully(
+        self,
+        user1,
+        job_requirement1_user1_valid_data,
+    ):
+        result = JobRequirementService.create(
+            user=user1,
+            validated_data=job_requirement1_user1_valid_data,
         )
 
-        mock_full_clean.assert_called_once()
+        assert result.id is not None
+        assert result.title == job_requirement1_user1_valid_data["title"]
+        assert result.description == job_requirement1_user1_valid_data["description"]
 
+    def test_create_calls_model_methods(
+        self,
+        user1,
+        job_requirement1_user1_valid_data,
+    ):
+        with patch("apps.companies.models.JobRequirement.full_clean") as mock_clean, \
+             patch("apps.companies.models.JobRequirement.save") as mock_save:
+
+            JobRequirementService.create(
+                user=user1,
+                validated_data=job_requirement1_user1_valid_data,
+            )
+
+            mock_clean.assert_called_once()
+            mock_save.assert_called_once()
+
+
+# -----------------------------------
+# UPDATE
+# -----------------------------------
 
 @pytest.mark.django_db
-def test_create_job_requirement_calls_save(
-        user, job_requirement_user1_valid_data
-):
+class TestJobRequirementServiceUpdate:
 
-    with patch(
-            "apps.companies.models.JobRequirement.save"
-    ) as mock_save:
-
-        JobRequirementService.create(
-            user=user, validated_data=job_requirement_user1_valid_data
+    def test_update_returns_updated_job_requirement(
+        self,
+        job_requirement1_user1,
+        job_requirement1_user1_updated_valid_data,
+    ):
+        updated = JobRequirementService.update(
+            user=job_requirement1_user1.user,
+            job_requirement_id=job_requirement1_user1.id,
+            validated_data=job_requirement1_user1_updated_valid_data,
         )
 
-        mock_save.assert_called_once()
+        assert updated.id == job_requirement1_user1.id
+        assert updated.title == job_requirement1_user1_updated_valid_data["title"]
+        assert (updated.description ==
+                job_requirement1_user1_updated_valid_data["description"])
 
-#   ----------------------------------- ****** -----------------------------------
-
-
-# Updating
-
-@pytest.mark.django_db
-def test_update_job_requirement_calls_full_clean(
-        job_requirement_user1_updated_valid_data, job_requirement_user1
-):
-
-    with patch(
-            "apps.companies.models.JobRequirement.full_clean"
-    ) as mock_full_clean:
-
-        JobRequirementService.update(
-            user=job_requirement_user1.user,
-            validated_data=job_requirement_user1_updated_valid_data,
-            job_requirement_id=job_requirement_user1.id
-        )
-
-        mock_full_clean.assert_called_once()
-
-
-@pytest.mark.django_db
-def test_update_job_requirement_calls_save(
-        job_requirement_user1_updated_valid_data, job_requirement_user1
-):
-
-    with patch(
-            "apps.companies.models.JobRequirement.save"
-    ) as mock_save:
-
-        JobRequirementService.update(
-            user=job_requirement_user1.user,
-            validated_data=job_requirement_user1_updated_valid_data,
-            job_requirement_id=job_requirement_user1.id
-        )
-
-        mock_save.assert_called_once()
-
-
-@pytest.mark.django_db
-def test_update_job_requirement_calls_update_non_m2m_fields(
-        job_requirement_user1_updated_valid_data, job_requirement_user1
-):
-
-    with patch(
+    def test_update_calls_update_non_m2m_fields(
+        self,
+        job_requirement1_user1,
+        job_requirement1_user1_updated_valid_data,
+    ):
+        with patch(
             "apps.companies.services.job_requirement_service.JobRequirementService."
             "_update_non_m2m_fields"
-    ) as mock_update_non_m2m_fields:
+        ) as mock_update:
 
-        JobRequirementService.update(
-            user=job_requirement_user1.user,
-            job_requirement_id=job_requirement_user1.id,
-            validated_data=job_requirement_user1_updated_valid_data
+            JobRequirementService.update(
+                user=job_requirement1_user1.user,
+                job_requirement_id=job_requirement1_user1.id,
+                validated_data=job_requirement1_user1_updated_valid_data,
+            )
+
+            mock_update.assert_called_once()
+
+    def test_update_calls_model_methods(
+        self,
+        job_requirement1_user1,
+        job_requirement1_user1_updated_valid_data,
+    ):
+        with patch("apps.companies.models.JobRequirement.full_clean") as mock_clean, \
+             patch("apps.companies.models.JobRequirement.save") as mock_save:
+
+            JobRequirementService.update(
+                user=job_requirement1_user1.user,
+                job_requirement_id=job_requirement1_user1.id,
+                validated_data=job_requirement1_user1_updated_valid_data,
+            )
+
+            mock_clean.assert_called_once()
+            mock_save.assert_called_once()
+
+    def test_partial_update_keeps_existing_fields(
+        self,
+        job_requirement1_user1,
+        job_requirement1_user1_updated_valid_data,
+    ):
+        data = job_requirement1_user1_updated_valid_data.copy()
+        data.pop("description")
+
+        updated = JobRequirementService.update(
+            user=job_requirement1_user1.user,
+            job_requirement_id=job_requirement1_user1.id,
+            validated_data=data,
         )
 
-        mock_update_non_m2m_fields.assert_called_once()
+        assert updated.title == data["title"]
+        assert updated.description == job_requirement1_user1.description
 
+
+# -----------------------------------
+# REMOVE
+# -----------------------------------
 
 @pytest.mark.django_db
-def test_update_job_requirement_calls_resolve_job_requirement(
-        job_requirement_user1, job_requirement_user1_updated_valid_data
-):
+class TestJobRequirementServiceRemove:
 
-    with patch(
-        "apps.companies.services.job_requirement_service.JobRequirementService."
-        "_resolve_job_requirement"
-    ) as mock_resolve_job_requirement:
+    def test_remove_resolves_job_requirement(
+        self,
+        job_requirement1_user1,
+    ):
+        with patch(
+            "apps.companies.services.job_requirement_service.JobRequirementService."
+            "_resolve_job_requirement"
+        ) as mock_resolve:
 
-        JobRequirementService.update(
-            user=job_requirement_user1.user,
-            job_requirement_id=job_requirement_user1.id,
-            validated_data=job_requirement_user1_updated_valid_data,
-        )
+            mock_resolve.return_value = job_requirement1_user1
 
-        mock_resolve_job_requirement.assert_called_once()
+            JobRequirementService.remove(
+                user=job_requirement1_user1.user,
+                job_requirement_id=job_requirement1_user1.id,
+            )
 
-#   ----------------------------------- ****** -----------------------------------
-
-
-# Test Deleting
-
-@pytest.mark.django_db
-def test_delete_job_requirement_calls_resolve_job_requirement(
-        job_requirement_user1
-):
-
-    with patch(
-        "apps.companies.services.job_requirement_service.JobRequirementService."
-        "_resolve_job_requirement"
-    ) as mock_resolve_job_requirement:
-
-        JobRequirementService.remove(
-            user=job_requirement_user1.user,
-            job_requirement_id=job_requirement_user1.id,
-        )
-
-        mock_resolve_job_requirement.assert_called_once()
-
-#   ----------------------------------- ****** -----------------------------------
+            mock_resolve.assert_called_once()
 
 
-# Test Retrieving
+# -----------------------------------
+# RESOLVE
+# -----------------------------------
 
 @pytest.mark.django_db
-def test_access_to_job_requirement_of_another_user_raises_validation_error(
-        other_user, job_requirement_user1
-):
+class TestJobRequirementServiceResolve:
 
-    # Job Requirement don't belong to user
-    with pytest.raises(ValidationError):
-        JobRequirementService._resolve_job_requirement(
-            user=other_user,
-            job_requirement_id=job_requirement_user1.id,
+    def test_returns_job_requirement_successfully(
+        self,
+        job_requirement1_user1,
+    ):
+        result = JobRequirementService._resolve_job_requirement(
+            user=job_requirement1_user1.user,
+            job_requirement_id=job_requirement1_user1.id,
         )
 
-#   ----------------------------------- ****** -----------------------------------
+        assert result == job_requirement1_user1
+
+    def test_access_by_other_users_raises_error(
+        self,
+        user2,
+        job_requirement1_user1,
+    ):
+        with pytest.raises(AccessDeniedError):
+            JobRequirementService._resolve_job_requirement(
+                user=user2,
+                job_requirement_id=job_requirement1_user1.id,
+            )
+            

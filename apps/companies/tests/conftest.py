@@ -261,17 +261,17 @@ def job_benefit1_user2(db, user2):
         description="Description1",
     )
 
-
 # Job Task Fixtures:
 
+
 @pytest.fixture
-def job_task_user1_valid_data():
+def job_task1_user1_valid_data():
 
     return {"title": "Title1", "description": "Description1"}
 
 
 @pytest.fixture
-def job_task_user1_updated_valid_data():
+def job_task1_user1_updated_valid_data():
 
     return {"title": "Title1 Updated", "description": "Description1 Updated"}
 
@@ -309,13 +309,13 @@ def job_task2_user1(db, user1):
 # Job Requirement Fixtures:
 
 @pytest.fixture
-def job_requirement_user1_valid_data():
+def job_requirement1_user1_valid_data():
 
     return {"title": "Title1", "description": "Description1"}
 
 
 @pytest.fixture
-def job_requirement_user1_updated_valid_data():
+def job_requirement1_user1_updated_valid_data():
 
     return {"title": "Title1 Updated", "description": "Description1 Updated"}
 
@@ -498,8 +498,8 @@ def job_position1_context(db, job_position1_user1):
 def job_pos_user1_valid_data(
         empl_type1,
         job_site1,
-        job_task_user1,
-        job_requirement_user1
+        job_task1_user1,
+        job_requirement1_user1
 ):
 
     return {
@@ -507,8 +507,8 @@ def job_pos_user1_valid_data(
         "description": "Description1",
         "employment_types": [empl_type1],
         "job_sites": [job_site1],
-        "tasks": [job_task_user1],
-        "requirements": [job_requirement_user1],
+        "tasks": [job_task1_user1],
+        "requirements": [job_requirement1_user1],
     }
 
 
@@ -537,7 +537,7 @@ def job_pos_user1_updated_valid_data(
         job_site2,
         job_task2_user1,
         job_requirement2_user1,
-        job_benefit_user1,
+        job_benefit1_user1,
 ):
 
     return {
@@ -547,7 +547,7 @@ def job_pos_user1_updated_valid_data(
         "job_sites": [job_site2],
         "tasks": [job_task2_user1],
         "requirements": [job_requirement2_user1],
-        "benefits": [job_benefit_user1],
+        "benefits": [job_benefit1_user1],
     }
 
 

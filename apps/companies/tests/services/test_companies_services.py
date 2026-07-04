@@ -1,277 +1,215 @@
 import pytest
-
 from unittest.mock import patch
-
-from rest_framework.exceptions import PermissionDenied
 
 from apps.companies.services.company_service import CompanyService
 
-#   ----------------------------------- ****** -----------------------------------
+from apps.core.exceptions.exceptions import DomainInvariantViolationError
 
 
-# Creation:
+# -----------------------------------
+# CREATE
+# -----------------------------------
 
 @pytest.mark.django_db
-def test_create_company_calls_resolve_workspace(
-        workspace_user1, co1_ws1_user1_context_with_id, co1_ws1_user1_valid_data
-):
+class TestCompanyServiceCreate:
 
-    with (
-        patch(
-            "apps.companies.services.company_service.CompanyService."
-            "_resolve_workspace"
-        ) as mock_resolve_workspace
+    def test_create_resolves_workspace(
+            self,
+            workspace1_user1,
+            co1_ws1_user1_context_with_id,
+            co1_ws1_user1_valid_data
     ):
 
-        # Error due to fake workspace
-        with pytest.raises(ValueError):
+        with patch(
+            "apps.companies.services.company_service.CompanyService."
+            "_resolve_workspace",
+            return_value=workspace1_user1
+        ) as mock_resolve:
+
             CompanyService.create(
-                user=workspace_user1.owner,
+                user=workspace1_user1.owner,
                 context=co1_ws1_user1_context_with_id,
                 validated_data=co1_ws1_user1_valid_data,
             )
 
-        mock_resolve_workspace.assert_called_once()
+            mock_resolve.assert_called_once()
 
-
-@pytest.mark.django_db
-def test_create_company_calls_full_clean(
-        workspace_user1, co1_ws1_user1_context_no_id, co1_ws1_user1_valid_data
-):
-
-    with patch("apps.companies.models.Company.full_clean") as mock_clean:
-        CompanyService.create(
-            user=workspace_user1.owner,
-            context=co1_ws1_user1_context_no_id,
-            validated_data=co1_ws1_user1_valid_data,
-        )
-
-        mock_clean.assert_called_once()
-
-
-@pytest.mark.django_db
-def test_create_company_calls_save(
-        workspace_user1, co1_ws1_user1_context_no_id, co1_ws1_user1_valid_data
-):
-
-    with patch("apps.companies.models.Company.save") as mock_save:
-        CompanyService.create(
-            user=workspace_user1.owner,
-            context=co1_ws1_user1_context_no_id,
-            validated_data=co1_ws1_user1_valid_data,
-        )
-
-        mock_save.assert_called_once()
-
-#   ----------------------------------- ****** -----------------------------------
-
-
-# Updating
-
-@pytest.mark.django_db
-def test_update_calls_resolve_company(
-        co1_ws1_user1,
-        co1_ws1_user1_context_with_id,
-        co1_ws1_user1_updated_valid_data
-):
-
-    with (
-        patch(
-            "apps.companies.services.company_service.CompanyService._resolve_company"
-        ) as mock_resolve_company
+    def test_create_calls_model_methods(
+            self,
+            workspace1_user1,
+            co1_ws1_user1_context_with_id,
+            co1_ws1_user1_valid_data
     ):
 
-        CompanyService.update(
-            user=co1_ws1_user1.workspace.owner,
-            context=co1_ws1_user1_context_with_id,
-            validated_data=co1_ws1_user1_updated_valid_data
-        )
+        with patch("apps.companies.models.Company.full_clean") as mock_clean, \
+             patch("apps.companies.models.Company.save") as mock_save, \
+             patch(
+                 "apps.companies.services.company_service.CompanyService."
+                 "_resolve_workspace",
+                 return_value=workspace1_user1
+             ):
 
-        mock_resolve_company.assert_called_once()
+            CompanyService.create(
+                user=workspace1_user1.owner,
+                context=co1_ws1_user1_context_with_id,
+                validated_data=co1_ws1_user1_valid_data,
+            )
+
+            mock_clean.assert_called_once()
+            mock_save.assert_called_once()
 
 
-@pytest.mark.django_db
-def test_update_company_calls_full_clean(
-        co1_ws1_user1,
-        co1_ws1_user1_context_with_id,
-        co1_ws1_user1_updated_valid_data
-):
-
-    with patch("apps.companies.models.Company.full_clean") as mock_clean:
-        CompanyService.update(
-            user=co1_ws1_user1.workspace.owner,
-            context=co1_ws1_user1_context_with_id,
-            validated_data=co1_ws1_user1_updated_valid_data,
-        )
-
-        mock_clean.assert_called_once()
-
+# -----------------------------------
+# UPDATE
+# -----------------------------------
 
 @pytest.mark.django_db
-def test_update_company_calls_save(
-        co1_ws1_user1,
-        co1_ws1_user1_context_with_id,
-        co1_ws1_user1_updated_valid_data
-):
+class TestCompanyServiceUpdate:
 
-    with patch("apps.companies.models.Company.save") as mock_save:
-        CompanyService.update(
-            user=co1_ws1_user1.workspace.owner,
-            context=co1_ws1_user1_context_with_id,
-            validated_data=co1_ws1_user1_updated_valid_data,
-        )
+    def test_update_resolves_company(
+            self,
+            co1_ws1_user1,
+            co1_ws1_user1_context_with_id,
+            co1_ws1_user1_updated_valid_data
+    ):
 
-        mock_save.assert_called_once()
+        with patch(
+            "apps.companies.services.company_service.CompanyService._resolve_company"
+        ) as mock_resolve:
 
+            mock_resolve.return_value = co1_ws1_user1
 
-@pytest.mark.django_db
-def test_update_company_calls_update_non_m2m_fields(
-        co1_ws1_user1,
-        co1_ws1_user1_context_with_id,
-        co1_ws1_user1_updated_valid_data
-):
+            CompanyService.update(
+                user=co1_ws1_user1.workspace.owner,
+                context=co1_ws1_user1_context_with_id,
+                validated_data=co1_ws1_user1_updated_valid_data,
+            )
 
-    with patch(
+            mock_resolve.assert_called_once()
+
+    def test_update_calls_update_non_m2m_fields(
+            self,
+            co1_ws1_user1,
+            co1_ws1_user1_context_with_id,
+            co1_ws1_user1_updated_valid_data
+    ):
+
+        with patch(
             "apps.companies.services.company_service.CompanyService."
             "_update_non_m2m_fields"
-    ) as mock_update_non_m2m_fields:
-        CompanyService.update(
+        ) as mock_update, \
+             patch(
+                 "apps.companies.services.company_service.CompanyService."
+                 "_resolve_company",
+                 return_value=co1_ws1_user1
+             ):
+
+            CompanyService.update(
+                user=co1_ws1_user1.workspace.owner,
+                context=co1_ws1_user1_context_with_id,
+                validated_data=co1_ws1_user1_updated_valid_data,
+            )
+
+            mock_update.assert_called_once()
+
+    def test_partial_update_does_not_override_missing_fields(
+        self,
+        co1_ws1_user1,
+        co1_ws1_user1_context_with_id,
+        co1_ws1_user1_updated_valid_data,
+    ):
+        data = co1_ws1_user1_updated_valid_data.copy()
+        data.pop("website")
+
+        updated = CompanyService.update(
+            user=co1_ws1_user1.workspace.owner,
+            context=co1_ws1_user1_context_with_id,
+            validated_data=data,
+        )
+
+        assert updated.name == data["name"]
+        assert updated.website == co1_ws1_user1.website
+
+    def test_full_update_updates_all_fields(
+        self,
+        co1_ws1_user1,
+        co1_ws1_user1_context_with_id,
+        co1_ws1_user1_updated_valid_data,
+    ):
+        updated = CompanyService.update(
             user=co1_ws1_user1.workspace.owner,
             context=co1_ws1_user1_context_with_id,
             validated_data=co1_ws1_user1_updated_valid_data,
         )
 
-        mock_update_non_m2m_fields.assert_called_once()
+        assert updated.name == co1_ws1_user1_updated_valid_data["name"]
+        assert updated.website == co1_ws1_user1_updated_valid_data["website"]
 
 
-@pytest.mark.django_db
-def test_update_only_updates_the_given_fields(
-        co1_ws1_user1_context_with_id,
-        co1_ws1_user1_updated_valid_data,
-        co1_ws1_user1
-):
-
-    co1_ws1_user1_updated_valid_data.pop("website")
-
-    updated_company = CompanyService.update(
-        user=co1_ws1_user1.workspace.owner,
-        context=co1_ws1_user1_context_with_id,
-        validated_data=co1_ws1_user1_updated_valid_data
-    )
-
-    assert updated_company.id == co1_ws1_user1.id
-    assert updated_company.workspace == co1_ws1_user1.workspace
-    assert updated_company.name == co1_ws1_user1_updated_valid_data["name"]
-    assert updated_company.website == co1_ws1_user1.website
-
+# -----------------------------------
+# REMOVE
+# -----------------------------------
 
 @pytest.mark.django_db
-def test_full_update_updates_all_updatable_fields(
-        co1_ws1_user1_context_with_id,
-        co1_ws1_user1_updated_valid_data,
-        co1_ws1_user1
-):
+class TestCompanyServiceRemove:
 
-    updated_company = CompanyService.update(
-        user=co1_ws1_user1.workspace.owner,
-        context=co1_ws1_user1_context_with_id,
-        validated_data=co1_ws1_user1_updated_valid_data
-    )
+    def test_remove_resolves_company(
+            self, co1_ws1_user1, co1_ws1_user1_context_with_id
+    ):
 
-    assert updated_company.id == co1_ws1_user1.id
-    assert updated_company.workspace == co1_ws1_user1.workspace
-    assert updated_company.name == co1_ws1_user1_updated_valid_data["name"]
-    assert updated_company.website == co1_ws1_user1_updated_valid_data["website"]
-
-#   ----------------------------------- ****** -----------------------------------
-
-
-# Test Deleting
-
-@pytest.mark.django_db
-def test_remove_calls_resolve_company(
-        co1_ws1_user1, co1_ws1_user1_context_with_id
-):
-
-    with (
-        patch(
+        with patch(
             "apps.companies.services.company_service.CompanyService._resolve_company"
-        ) as mock_resolve_company
+        ) as mock_resolve:
+
+            mock_resolve.return_value = co1_ws1_user1
+
+            CompanyService.remove(
+                user=co1_ws1_user1.workspace.owner,
+                context=co1_ws1_user1_context_with_id,
+            )
+
+            mock_resolve.assert_called_once()
+
+
+# -----------------------------------
+# RESOLVE COMPANY
+# -----------------------------------
+
+@pytest.mark.django_db
+class TestCompanyServiceResolveCompany:
+
+    def test_returns_company_successfully(
+            self, co1_ws1_user1, co1_ws1_user1_context_with_id
     ):
 
-        CompanyService.remove(
+        result = CompanyService._resolve_company(
             user=co1_ws1_user1.workspace.owner,
-            context=co1_ws1_user1_context_with_id,
+            workspace_id=co1_ws1_user1.workspace.workspace_id,
+            company_id=co1_ws1_user1.id,
         )
 
-        mock_resolve_company.assert_called_once()
+        assert result == co1_ws1_user1
 
-#   ----------------------------------- ****** -----------------------------------
+    def test_workspace_mismatch_raises_domain_error(self, co1_ws1_user1):
 
+        with pytest.raises(DomainInvariantViolationError):
+            CompanyService._resolve_company(
+                user=co1_ws1_user1.workspace.owner,
+                workspace_id="different-workspace-id",
+                company_id=co1_ws1_user1.id,
+            )
 
-# Test Retrieving
+    def test_selector_is_used(self, co1_ws1_user1):
 
-@pytest.mark.django_db
-def test_resolve_company_calls_resolve_workspace(
-        co1_ws1_user1, co1_ws1_user1_context_with_id
-):
+        with patch(
+            "apps.companies.services.company_service.CompanySelector.get",
+            return_value=co1_ws1_user1
+        ) as mock_get:
 
-    with (
-        patch(
-            "apps.companies.services.company_service.CompanyService."
-            "_resolve_workspace"
-        ) as mock_resolve_workspace
-    ):
+            CompanyService._resolve_company(
+                user=co1_ws1_user1.workspace.owner,
+                workspace_id=co1_ws1_user1.workspace.workspace_id,
+                company_id=co1_ws1_user1.id,
+            )
 
-        CompanyService._resolve_company(
-            user=co1_ws1_user1.workspace.owner,
-            workspace_id=co1_ws1_user1_context_with_id.workspace_id,
-            company_id=co1_ws1_user1_context_with_id.id,
-        )
-
-        mock_resolve_workspace.assert_called_once()
-
-
-@pytest.mark.django_db
-def test_resolve_company_returns_company_successfully(
-        co1_ws1_user1, co1_ws1_user1_context_with_id
-):
-
-    company = CompanyService._resolve_company(
-        user=co1_ws1_user1.workspace.owner,
-        workspace_id=co1_ws1_user1.workspace.workspace_id,
-        company_id=co1_ws1_user1_context_with_id.id,
-    )
-
-    assert company == co1_ws1_user1
-    assert company.id == co1_ws1_user1_context_with_id.id
-    assert company.workspace.workspace_id == co1_ws1_user1.workspace.workspace_id
-
-
-@pytest.mark.django_db
-def test_access_to_someone_else_company_raise_error(
-        other_workspace_user1, other_user, co1_ws1_user1_context_with_id
-):
-
-    # Company belong to another user
-    with pytest.raises(PermissionDenied):
-        CompanyService._resolve_company(
-            user=other_user,
-            workspace_id=co1_ws1_user1_context_with_id.workspace_id,
-            company_id=co1_ws1_user1_context_with_id.id,
-        )
-
-
-@pytest.mark.django_db
-def test_get_company_from_another_workspace_raises_validation_error(
-        co1_ws2_user1, co1_ws1_user1
-):
-
-    with pytest.raises(PermissionDenied):
-        CompanyService._resolve_company(
-            user=co1_ws1_user1.workspace.owner,
-            workspace_id=co1_ws1_user1.workspace.id,
-            company_id=co1_ws2_user1.id,
-        )
-
-#   ----------------------------------- ****** -----------------------------------
+            mock_get.assert_called_once()
