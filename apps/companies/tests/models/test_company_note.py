@@ -6,145 +6,170 @@ from django.db import IntegrityError
 from apps.companies.models import CompanyNote
 
 
-#   ----------------------------------- ****** -----------------------------------
-
-# Invalid Creation:
-
-@pytest.mark.django_db
-def test_company_note_requires_company():
-
-    # Company is None
-    with pytest.raises(ValidationError):
-        CompanyNote(company=None, title="Co.1 Bad", content="Content").full_clean()
-
-    # Company is not provided
-    with pytest.raises(ValidationError):
-        CompanyNote(title="Co.1 Bad", content="Content").full_clean()
-
-
-@pytest.mark.django_db
-def test_company_note_requires_title(co1_ws1_user1):
-
-    # Title is None
-
-    with pytest.raises(ValidationError):
-        CompanyNote(
-            title=None, company=co1_ws1_user1, content="Content"
-        ).full_clean()
-
-    # Title is not provided
-    with pytest.raises(ValidationError):
-        CompanyNote(company=co1_ws1_user1, content="Content").full_clean()
-
-
-@pytest.mark.django_db
-def test_company_note_requires_non_empty_title(co1_ws1_user1):
-
-    with pytest.raises(ValidationError):
-        CompanyNote(title="", company=co1_ws1_user1, content="Content").full_clean()
-
-
-@pytest.mark.django_db
-def test_company_note_requires_content(co1_ws1_user1):
-
-    # Content is None
-    with pytest.raises(ValidationError):
-        CompanyNote(title="Title", company=co1_ws1_user1, content=None).full_clean()
-
-    # Content is not Provided
-    with pytest.raises(ValidationError):
-        CompanyNote(title="Title", company=co1_ws1_user1).full_clean()
-
-
-@pytest.mark.django_db
-def test_company_note_requires_non_empty_content(co1_ws1_user1):
-
-    with pytest.raises(ValidationError):
-        CompanyNote(title="Title", company=co1_ws1_user1, content="").full_clean()
+pytestmark = pytest.mark.django_db
 
 #   ----------------------------------- ****** -----------------------------------
 
 
-# Constraint Check:
+@pytest.fixture
+def content1() -> str:
 
-@pytest.mark.django_db
-def test_lower_case_title_should_be_unique_per_company(co1_ws1_user1):
+    return "Content 1"
 
-    CompanyNote.objects.create(
-        title="Title",
-        company=co1_ws1_user1,
-        content="Content"
-    )
 
-    with pytest.raises(IntegrityError):
+class TestCompanyNoteValidation:
+
+    def test_company_note_requires_company(self, content1):
+        with pytest.raises(ValidationError):
+            CompanyNote(
+                title="Test", content=content1, company=None
+            ).full_clean()
+
+    def test_company_note_requires_title(self, co1_ws1_user1, content1):
+        with pytest.raises(ValidationError):
+            CompanyNote(
+                title=None, company=co1_ws1_user1, content=content1
+            ).full_clean()
+
+    def test_company_note_requires_content(self, co1_ws1_user1):
+        with pytest.raises(ValidationError):
+            CompanyNote(
+                title="Test", company=co1_ws1_user1, content=None
+            ).full_clean()
+
+    def test_company_note_requires_non_empty_content(self, co1_ws1_user1):
+        with pytest.raises(ValidationError):
+            CompanyNote(
+                title="Title", company=co1_ws1_user1, content=""
+            ).full_clean()
+
+    def test_company_note_requires_non_empty_title(
+            self, co1_ws1_user1, content1
+    ):
+        with pytest.raises(ValidationError):
+            CompanyNote(
+                title="", company=co1_ws1_user1, content=content1
+            ).full_clean()
+
+
+#   ----------------------------------- ****** -----------------------------------
+
+
+class TestCompanyNoteConstraint:
+
+    def test_title_is_unique_per_company(self, co1_ws1_user1, content1):
         CompanyNote.objects.create(
-            title="tiTLE",
-            company=co1_ws1_user1,
-            content="Another Content"
+            title="Test 1", company=co1_ws1_user1, content=content1
         )
 
+        with pytest.raises(IntegrityError):
+            CompanyNote.objects.create(
+                title="Test 1", company=co1_ws1_user1, content=content1
+            )
+
+    def test_same_title_and_company_raise_error_when_call_full_clean(
+            self,
+            co1_ws1_user1,
+            content1
+    ):
+        CompanyNote.objects.create(
+            title="Test 1", company=co1_ws1_user1, content=content1
+        )
+
+        with pytest.raises(ValidationError) as e:
+            CompanyNote(
+                title="Test 1", company=co1_ws1_user1, content=content1
+            ).full_clean()
+
+            assert e.error_dict["__all__"][0].code == "duplicate_company_note_title"
 
 #   ----------------------------------- ****** -----------------------------------
 
 
-# Valid Creation:
-@pytest.mark.django_db
-def test_valid_company_note(co1_ws1_user1):
+class TestCompanyNoteCreation:
 
-    c_note = CompanyNote(
-        title="Title",
-        company=co1_ws1_user1,
-        content="something"
-    )
-    
-    c_note.full_clean()
-    c_note.save()
+    def test_valid_company_note_creation(self, co1_ws1_user1, content1):
+        company_email = CompanyNote.objects.create(
+            title="Title 1",
+            company=co1_ws1_user1,
+            content=content1,
+        )
 
-    assert c_note.id is not None
-    assert c_note.company == co1_ws1_user1
-    assert c_note.title == "Title"
-    assert c_note.content == "something"
+        assert company_email.company == co1_ws1_user1
+        assert company_email.title == "Title 1"
+        assert company_email.content == content1
+
+    def test_ordering(self, co1_ws1_user1, content1):
+        note1 = CompanyNote.objects.create(
+            title="A", company=co1_ws1_user1, content=content1
+        )
+        note2 = CompanyNote.objects.create(
+            title="C", company=co1_ws1_user1, content=content1
+        )
+        note3 = CompanyNote.objects.create(
+            title="B", company=co1_ws1_user1, content=content1
+        )
+        note4 = CompanyNote.objects.create(
+            title="C-Note 2", company=co1_ws1_user1, content=content1
+        )
+        note5 = CompanyNote.objects.create(
+            title="C-Note 1", company=co1_ws1_user1, content=content1
+        )
+
+        correct_title_order = [
+            note1,
+            note3,
+            note2,
+            note5,
+            note4
+        ]
+
+        notes = CompanyNote.objects.all()
+
+        for notes_correct_order, notes_given in zip(correct_title_order, notes):
+            assert notes_correct_order == notes_given
+
+    def test_other_users_with_same_title_is_valid(
+            self, co1_ws1_user1, co1_ws1_user2, content1
+    ):
+
+        note1 = CompanyNote.objects.create(
+            title="Note 1", company=co1_ws1_user1, content=content1
+        )
+        note2 = CompanyNote.objects.create(
+            title="Note 1", company=co1_ws1_user2, content=content1
+        )
+
+        assert note1.title == "Note 1"
+        assert note1.title == note2.title
+
+        assert note1.content == content1
+        assert note1.content == note2.content
+
+    def test_different_companies_with_same_title_is_valid(
+            self, co1_ws1_user1, co1_ws2_user1, content1
+    ):
+
+        note1 = CompanyNote.objects.create(
+            title="Note 1", company=co1_ws1_user1, content=content1
+        )
+        note2 = CompanyNote.objects.create(
+            title="Note 1", company=co1_ws2_user1, content=content1
+        )
+
+        assert note1.title == "Note 1"
+        assert note1.title == note2.title
+
+#   ----------------------------------- ****** -----------------------------------
 
 
-@pytest.mark.django_db
-def test_same_title_in_different_company_in_same_workspace_is_allowed(
-        co1_ws1_user1, co2_ws1_user1
-):
+class TestCompanyNoteRepresentation:
 
-    c_note_1 = CompanyNote.objects.create(
-        title="Title", company=co1_ws1_user1, content="Content1"
-    )
-    
-    c_note_2 = CompanyNote.objects.create(
-        title="Title", company=co2_ws1_user1, content="Content1"
-    )
-    
-    assert c_note_1.title == c_note_2.title
+    def test_company_note_string_representation(self, co1_ws1_user1, content1):
+        note = CompanyNote.objects.create(
+            title="Note 1", company=co1_ws1_user1, content=content1
+        )
 
-
-@pytest.mark.django_db
-def test_same_title_in_different_companies_is_allowed(
-        co1_ws1_user1, co2_ws1_user1, co1_ws2_user1, co1_ws1_user2
-):
-
-    c_note_1 = CompanyNote.objects.create(
-        title="Title", company=co1_ws1_user1, content="Content"
-    )
-
-    c_note_2 = CompanyNote.objects.create(
-        title="Title", company=co2_ws1_user1, content="Content"
-    )
-
-    c_note_3 = CompanyNote.objects.create(
-        title="Title", company=co1_ws2_user1, content="Content"
-    )
-
-    c_note_4 = CompanyNote.objects.create(
-        title="Title", company=co1_ws1_user2, content="Content"
-    )
-
-    assert c_note_1.title == c_note_2.title
-    assert c_note_1.title == c_note_3.title
-    assert c_note_1.title == c_note_4.title
+        assert str(note) == note.title
 
 #   ----------------------------------- ****** -----------------------------------

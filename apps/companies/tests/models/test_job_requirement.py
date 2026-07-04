@@ -1,170 +1,149 @@
 import pytest
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 
-from apps.accounts.models import User
 from apps.companies.models import JobRequirement
 
 
-#   ----------------------------------- ****** -----------------------------------
-
-# Invalid Creation:
-
-@pytest.mark.django_db
-def test_job_requirement_require_user():
-
-    # User is None
-    with pytest.raises(ValidationError):
-        JobRequirement(
-            user=None, title="Title", description="Some description"
-        ).full_clean()
-
-    # User is not provided
-    with pytest.raises(ValidationError):
-        JobRequirement(
-            title="Title", description="Some description"
-        ).full_clean()
-
-    # User is not created in database
-    with pytest.raises(ValidationError):
-        JobRequirement(
-            user=User(email="email@gmail.com"),
-            title="Title",
-            description="Some description"
-        ).full_clean()
-
-
-@pytest.mark.django_db
-def test_job_requirement_require_title(user):
-
-    # Title is None
-    with pytest.raises(ValidationError):
-        JobRequirement(
-            user=user, title=None, description="Some description"
-        ).full_clean()
-
-    # Title is not provided
-    with pytest.raises(ValidationError):
-        JobRequirement(
-            user=user, description="Some description"
-        ).full_clean()
-
-
-@pytest.mark.django_db
-def test_job_requirement_require_non_empty_title(user):
-
-    with pytest.raises(ValidationError):
-        JobRequirement(
-            user=user, title="", description="Some description"
-        ).full_clean()
-
+pytestmark = pytest.mark.django_db
 
 #   ----------------------------------- ****** -----------------------------------
 
-# Constraint Tests:
 
-@pytest.mark.django_db
-def test_job_requirement_title_and_description_is_lower_unique_per_user(user):
+@pytest.fixture
+def default_description() -> str:
 
-    JobRequirement.objects.create(
-        user=user,
-        title="Job Requirement Title",
-        description="Some description"
-    )
+    return ""
 
-    with transaction.atomic():
+
+@pytest.fixture
+def title1() -> str:
+    
+    return "Title1"
+
+
+@pytest.fixture
+def description1() -> str:
+
+    return "Description1"
+
+
+class TestJobRequirementValidation:
+    
+    def test_job_requirement_required_user(self, title1):
+        with pytest.raises(ValidationError):
+            JobRequirement(user=None, title=title1).full_clean()
+
+    def test_job_requirement_requires_title(self, user1):
+        with pytest.raises(ValidationError):
+            JobRequirement(user=user1, title=None).full_clean()
+
+    def test_job_requirement_requires_non_empty_title(self, user1):
+        with pytest.raises(ValidationError):
+            JobRequirement(user=user1, title="").full_clean()
+
+#   ----------------------------------- ****** -----------------------------------
+
+
+class TestJobRequirementConstraint:
+
+    def test_title_and_description_is_unique_for_each_user(
+            self, user1, title1, description1
+    ):
+        JobRequirement.objects.create(
+            user=user1, title=title1, description=description1
+        )
+
         with pytest.raises(IntegrityError):
             JobRequirement.objects.create(
-                user=user,
-                title="job Requirement Title",
-                description="some DESCRIPTION"
+                user=user1, title=title1, description=description1
             )
 
-    # With no description
-    JobRequirement.objects.create(
-        user=user,
-        title="Job Requirement Title",
-    )
+    def test_same_title_and_description_raise_error_when_call_full_clean(
+            self, user1, title1, description1
+    ):
+        JobRequirement.objects.create(
+            user=user1, title=title1, description=description1
+        )
 
-    with transaction.atomic():
-        with pytest.raises(IntegrityError):
-            JobRequirement.objects.create(
-                user=user,
-                title="Job Requirement Title",
-            )
+        with pytest.raises(ValidationError) as e:
+            JobRequirement(
+                user=user1, title=title1, description=description1
+            ).full_clean()
 
+            assert e.error_dict["__all__"][0].code == "duplicate_job_requirement"
 
 #   ----------------------------------- ****** -----------------------------------
 
-# Valid Creation:
 
-@pytest.mark.django_db
-def test_job_requirement_description_is_optional(user):
+class TestJobRequirementCreation:
 
-    # Description is not provided
-    job_requirement = JobRequirement(
-        user=user,
-        title="Title1",
-    )
+    def test_valid_job_requirement_creation(self, user1, title1, description1):
+        job_requirement = JobRequirement.objects.create(
+            user=user1, title=title1, description=description1
+        )
 
-    job_requirement.full_clean()
-    job_requirement.save()
+        assert job_requirement.user == user1
+        assert job_requirement.title == title1
+        assert job_requirement.description == description1
 
-    assert job_requirement.id is not None
+    def test_description_is_optional(self, user1, title1, default_description):
+        job_requirement = JobRequirement.objects.create(user=user1, title=title1)
 
-    # Description is None
-    job_requirement = JobRequirement(
-        user=user,
-        title="Title2",
-        description=None
-    )
+        assert job_requirement.user == user1
+        assert job_requirement.title == title1
+        assert job_requirement.description == default_description
 
-    job_requirement.full_clean()
-    job_requirement.save()
+    def test_same_title_and_description_is_valid_for_different_users(
+            self, user1, user2, title1, description1
+    ):
+        job_requirement1 = JobRequirement.objects.create(
+            user=user1, title=title1, description=description1
+        )
 
-    assert job_requirement.id is not None
+        job_requirement2 = JobRequirement.objects.create(
+            user=user2, title=title1, description=description1
+        )
+
+        assert job_requirement1.user != job_requirement2.user
+        assert job_requirement1.title == job_requirement2.title
+        assert job_requirement1.description == job_requirement2.description
+
+    def test_ordering(self, user1, description1):
+        requirement1 = JobRequirement.objects.create(
+            user=user1, title="C", description=description1
+        )
+        requirement2 = JobRequirement.objects.create(
+            user=user1, title="A", description=description1
+        )
+        requirement3 = JobRequirement.objects.create(
+            user=user1, title="B", description=description1
+        )
+
+        correct_name_order = [
+            requirement2,
+            requirement3,
+            requirement1,
+        ]
+
+        requirements = JobRequirement.objects.all()
+
+        for requirements_correct_order, requirements_given in (
+                zip(correct_name_order, requirements)):
+            assert requirements_correct_order == requirements_given
+
+#   ----------------------------------- ****** -----------------------------------
 
 
-@pytest.mark.django_db
-def test_job_requirement_with_description(user):
+class TestJobRequirementRepresentation:
 
-    job_requirement = JobRequirement(
-        user=user,
-        title="Job Requirement Title",
-        description="Some description"
-    )
+    def test_job_requirement_string_representation(
+            self, user1, title1, description1
+    ):
+        job_requirement = JobRequirement.objects.create(
+            user=user1, title=title1, description=description1
+        )
 
-    job_requirement.full_clean()
-    job_requirement.save()
-
-    assert job_requirement.id is not None
-    assert job_requirement.title == "Job Requirement Title"
-    assert job_requirement.description == "Some description"
-
-
-@pytest.mark.django_db
-def test_description_is_set_to_empty_string_if_not_given_or_none(user):
-
-    job_requirement = JobRequirement(
-        user=user,
-        title="Job Requirement Title 1",
-    )
-
-    job_requirement.full_clean()
-    job_requirement.save()
-
-    assert job_requirement.description == ""
-
-    job_requirement = JobRequirement(
-        user=user,
-        title="Job Requirement Title 2",
-        description=None
-    )
-
-    job_requirement.full_clean()
-    job_requirement.save()
-
-    assert job_requirement.description == ""
-
+        assert str(job_requirement) == job_requirement.title
 
 #   ----------------------------------- ****** -----------------------------------

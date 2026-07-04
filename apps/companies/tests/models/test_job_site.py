@@ -5,57 +5,83 @@ from django.db import IntegrityError
 from apps.companies.models import JobSite
 
 
-#   ----------------------------------- ****** -----------------------------------
-
-# Invalid Creation:
-
-@pytest.mark.django_db
-def test_job_site_require_name():
-
-    # Name is None
-    with pytest.raises(ValidationError):
-        JobSite(name=None).full_clean()
-
-    # Name is not provided
-    with pytest.raises(ValidationError):
-        JobSite().full_clean()
-
-
-@pytest.mark.django_db
-def test_job_site_require_non_empty_name():
-
-    with pytest.raises(ValidationError):
-        JobSite(name="").full_clean()
-
-
-#   ----------------------------------- ****** -----------------------------------
-
-# Constraint Tests:
-
-@pytest.mark.django_db
-def test_job_site_name_is_lower_unique():
-
-    JobSite.objects.create(name="Home Office")
-
-    with pytest.raises(IntegrityError):
-        JobSite.objects.create(name="home oFFIcE")
-
+pytestmark = pytest.mark.django_db
 
 #   ----------------------------------- ****** -----------------------------------
 
 
-# Valid Creation:
+@pytest.fixture
+def name1() -> str:
+    
+    return "Name1"
 
-@pytest.mark.django_db
-def test_job_site_valid():
 
-    job_site = JobSite(name="In-Site")
+class TestJobSiteValidation:
 
-    job_site.full_clean()
-    job_site.save()
+    def test_job_site_requires_name(self):
+        with pytest.raises(ValidationError):
+            JobSite(name=None).full_clean()
 
-    assert job_site.id is not None
-    assert job_site.name == "In-Site"
+    def test_job_site_requires_non_empty_name(self):
+        with pytest.raises(ValidationError):
+            JobSite(name="").full_clean()
+
+#   ----------------------------------- ****** -----------------------------------
+
+
+class TestJobSiteConstraint:
+
+    def test_name_is_unique(self, name1):
+        JobSite.objects.create(name=name1)
+
+        with pytest.raises(IntegrityError):
+            JobSite.objects.create(name=name1)
+
+    def test_same_name_raise_error_when_call_full_clean(self, name1):
+        JobSite.objects.create(name=name1)
+
+        with pytest.raises(ValidationError) as e:
+            JobSite(name=name1).full_clean()
+
+            assert (e.error_dict["__all__"][0].code ==
+                    "duplicate_job_site_name")
+
+#   ----------------------------------- ****** -----------------------------------
+
+
+class TestJobSiteCreation:
+
+    def test_valid_job_site_creation(self, name1):
+        job_site = JobSite.objects.create(name=name1)
+
+        assert job_site.name == name1
+
+    def test_ordering(self):
+        job_site1 = JobSite.objects.create(name="C")
+        job_site2 = JobSite.objects.create(name="A")
+        job_site3 = JobSite.objects.create(name="B")
+
+        correct_name_order = [
+            job_site2,
+            job_site3,
+            job_site1,
+        ]
+
+        job_sites = JobSite.objects.all()
+
+        for job_sites_correct_order, job_sites_given in (
+                zip(correct_name_order, job_sites)):
+            assert job_sites_correct_order == job_sites_given
+
+#   ----------------------------------- ****** -----------------------------------
+
+
+class TestJobSiteRepresentation:
+
+    def test_job_site_string_representation(self, name1):
+        job_site = JobSite.objects.create(name=name1)
+
+        assert str(job_site) == job_site.name
 
 
 #   ----------------------------------- ****** -----------------------------------

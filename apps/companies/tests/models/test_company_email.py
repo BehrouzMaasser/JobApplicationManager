@@ -158,9 +158,11 @@ class TestCompanyEmailCreation:
         assert email1.title == email2.title
 
 
-class TestCompanyRepresentation:
+class TestCompanyEmailRepresentation:
 
-    def test_company_string_representation(self, co1_ws1_user1, email_address1):
+    def test_company_email_string_representation(
+            self, co1_ws1_user1, email_address1
+    ):
         email = CompanyEmail.objects.create(
             title="Email 1", company=co1_ws1_user1, email=email_address1
         )
