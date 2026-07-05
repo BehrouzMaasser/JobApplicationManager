@@ -516,8 +516,8 @@ def job_pos_user1_valid_data(
 def job_pos_user1_api_valid_data(
         empl_type1,
         job_site1,
-        job_task_user1,
-        job_requirement_user1
+        job_task1_user1,
+        job_requirement1_user1
 ):
 
     return {
@@ -525,8 +525,8 @@ def job_pos_user1_api_valid_data(
         "description": "Description1",
         "employment_types": [empl_type1.id],
         "job_sites": [job_site1.id],
-        "tasks": [job_task_user1.id],
-        "requirements": [job_requirement_user1.id],
+        "tasks": [job_task1_user1.id],
+        "requirements": [job_requirement1_user1.id],
     }
 
 
