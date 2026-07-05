@@ -6,58 +6,67 @@ from apps.companies.models import JobTask
 pytestmark = pytest.mark.django_db
 
 
+# =========================================================
+# LIST
+# =========================================================
+
 class TestJobTaskListAPIView:
 
     @pytest.fixture
-    def job_tasks_url_path(self, base_api_url_path):
+    def url(self, base_api_url_path):
         return f"{base_api_url_path}job-tasks/"
 
-    def test_requires_authentication(
-        self,
-        api_client,
-        job_tasks_url_path,
-    ):
-        response = api_client.get(job_tasks_url_path)
+    def test_requires_authentication(self, api_client, url):
+        response = api_client.get(url)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_list_job_tasks(
+    def test_returns_job_tasks(
         self,
         authenticated_client,
-        job_tasks_url_path,
+        url,
         job_task1_user1,
     ):
-        response = authenticated_client.get(job_tasks_url_path)
+        response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
 
-        returned_ids = {item["id"] for item in response.data["results"]}
+        returned_ids = {obj["id"] for obj in response.data["results"]}
         assert job_task1_user1.id in returned_ids
 
+    def test_does_not_return_foreign_tasks(
+        self,
+        authenticated_client,
+        url,
+        job_task1_user1,
+        job_task1_user2,
+    ):
+        response = authenticated_client.get(url)
+
+        returned_ids = {obj["id"] for obj in response.data["results"]}
+        assert job_task1_user2.id not in returned_ids
+
+
+# =========================================================
+# RETRIEVE
+# =========================================================
 
 class TestJobTaskRetrieveAPIView:
 
     @pytest.fixture
-    def job_tasks_url_path(self, base_api_url_path):
-        return f"{base_api_url_path}job-tasks/"
+    def url(self, base_api_url_path, job_task1_user1):
+        return f"{base_api_url_path}job-tasks/{job_task1_user1.id}/"
 
-    def test_requires_authentication(
-        self,
-        api_client,
-        job_tasks_url_path,
-        job_task1_user1,
-    ):
-        response = api_client.get(f"{job_tasks_url_path}{job_task1_user1.id}/")
+    def test_requires_authentication(self, api_client, url):
+        response = api_client.get(url)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_retrieve_job_task(
+    def test_retrieves_job_task(
         self,
         authenticated_client,
-        job_tasks_url_path,
+        url,
         job_task1_user1,
     ):
-        response = authenticated_client.get(
-            f"{job_tasks_url_path}{job_task1_user1.id}/"
-        )
+        response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["id"] == job_task1_user1.id
@@ -65,82 +74,86 @@ class TestJobTaskRetrieveAPIView:
     def test_returns_404_for_unknown_job_task(
         self,
         authenticated_client,
-        job_tasks_url_path,
+        base_api_url_path,
     ):
-        response = authenticated_client.get(f"{job_tasks_url_path}999999/")
+        response = authenticated_client.get(
+            f"{base_api_url_path}job-tasks/999999/"
+        )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
+
+# =========================================================
+# CREATE
+# =========================================================
 
 class TestJobTaskCreateAPIView:
 
     @pytest.fixture
-    def job_tasks_url_path(self, base_api_url_path):
+    def url(self, base_api_url_path):
         return f"{base_api_url_path}job-tasks/"
 
     def test_requires_authentication(
         self,
         api_client,
-        job_tasks_url_path,
+        url,
         job_task1_user1_valid_data,
     ):
-        response = api_client.post(
-            job_tasks_url_path,
-            job_task1_user1_valid_data,
-            format="json",
-        )
+        response = api_client.post(url, job_task1_user1_valid_data, format="json")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_create_job_task(
+    def test_create_job_task_success(
         self,
         authenticated_client,
-        job_tasks_url_path,
+        url,
         job_task1_user1_valid_data,
     ):
         response = authenticated_client.post(
-            job_tasks_url_path,
+            url,
             job_task1_user1_valid_data,
             format="json",
         )
 
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_201_CREATED
 
-        assert JobTask.objects.filter(id=response.data["id"]).exists()
+        obj = JobTask.objects.get(pk=response.data["id"])
 
-        assert response.data["title"] == job_task1_user1_valid_data["title"]
+        assert obj.title == job_task1_user1_valid_data["title"]
+        assert obj.description == job_task1_user1_valid_data["description"]
 
-        assert (response.data["description"] ==
-                job_task1_user1_valid_data["description"])
+        assert JobTask.objects.filter(pk=response.data["id"]).exists()
 
+    def test_invalid_payload_rejected(
+        self,
+        authenticated_client,
+        url,
+    ):
+        response = authenticated_client.post(url, {}, format="json")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+# =========================================================
+# UPDATE
+# =========================================================
 
 class TestJobTaskUpdateAPIView:
 
     @pytest.fixture
-    def job_tasks_url_path(self, base_api_url_path):
-        return f"{base_api_url_path}job-tasks/"
+    def url(self, base_api_url_path, job_task1_user1):
+        return f"{base_api_url_path}job-tasks/{job_task1_user1.id}/"
 
-    def test_requires_authentication(
-        self,
-        api_client,
-        job_tasks_url_path,
-        job_task1_user1,
-        job_task1_user1_updated_valid_data,
-    ):
-        response = api_client.put(
-            f"{job_tasks_url_path}{job_task1_user1.id}/",
-            job_task1_user1_updated_valid_data,
-            format="json",
-        )
+    def test_requires_authentication(self, api_client, url):
+        response = api_client.put(url, {})
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_update_job_task(
+    def test_full_update_success(
         self,
         authenticated_client,
-        job_tasks_url_path,
         job_task1_user1,
+        url,
         job_task1_user1_updated_valid_data,
     ):
         response = authenticated_client.put(
-            f"{job_tasks_url_path}{job_task1_user1.id}/",
+            url,
             job_task1_user1_updated_valid_data,
             format="json",
         )
@@ -154,57 +167,87 @@ class TestJobTaskUpdateAPIView:
         assert (job_task1_user1.description ==
                 job_task1_user1_updated_valid_data["description"])
 
-    def test_partial_update_job_task(
+    def test_partial_update_success(
         self,
         authenticated_client,
-        job_tasks_url_path,
         job_task1_user1,
+        url,
         job_task1_user1_updated_valid_data,
     ):
         old_title = job_task1_user1.title
 
-        partial_data = {
+        payload = {
             "description": job_task1_user1_updated_valid_data["description"]
         }
 
-        response = authenticated_client.patch(
-            f"{job_tasks_url_path}{job_task1_user1.id}/",
-            partial_data,
-            format="json",
-        )
+        response = authenticated_client.patch(url, payload, format="json")
 
         assert response.status_code == status.HTTP_200_OK
 
         job_task1_user1.refresh_from_db()
 
-        assert job_task1_user1.description == partial_data["description"]
+        assert job_task1_user1.description == payload["description"]
         assert job_task1_user1.title == old_title
 
+    def test_returns_404_for_unknown_update(
+        self,
+        authenticated_client,
+        base_api_url_path,
+        job_task1_user1_updated_valid_data,
+    ):
+        response = authenticated_client.put(
+            f"{base_api_url_path}job-tasks/999999/",
+            job_task1_user1_updated_valid_data,
+            format="json",
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+# =========================================================
+# DELETE
+# =========================================================
 
 class TestJobTaskDeleteAPIView:
 
     @pytest.fixture
-    def job_tasks_url_path(self, base_api_url_path):
-        return f"{base_api_url_path}job-tasks/"
+    def url(self, base_api_url_path, job_task1_user1):
+        return f"{base_api_url_path}job-tasks/{job_task1_user1.id}/"
 
-    def test_requires_authentication(
-        self,
-        api_client,
-        job_tasks_url_path,
-        job_task1_user1,
-    ):
-        response = api_client.delete(f"{job_tasks_url_path}{job_task1_user1.id}/")
+    def test_requires_authentication(self, api_client, url):
+        response = api_client.delete(url)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_delete_job_task(
+    def test_delete_success(
         self,
         authenticated_client,
-        job_tasks_url_path,
         job_task1_user1,
+        url,
     ):
-        response = authenticated_client.delete(
-            f"{job_tasks_url_path}{job_task1_user1.id}/"
-        )
+        response = authenticated_client.delete(url)
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        assert not JobTask.objects.filter(id=job_task1_user1.id).exists()
+        assert not JobTask.objects.filter(pk=job_task1_user1.id).exists()
+
+    def test_delete_unknown_object(
+        self,
+        authenticated_client,
+        base_api_url_path,
+    ):
+        response = authenticated_client.delete(
+            f"{base_api_url_path}job-tasks/999999/"
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_delete_idempotency(
+        self,
+        authenticated_client,
+        job_task1_user1,
+        url,
+    ):
+        authenticated_client.delete(url)
+        response = authenticated_client.delete(url)
+
+        assert response.status_code in (
+            status.HTTP_404_NOT_FOUND,
+            status.HTTP_204_NO_CONTENT,
+        )

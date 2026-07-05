@@ -292,7 +292,8 @@ class BaseServiceViewSet(BaseReadOnlyViewSet, ABC):
         return Response(
             self.read_serializer(
                 instance=instance, context=self.get_serializer_context()
-            ).data
+            ).data,
+            status=status.HTTP_201_CREATED,
         )
 
     def update(self, request, *args, **kwargs) -> Response:

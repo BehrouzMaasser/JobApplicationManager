@@ -33,6 +33,18 @@ class TestCompanyEmailListAPIView:
         returned_ids = {item["id"] for item in response.data["results"]}
         assert co_email1_co1_ws1_user1.id in returned_ids
 
+    def test_does_not_return_foreign_company_emails(
+        self,
+        authenticated_client,
+        url,
+        co_email1_co1_ws1_user1,
+        co_email1_co1_ws1_user2,
+    ):
+        response = authenticated_client.get(url)
+
+        returned_ids = {item["id"] for item in response.data["results"]}
+        assert co_email1_co1_ws1_user2.id not in returned_ids
+
 
 # =========================================================
 # RETRIEVE (global endpoint)
@@ -60,7 +72,9 @@ class TestCompanyEmailRetrieveAPIView:
         assert response.data["id"] == co_email1_co1_ws1_user1.id
 
     def test_returns_404_for_unknown_email(
-            self, authenticated_client, base_api_url_path
+        self,
+        authenticated_client,
+        base_api_url_path,
     ):
         url = f"{base_api_url_path}company-emails/999999/"
         response = authenticated_client.get(url)
@@ -83,7 +97,10 @@ class TestNestedCompanyEmailCreateAPIView:
         )
 
     def test_requires_authentication(
-            self, api_client, url, co_email1_co1_ws1_user1_valid_data
+        self,
+        api_client,
+        url,
+        co_email1_co1_ws1_user1_valid_data,
     ):
         response = api_client.post(
             url, co_email1_co1_ws1_user1_valid_data, format="json"
@@ -95,17 +112,51 @@ class TestNestedCompanyEmailCreateAPIView:
         authenticated_client,
         url,
         co_email1_co1_ws1_user1_valid_data,
+        co_email1_co1_ws1_user1,
     ):
         response = authenticated_client.post(
-            url, co_email1_co1_ws1_user1_valid_data, format="json"
+            url,
+            co_email1_co1_ws1_user1_valid_data,
+            format="json",
         )
 
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_201_CREATED
 
         obj = CompanyEmail.objects.get(pk=response.data["id"])
-
         assert obj.title == co_email1_co1_ws1_user1_valid_data["title"]
         assert obj.email == co_email1_co1_ws1_user1_valid_data["email"]
+
+        # DB persistence safety check
+        assert CompanyEmail.objects.filter(id=response.data["id"]).exists()
+
+    def test_cannot_create_in_foreign_company(
+        self,
+        authenticated_client,
+        base_api_url_path,
+        co1_ws1_user2,
+        co_email1_co1_ws1_user1_valid_data,
+    ):
+        url = (
+            f"{base_api_url_path}workspaces/{co1_ws1_user2.workspace.workspace_id}/"
+            f"companies/{co1_ws1_user2.pk}/company-emails/"
+        )
+
+        response = authenticated_client.post(
+            url,
+            co_email1_co1_ws1_user1_valid_data,
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_invalid_payload_rejected(
+        self,
+        authenticated_client,
+        url,
+    ):
+        response = authenticated_client.post(url, {}, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 # =========================================================
@@ -123,7 +174,10 @@ class TestNestedCompanyEmailRetrieveAPIView:
         )
 
     def test_requires_authentication(
-            self, api_client, base_url, co_email1_co1_ws1_user1
+        self,
+        api_client,
+        base_url,
+        co_email1_co1_ws1_user1,
     ):
         response = api_client.get(f"{base_url}{co_email1_co1_ws1_user1.id}/")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -141,7 +195,11 @@ class TestNestedCompanyEmailRetrieveAPIView:
         assert response.status_code == status.HTTP_200_OK
         assert response.data["id"] == co_email1_co1_ws1_user1.id
 
-    def test_returns_404_for_unknown_email(self, authenticated_client, base_url):
+    def test_returns_404_for_unknown_email(
+        self,
+        authenticated_client,
+        base_url,
+    ):
         response = authenticated_client.get(f"{base_url}999999/")
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -161,12 +219,18 @@ class TestNestedCompanyEmailUpdateAPIView:
         )
 
     def test_requires_authentication(
-            self, api_client, base_url, co_email1_co1_ws1_user1
+        self,
+        api_client,
+        base_url,
+        co_email1_co1_ws1_user1,
     ):
-        response = api_client.put(f"{base_url}{co_email1_co1_ws1_user1.id}/", {})
+        response = api_client.put(
+            f"{base_url}{co_email1_co1_ws1_user1.id}/",
+            {},
+        )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_updates_company_email(
+    def test_full_update(
         self,
         authenticated_client,
         base_url,
@@ -189,7 +253,7 @@ class TestNestedCompanyEmailUpdateAPIView:
         assert (co_email1_co1_ws1_user1.email ==
                 co_email1_co1_ws1_user1_updated_valid_data["email"])
 
-    def test_partial_update_company_email(
+    def test_partial_update(
         self,
         authenticated_client,
         base_url,
@@ -198,9 +262,7 @@ class TestNestedCompanyEmailUpdateAPIView:
     ):
         old_title = co_email1_co1_ws1_user1.title
 
-        payload = {
-            "email": co_email1_co1_ws1_user1_updated_valid_data["email"]
-        }
+        payload = {"email": co_email1_co1_ws1_user1_updated_valid_data["email"]}
 
         response = authenticated_client.patch(
             f"{base_url}{co_email1_co1_ws1_user1.id}/",
@@ -214,6 +276,19 @@ class TestNestedCompanyEmailUpdateAPIView:
 
         assert co_email1_co1_ws1_user1.email == payload["email"]
         assert co_email1_co1_ws1_user1.title == old_title
+
+    def test_patch_requires_authentication(
+        self,
+        api_client,
+        base_url,
+        co_email1_co1_ws1_user1,
+    ):
+        response = api_client.patch(
+            f"{base_url}{co_email1_co1_ws1_user1.id}/",
+            {"email": "x@test.com"},
+        )
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 # =========================================================
@@ -231,12 +306,15 @@ class TestNestedCompanyEmailDeleteAPIView:
         )
 
     def test_requires_authentication(
-            self, api_client, base_url, co_email1_co1_ws1_user1
+        self,
+        api_client,
+        base_url,
+        co_email1_co1_ws1_user1,
     ):
         response = api_client.delete(f"{base_url}{co_email1_co1_ws1_user1.id}/")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_deletes_company_email(
+    def test_delete_success(
         self,
         authenticated_client,
         base_url,
@@ -250,3 +328,45 @@ class TestNestedCompanyEmailDeleteAPIView:
         assert not CompanyEmail.objects.filter(
             pk=co_email1_co1_ws1_user1.id
         ).exists()
+
+    def test_delete_foreign_company_email_forbidden(
+        self,
+        authenticated_client,
+        base_api_url_path,
+        co_email1_co1_ws1_user2,
+    ):
+        url = (
+            f"{base_api_url_path}workspaces/"
+            f"{co_email1_co1_ws1_user2.company.workspace.workspace_id}/companies/"
+            f"{co_email1_co1_ws1_user2.company.pk}/company-emails/"
+            f"{co_email1_co1_ws1_user2.id}/"
+        )
+
+        response = authenticated_client.delete(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_delete_unknown_email(
+        self,
+        authenticated_client,
+        base_url,
+    ):
+        response = authenticated_client.delete(f"{base_url}999999/")
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_delete_idempotency(
+        self,
+        authenticated_client,
+        base_url,
+        co_email1_co1_ws1_user1,
+    ):
+        authenticated_client.delete(f"{base_url}{co_email1_co1_ws1_user1.id}/")
+
+        response = authenticated_client.delete(
+            f"{base_url}{co_email1_co1_ws1_user1.id}/"
+        )
+
+        assert response.status_code in (
+            status.HTTP_404_NOT_FOUND,
+            status.HTTP_204_NO_CONTENT,
+        )

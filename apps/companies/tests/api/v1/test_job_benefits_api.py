@@ -7,7 +7,7 @@ pytestmark = pytest.mark.django_db
 
 
 # =========================================================
-# List
+# LIST
 # =========================================================
 
 class TestJobBenefitListAPIView:
@@ -29,12 +29,25 @@ class TestJobBenefitListAPIView:
         response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert any(obj["id"] == job_benefit1_user1.id for
-                   obj in response.data["results"])
+
+        returned_ids = {obj["id"] for obj in response.data["results"]}
+        assert job_benefit1_user1.id in returned_ids
+
+    def test_does_not_return_foreign_benefits(
+        self,
+        authenticated_client,
+        url,
+        job_benefit1_user1,
+        job_benefit1_user2,
+    ):
+        response = authenticated_client.get(url)
+
+        returned_ids = {obj["id"] for obj in response.data["results"]}
+        assert job_benefit1_user2.id not in returned_ids
 
 
 # =========================================================
-# Retrieve
+# RETRIEVE
 # =========================================================
 
 class TestJobBenefitRetrieveAPIView:
@@ -58,9 +71,20 @@ class TestJobBenefitRetrieveAPIView:
         assert response.status_code == status.HTTP_200_OK
         assert response.data["id"] == job_benefit1_user1.id
 
+    def test_returns_404_for_unknown_job_benefit(
+        self,
+        authenticated_client,
+        base_api_url_path,
+    ):
+        response = authenticated_client.get(
+            f"{base_api_url_path}job-benefits/999999/"
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
 
 # =========================================================
-# Create
+# CREATE
 # =========================================================
 
 class TestJobBenefitCreateAPIView:
@@ -90,16 +114,18 @@ class TestJobBenefitCreateAPIView:
             format="json",
         )
 
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_201_CREATED
 
         obj = JobBenefit.objects.get(pk=response.data["id"])
 
         assert obj.name == job_benefit1_user1_valid_data["name"]
         assert obj.description == job_benefit1_user1_valid_data["description"]
 
+        assert JobBenefit.objects.filter(pk=response.data["id"]).exists()
+
 
 # =========================================================
-# Update
+# UPDATE
 # =========================================================
 
 class TestJobBenefitUpdateAPIView:
@@ -112,7 +138,7 @@ class TestJobBenefitUpdateAPIView:
         response = api_client.put(url, {})
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_updates_job_benefit(
+    def test_full_update(
         self,
         authenticated_client,
         job_benefit1_user1,
@@ -142,10 +168,11 @@ class TestJobBenefitUpdateAPIView:
         url,
         job_benefit1_user1_updated_valid_data,
     ):
-        payload = job_benefit1_user1_updated_valid_data.copy()
-        payload.pop("name")
-
         old_name = job_benefit1_user1.name
+
+        payload = {
+            "description": job_benefit1_user1_updated_valid_data["description"]
+        }
 
         response = authenticated_client.patch(url, payload, format="json")
 
@@ -156,9 +183,23 @@ class TestJobBenefitUpdateAPIView:
         assert job_benefit1_user1.description == payload["description"]
         assert job_benefit1_user1.name == old_name
 
+    def test_returns_404_for_unknown_update(
+        self,
+        authenticated_client,
+        base_api_url_path,
+        job_benefit1_user1_updated_valid_data,
+    ):
+        response = authenticated_client.put(
+            f"{base_api_url_path}job-benefits/999999/",
+            job_benefit1_user1_updated_valid_data,
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
 
 # =========================================================
-# Delete
+# DELETE
 # =========================================================
 
 class TestJobBenefitDeleteAPIView:
@@ -171,7 +212,7 @@ class TestJobBenefitDeleteAPIView:
         response = api_client.delete(url)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_deletes_job_benefit(
+    def test_delete_success(
         self,
         authenticated_client,
         job_benefit1_user1,
@@ -181,3 +222,29 @@ class TestJobBenefitDeleteAPIView:
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert not JobBenefit.objects.filter(pk=job_benefit1_user1.id).exists()
+
+    def test_delete_unknown_object(
+        self,
+        authenticated_client,
+        base_api_url_path,
+    ):
+        response = authenticated_client.delete(
+            f"{base_api_url_path}job-benefits/999999/"
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_delete_idempotency(
+        self,
+        authenticated_client,
+        job_benefit1_user1,
+        url,
+    ):
+        authenticated_client.delete(url)
+
+        response = authenticated_client.delete(url)
+
+        assert response.status_code in (
+            status.HTTP_404_NOT_FOUND,
+            status.HTTP_204_NO_CONTENT,
+        )
