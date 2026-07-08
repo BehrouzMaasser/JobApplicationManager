@@ -712,7 +712,7 @@ class CompanyNoteUpdateView(
 
         return ExtraContext(
             app_kind="company note",
-            page_title="Update Company Notee",
+            page_title="Update Company Note",
         )
 
 
@@ -747,7 +747,7 @@ class CompanyNoteDeleteView(
             )
         )
 
-        return redirect("company-detail-web", pk=self.kwargs["company_id"])
+        return redirect("company-detail-web", pk=self.company_note.company.pk)
 
     def build_app_context(self):
 
