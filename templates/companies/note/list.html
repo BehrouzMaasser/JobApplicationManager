@@ -16,7 +16,7 @@ Company Notes
 
     <div class="action-bar">
 
-        {% if app_context.company_id %}
+        {% if app_context.company_id and app_context.workspace_id %}
             <a
                 class="btn btn-primary"
                 href="{% url 'company-note-create-web' workspace_id=app_context.workspace_id company_id=app_context.company_id %}"
