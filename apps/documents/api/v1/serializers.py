@@ -1,3 +1,7 @@
+"""
+REST API serializers for the Documents domain.
+"""
+
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
@@ -9,18 +13,27 @@ from apps.documents.models import (
 
 
 # Serializers
+
+# =========================================================
+# Document Type
+# =========================================================
+
 class DocumentTypeSerializer(serializers.ModelSerializer):
+    """
+    Serialize document type data for API requests and responses.
+    """
 
     name = serializers.CharField(
         max_length=40,
         required=True,
         allow_blank=False,
-        allow_null=False
+        allow_null=False,
     )
+
     description = serializers.CharField(
         required=False,
         allow_null=True,
-        allow_blank=False
+        allow_blank=False,
     )
 
     class Meta:
@@ -40,18 +53,27 @@ class DocumentTypeSerializer(serializers.ModelSerializer):
             "id",
             "owner",
             "created_at",
-            "updated_at"
+            "updated_at",
         ]
 
 
+# =========================================================
+# Document
+# =========================================================
+
 class DocumentBaseSerializer(serializers.ModelSerializer):
+    """
+    Base serializer containing the common fields shared by document
+    read and write serializers.
+    """
 
     name = serializers.CharField(
         max_length=50,
         required=True,
         allow_blank=False,
-        allow_null=False
+        allow_null=False,
     )
+
     document_type = serializers.PrimaryKeyRelatedField(
         queryset=DocumentType.objects.all(),
         required=True,
@@ -80,6 +102,9 @@ class DocumentBaseSerializer(serializers.ModelSerializer):
 
 
 class DocumentReadSerializer(DocumentBaseSerializer):
+    """
+    Serialize document data for read operations, including the download URL.
+    """
 
     file_url = serializers.SerializerMethodField(read_only=True)
 
@@ -87,16 +112,20 @@ class DocumentReadSerializer(DocumentBaseSerializer):
 
         fields = [
             *DocumentBaseSerializer.Meta.fields,
-            "file_url"
+            "file_url",
         ]
 
     def get_file_url(self, document: Document) -> str | None:
+        """
+        Return the absolute download URL for the document when a request
+        is available, otherwise return the relative URL.
+        """
 
         request = self.context.get("request")
 
         url = reverse(
             "document-download",
-            kwargs={"id": document.pk}
+            kwargs={"id": document.pk},
         )
 
         if request:
@@ -106,10 +135,13 @@ class DocumentReadSerializer(DocumentBaseSerializer):
 
 
 class DocumentWriteSerializer(DocumentBaseSerializer):
+    """
+    Serialize document data for create and update operations.
+    """
 
     class Meta(DocumentBaseSerializer.Meta):
 
         fields = [
             *DocumentBaseSerializer.Meta.fields,
-            "file"
+            "file",
         ]

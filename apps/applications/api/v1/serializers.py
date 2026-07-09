@@ -1,3 +1,7 @@
+"""
+REST API serializers for the Applications domain.
+"""
+
 from rest_framework import serializers
 
 from apps.applications.models import (
@@ -9,7 +13,16 @@ from apps.companies.models import CompanyEmail
 from apps.documents.models import Document
 
 
+# Serializers
+
+# =========================================================
+# Job Application
+# =========================================================
+
 class JobApplicationSerializer(serializers.ModelSerializer):
+    """
+    Serialize job application data for API requests and responses.
+    """
 
     emails = serializers.PrimaryKeyRelatedField(
         many=True,
@@ -57,7 +70,14 @@ class JobApplicationSerializer(serializers.ModelSerializer):
         ]
 
 
+# =========================================================
+# Job Application Note
+# =========================================================
+
 class JobApplicationNoteSerializer(serializers.ModelSerializer):
+    """
+    Serialize job application note data for API requests and responses.
+    """
 
     title = serializers.CharField(
         max_length=60,
@@ -65,6 +85,7 @@ class JobApplicationNoteSerializer(serializers.ModelSerializer):
         allow_blank=False,
         allow_null=False,
     )
+
     content = serializers.CharField(
         required=True,
         allow_blank=False,
