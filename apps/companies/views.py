@@ -1038,5 +1038,5 @@ class JobPositionDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
 
         return ExtraContext(
             app_kind="job position",
-            page_title="Delete job Position",
+            page_title="Delete Job Position",
         )
