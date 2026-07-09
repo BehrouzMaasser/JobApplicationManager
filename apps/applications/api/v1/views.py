@@ -1,6 +1,13 @@
-from rest_framework import viewsets, mixins, status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
+"""
+REST API views for managing the Applications domain.
+
+This module defines DRF ViewSets that:
+- Delegate read operations to selector layer
+- Delegate write operations to service layer
+- Enforce consistent lookup behavior for nested resources
+"""
+
+from django.db.models import QuerySet
 
 # Serializers
 from apps.applications.api.v1.serializers import (
@@ -8,285 +15,261 @@ from apps.applications.api.v1.serializers import (
     JobApplicationNoteSerializer,
 )
 
-# Selectors
-from apps.applications.selectors.application_note_selector import (
+# Models (for typing only)
+from apps.applications.models import (
+    JobApplication,
+    JobApplicationNote,
+)
 
+# Selectors
+from apps.applications.selectors.application_selector import (
+    JobApplicationSelector,
+)
+from apps.applications.selectors.application_note_selector import (
     JobApplicationNoteSelector,
 )
 
-from apps.applications.selectors.application_selector import JobApplicationSelector
-
-# Contexts
-from apps.applications.services.contexts.application_context import (
-    JobApplicationContext,
-    JobApplicationChildContext
-)
-
 # Services
+from apps.applications.services.application_service import (
+    JobApplicationService,
+)
 from apps.applications.services.application_note_service import (
     JobApplicationNoteService,
 )
 
-from apps.applications.services.application_service import JobApplicationService
+# Contexts
+from apps.applications.services.contexts.application_context import (
+    JobApplicationContext,
+    JobApplicationChildContext,
+)
+
+# Base ViewSets
+from apps.core.common.api.viewsets import (
+    BaseReadOnlyViewSet,
+    BaseContextServiceViewSet,
+)
 
 
-# ViewSets
+# =========================================================
+# Job Application
+# =========================================================
 
-class JobApplicationViewSet(
-    mixins.RetrieveModelMixin,
-    mixins.ListModelMixin,
-    viewsets.GenericViewSet,
-):
+class JobApplicationViewSet(BaseReadOnlyViewSet):
+    """
+    Read-only API for Job Applications.
 
-    # URL Path:
-    # job-applications/{id}
+    Responsibilities:
+    - List and retrieve job applications
+    - Delegate queries to JobApplicationSelector
+    - Support optional filtering
+    """
 
     serializer_class = JobApplicationSerializer
-    permission_classes = [IsAuthenticated]
+
+    selector_class = JobApplicationSelector
+    selector_lookup_field = "application_id"
 
     lookup_url_kwarg = "id"
 
-    def get_object(self, queryset=None):
+    def get_queryset(self) -> QuerySet[JobApplication]:
+        """
+        Return filtered job applications for the authenticated user.
+        """
 
-        return JobApplicationSelector.get(
-            user=self.request.user, application_id=self.kwargs["id"]
-        )
-
-    def get_queryset(self):
-
-        return JobApplicationSelector.list(
+        return self.selector.list(
             user=self.request.user,
             filters=self._get_queryset_filters(),
         )
 
-    def _get_queryset_filters(self):
+    def _get_queryset_filters(
+        self,
+    ) -> JobApplicationSelector.QueryFilter:
+        """
+        Build selector filter object from query parameters.
+        """
 
         return JobApplicationSelector.QueryFilter(
-            workspace_id=self.request.query_params.get('workspace_id'),
-            company_id=self.request.query_params.get('company_id'),
-            job_position_id=self.request.query_params.get('job_position_id'),
-            status_id=self.request.query_params.get('status_id'),
-            date_applied=self.request.query_params.get('date_applied'),
+            workspace_id=self.request.query_params.get("workspace_id"),
+            company_id=self.request.query_params.get("company_id"),
+            job_position_id=self.request.query_params.get("job_position_id"),
+            status_id=self.request.query_params.get("status_id"),
+            date_applied=self.request.query_params.get("date_applied"),
         )
 
 
-class JobApplicationNestedViewSet(viewsets.ModelViewSet):
+class NestedJobApplicationViewSet(BaseContextServiceViewSet):
+    """
+    Full CRUD API for Job Applications in nested context.
 
-    # URL Path:
-    # workspaces/{workspace_id}/companies/{company_id}/job-positions/{job_position_id}/job-applications/{id}
+    Requires:
+    - workspace_id
+    - company_id
+    - job_position_id
+    """
 
-    permission_classes = [IsAuthenticated]
-    serializer_class = JobApplicationSerializer
+    service_class = JobApplicationService
+    selector_class = JobApplicationSelector
+
+    read_serializer_class = JobApplicationSerializer
+    write_serializer_class = JobApplicationSerializer
 
     lookup_url_kwarg = "id"
+    selector_lookup_field = "application_id"
 
-    def get_object(self, queryset=None):
+    def get_queryset(self) -> QuerySet[JobApplication]:
+        """
+        Return job applications scoped to a job position.
+        """
 
-        return JobApplicationSelector.get(
-            user=self.request.user, application_id=self.kwargs["id"]
-        )
-
-    def get_queryset(self):
-
-        return JobApplicationSelector.list(
+        return self.selector.list(
             user=self.request.user,
             filters=self._get_queryset_filters(),
         )
 
-    def create(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = JobApplicationService.create(
-            user=self.request.user,
-            context=self._get_context(None),
-            validated_data=serializer.validated_data)
-
-        return Response(self.get_serializer(instance).data)
-
-    def update(self, request, *args, **kwargs):
-
-        serializer = self._validated_serializer()
-
-        instance = JobApplicationService.update(
-            user=self.request.user,
-            context=self._get_context(self.kwargs['id']),
-            validated_data=serializer.validated_data)
-
-        return Response(self.get_serializer(instance).data)
-
-    def partial_update(self, request, *args, **kwargs):
-
-        serializer = self._validated_serializer(partial=True)
-
-        instance = JobApplicationService.update(
-            user=self.request.user,
-            context=self._get_context(self.kwargs['id']),
-            validated_data=serializer.validated_data)
-
-        return Response(self.get_serializer(instance).data)
-
-    def destroy(self, request, *args, **kwargs):
-
-        JobApplicationService.remove(
-            user=self.request.user,
-            context=self._get_context(self.kwargs['id']),
-        )
-
-        return Response(status=status.HTTP_200_OK)
-
-    def _get_context(self, job_application_id: int | None):
+    def get_create_context(self) -> JobApplicationContext:
+        """
+        Context used when creating a job application.
+        """
 
         return JobApplicationContext(
-            id=job_application_id,
-            workspace_id=self.kwargs['workspace_id'],
-            company_id=self.kwargs['company_id'],
-            job_position_id=self.kwargs['job_position_id'],
+            id=None,
+            workspace_id=self.kwargs["workspace_id"],
+            company_id=self.kwargs["company_id"],
+            job_position_id=self.kwargs["job_position_id"],
         )
 
-    def _get_queryset_filters(self):
+    def get_update_context(self) -> JobApplicationContext:
+        """
+        Context used when updating or deleting a job application.
+        """
+
+        return JobApplicationContext(
+            id=self.kwargs["id"],
+            workspace_id=self.kwargs["workspace_id"],
+            company_id=self.kwargs["company_id"],
+            job_position_id=self.kwargs["job_position_id"],
+        )
+
+    def _get_queryset_filters(
+        self,
+    ) -> JobApplicationSelector.QueryFilter:
         return JobApplicationSelector.QueryFilter(
-            workspace_id=self.kwargs['workspace_id'],
-            company_id=self.kwargs['company_id'],
-            job_position_id=self.kwargs['job_position_id'],
+            workspace_id=self.kwargs["workspace_id"],
+            company_id=self.kwargs["company_id"],
+            job_position_id=self.kwargs["job_position_id"],
         )
 
-    def _validated_serializer(self, partial=False):
-        serializer = self.get_serializer(
-            data=self.request.data,
-            partial=partial
-        )
-        serializer.is_valid(raise_exception=True)
-        return serializer
 
+# =========================================================
+# Job Application Note
+# =========================================================
 
-class JobApplicationNoteViewSet(
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    viewsets.GenericViewSet,
-):
+class JobApplicationNoteViewSet(BaseReadOnlyViewSet):
+    """
+    Read-only API for Job Application Notes.
 
-    # URL Path:
-    # job-application-notes/{id}
+    Responsibilities:
+    - List and retrieve application notes
+    - Delegate queries to JobApplicationNoteSelector
+    - Support optional filtering
+    """
 
     serializer_class = JobApplicationNoteSerializer
-    permission_classes = [IsAuthenticated]
+
+    selector_class = JobApplicationNoteSelector
+    selector_lookup_field = "application_note_id"
 
     lookup_url_kwarg = "id"
 
-    def get_object(self, queryset=None):
+    def get_queryset(self) -> QuerySet[JobApplicationNote]:
+        """
+        Return filtered application notes for the authenticated user.
+        """
 
-        return JobApplicationNoteSelector.get(
-            user=self.request.user, application_note_id=self.kwargs["id"]
-        )
-
-    def get_queryset(self):
-
-        return JobApplicationNoteSelector.list(
+        return self.selector.list(
             user=self.request.user,
             filters=self._get_queryset_filters(),
         )
 
-    def _get_queryset_filters(self):
+    def _get_queryset_filters(
+        self,
+    ) -> JobApplicationNoteSelector.QueryFilter:
+        """
+        Build selector filter object from query parameters.
+        """
 
         return JobApplicationNoteSelector.QueryFilter(
-            workspace_id=self.request.query_params.get('workspace_id'),
-            company_id=self.request.query_params.get('company_id'),
-            job_position_id=self.request.query_params.get('job_position_id'),
-            job_application_id=self.request.query_params.get('job_application_id'),
+            workspace_id=self.request.query_params.get("workspace_id"),
+            company_id=self.request.query_params.get("company_id"),
+            job_position_id=self.request.query_params.get("job_position_id"),
+            job_application_id=self.request.query_params.get(
+                "job_application_id"
+            ),
         )
 
 
-class JobApplicationNoteNestedViewSet(viewsets.ModelViewSet):
+class NestedJobApplicationNoteViewSet(BaseContextServiceViewSet):
+    """
+    Full CRUD API for Job Application Notes in nested context.
 
-    # URL Path:
-    # workspaces/{workspace_id}/companies/{company_id}/job-positions/{job_position_id}/job-applications/{job_application_id}/job-application-notes/{id}
+    Requires:
+    - workspace_id
+    - company_id
+    - job_position_id
+    - job_application_id
+    """
 
-    permission_classes = [IsAuthenticated]
-    serializer_class = JobApplicationNoteSerializer
+    service_class = JobApplicationNoteService
+    selector_class = JobApplicationNoteSelector
+
+    read_serializer_class = JobApplicationNoteSerializer
+    write_serializer_class = JobApplicationNoteSerializer
 
     lookup_url_kwarg = "id"
+    selector_lookup_field = "application_note_id"
 
-    def get_object(self, queryset=None):
+    def get_queryset(self) -> QuerySet[JobApplicationNote]:
+        """
+        Return application notes scoped to a job application.
+        """
 
-        return JobApplicationNoteSelector.get(
-            user=self.request.user, application_note_id=self.kwargs["id"]
-        )
-
-    def get_queryset(self):
-
-        return JobApplicationNoteSelector.list(
+        return self.selector.list(
             user=self.request.user,
             filters=self._get_queryset_filters(),
         )
 
-    def create(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = JobApplicationNoteService.create(
-            user=self.request.user,
-            context=self._get_context(None),
-            validated_data=serializer.validated_data
-        )
-
-        return Response(self.get_serializer(instance).data)
-
-    def update(self, request, *args, **kwargs):
-
-        serializer = self._validated_serializer()
-
-        instance = JobApplicationNoteService.update(
-            user=self.request.user,
-            context=self._get_context(self.kwargs['id']),
-            validated_data=serializer.validated_data)
-
-        return Response(self.get_serializer(instance).data)
-
-    def partial_update(self, request, *args, **kwargs):
-
-        serializer = self._validated_serializer(partial=True)
-
-        instance = JobApplicationNoteService.update(
-            user=self.request.user,
-            context=self._get_context(self.kwargs['id']),
-            validated_data=serializer.validated_data)
-
-        return Response(self.get_serializer(instance).data)
-
-    def destroy(self, request, *args, **kwargs):
-
-        JobApplicationNoteService.remove(
-            user=self.request.user,
-            context=self._get_context(self.kwargs['id']),
-        )
-
-        return Response(status=status.HTTP_200_OK)
-
-    def _get_context(self, job_application_note_id: int | None):
+    def get_create_context(self) -> JobApplicationChildContext:
+        """
+        Context used when creating a job application note.
+        """
 
         return JobApplicationChildContext(
-            id=job_application_note_id,
-            workspace_id=self.kwargs['workspace_id'],
-            company_id=self.kwargs['company_id'],
-            job_position_id=self.kwargs['job_position_id'],
+            id=None,
+            workspace_id=self.kwargs["workspace_id"],
+            company_id=self.kwargs["company_id"],
+            job_position_id=self.kwargs["job_position_id"],
             job_application_id=self.kwargs["job_application_id"],
         )
 
-    def _get_queryset_filters(self):
-        return JobApplicationNoteSelector.QueryFilter(
-            workspace_id=self.kwargs['workspace_id'],
-            company_id=self.kwargs['company_id'],
-            job_position_id=self.kwargs['job_position_id'],
-            job_application_id=self.kwargs['job_application_id'],
+    def get_update_context(self) -> JobApplicationChildContext:
+        """
+        Context used when updating or deleting a job application note.
+        """
+
+        return JobApplicationChildContext(
+            id=self.kwargs["id"],
+            workspace_id=self.kwargs["workspace_id"],
+            company_id=self.kwargs["company_id"],
+            job_position_id=self.kwargs["job_position_id"],
+            job_application_id=self.kwargs["job_application_id"],
         )
 
-    def _validated_serializer(self, partial=False):
-        serializer = self.get_serializer(
-            data=self.request.data,
-            partial=partial
+    def _get_queryset_filters(
+        self,
+    ) -> JobApplicationNoteSelector.QueryFilter:
+        return JobApplicationNoteSelector.QueryFilter(
+            workspace_id=self.kwargs["workspace_id"],
+            company_id=self.kwargs["company_id"],
+            job_position_id=self.kwargs["job_position_id"],
+            job_application_id=self.kwargs["job_application_id"],
         )
-        serializer.is_valid(raise_exception=True)
-        return serializer

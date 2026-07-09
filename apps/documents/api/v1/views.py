@@ -1,123 +1,108 @@
+"""
+REST API views for managing the Documents domain.
+
+This module defines DRF ViewSets that:
+- Delegate read operations to selector layer
+- Delegate write operations to service layer
+- Provide document download functionality
+"""
+
+from django.db.models import QuerySet
+
 # DRF
-from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.response import Response
-
-# DRF Permissions
-from rest_framework.permissions import IsAuthenticated
 
 # Mixins
-from apps.core.mixins.document_file_response_mixin import DocumentFileResponseMixin
+from apps.core.mixins.document_file_response_mixin import (
+    DocumentFileResponseMixin,
+)
 
 # Serializers
 from apps.documents.api.v1.serializers import (
     DocumentTypeSerializer,
     DocumentReadSerializer,
-    DocumentWriteSerializer
+    DocumentWriteSerializer,
+)
+
+# Models (for typing only)
+from apps.documents.models import (
+    Document,
+    DocumentType,
 )
 
 # Selectors
-from apps.documents.selectors.document_type_selector import DocumentTypeSelector
-from apps.documents.selectors.document_selector import DocumentSelector
+from apps.documents.selectors.document_selector import (
+    DocumentSelector,
+)
+from apps.documents.selectors.document_type_selector import (
+    DocumentTypeSelector,
+)
 
 # Services
-from apps.documents.services.document_type_service import DocumentTypeService
 from apps.documents.services.document_service import DocumentService
+from apps.documents.services.document_type_service import (
+    DocumentTypeService,
+)
+
+# Base ViewSets
+from apps.core.common.api.viewsets import (
+    BaseIdServiceViewSet,
+)
 
 
-# ViewSets
+# =========================================================
+# Document Type
+# =========================================================
 
-class DocumentTypeViewSet(viewsets.ModelViewSet):
+class DocumentTypeViewSet(BaseIdServiceViewSet):
+    """
+    CRUD API for Document Types.
+    """
 
-    # URL Path:
-    # document-types/{id}
+    service_class = DocumentTypeService
+    selector_class = DocumentTypeSelector
 
-    permission_classes = [IsAuthenticated]
-    serializer_class = DocumentTypeSerializer
+    read_serializer_class = DocumentTypeSerializer
+    write_serializer_class = DocumentTypeSerializer
 
     lookup_url_kwarg = "id"
+    selector_lookup_field = "document_type_id"
+    service_lookup_id = "document_type_id"
 
-    def get_object(self, queryset=None):
+    def get_queryset(self) -> QuerySet[DocumentType]:
+        """
+        Return all document types for the authenticated user.
+        """
 
-        return DocumentTypeSelector.get(
-            user=self.request.user, document_type_id=self.kwargs["id"]
-        )
-
-    def get_queryset(self):
-
-        return DocumentTypeSelector.list(user=self.request.user)
-
-    def create(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = DocumentTypeService.create(
-            user=request.user,
-            validated_data=serializer.validated_data
-        )
-
-        return Response(DocumentTypeSerializer(instance).data)
-
-    def update(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = DocumentTypeService.update(
-            user=request.user,
-            document_type_id=self.kwargs['id'],
-            validated_data=serializer.validated_data
-        )
-
-        return Response(DocumentTypeSerializer(instance).data)
-
-    def partial_update(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-
-        instance = DocumentTypeService.update(
-            user=request.user,
-            document_type_id=self.kwargs['id'],
-            validated_data=serializer.validated_data
-        )
-
-        return Response(DocumentTypeSerializer(instance).data)
-
-    def destroy(self, request, *args, **kwargs):
-
-        DocumentTypeService.remove(
-            user=request.user,
-            document_type_id=self.kwargs['id']
-        )
-
-        return Response(status=status.HTTP_200_OK)
+        return self.selector.list(user=self.request.user)
 
 
-class DocumentViewSet(viewsets.ModelViewSet, DocumentFileResponseMixin):
+# =========================================================
+# Document
+# =========================================================
 
-    # URL Path:
-    # documents/{id}
+class DocumentViewSet(
+    BaseIdServiceViewSet,
+    DocumentFileResponseMixin,
+):
+    """
+    CRUD API for Documents.
 
-    permission_classes = [IsAuthenticated]
+    Also provides a download endpoint for the stored document file.
+    """
+
     parser_classes = (MultiPartParser, FormParser)
 
+    service_class = DocumentService
+    selector_class = DocumentSelector
+
+    read_serializer_class = DocumentReadSerializer
+    write_serializer_class = DocumentWriteSerializer
+
     lookup_url_kwarg = "id"
-
-    def get_object(self, queryset=None):
-
-        return DocumentSelector.get(
-            user=self.request.user, document_id=self.kwargs["id"]
-        )
-
-    def get_serializer_class(self):
-
-        if self.action in ["list", "retrieve", "download"]:
-            return DocumentReadSerializer
-        else:
-            return DocumentWriteSerializer
+    selector_lookup_field = "document_id"
+    service_lookup_id = "document_id"
 
     @action(
         detail=True,
@@ -125,65 +110,31 @@ class DocumentViewSet(viewsets.ModelViewSet, DocumentFileResponseMixin):
         url_path="download",
     )
     def download(self, request, *args, **kwargs):
+        """
+        Download the document file.
+        """
 
         return self.get_response()
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Document]:
+        """
+        Return filtered documents for the authenticated user.
+        """
 
-        return DocumentSelector.list(
+        return self.selector.list(
             user=self.request.user,
-            filters=self._get_queryset_filters()
+            filters=self._get_queryset_filters(),
         )
 
-    def create(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = DocumentService.create(
-            user=request.user,
-            validated_data=serializer.validated_data
-        )
-
-        return Response(DocumentReadSerializer(instance).data)
-
-    def update(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        instance = DocumentService.update(
-            user=request.user,
-            document_id=self.kwargs['id'],
-            validated_data=serializer.validated_data
-        )
-
-        return Response(DocumentReadSerializer(instance).data)
-
-    def partial_update(self, request, *args, **kwargs):
-
-        serializer = self.get_serializer(data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-
-        instance = DocumentService.update(
-            user=request.user,
-            document_id=self.kwargs['id'],
-            validated_data=serializer.validated_data
-        )
-
-        return Response(DocumentReadSerializer(instance).data)
-
-    def destroy(self, request, *args, **kwargs):
-
-        DocumentService.remove(
-            user=request.user,
-            document_id=self.kwargs['id']
-        )
-
-        return Response(status=status.HTTP_200_OK)
-
-    def _get_queryset_filters(self):
+    def _get_queryset_filters(
+        self,
+    ) -> DocumentSelector.QueryFilter:
+        """
+        Build selector filter object from query parameters.
+        """
 
         return DocumentSelector.QueryFilter(
-            document_type_id=self.request.query_params.get("document_type")
+            document_type_id=self.request.query_params.get(
+                "document_type"
+            ),
         )
