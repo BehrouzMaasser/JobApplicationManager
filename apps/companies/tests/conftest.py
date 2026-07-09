@@ -513,6 +513,42 @@ def job_pos_user1_valid_data(
 
 
 @pytest.fixture
+def job_pos_user1_views_valid_data(
+        empl_type1,
+        job_site1,
+        job_task1_user1,
+        job_requirement1_user1
+):
+
+    return {
+        "title": "Title1",
+        "description": "Description1",
+        "employment_types": [empl_type1.pk],
+        "job_sites": [job_site1.pk],
+        "tasks": [job_task1_user1.pk],
+        "requirements": [job_requirement1_user1.pk],
+    }
+
+
+@pytest.fixture
+def job_pos_user1_views_updated_valid_data(
+        empl_type2,
+        job_site2,
+        job_task2_user1,
+        job_requirement2_user1
+):
+
+    return {
+        "title": "Title1 Updated",
+        "description": "Description1 Updated",
+        "employment_types": [empl_type2.pk],
+        "job_sites": [job_site2.pk],
+        "tasks": [job_task2_user1.pk],
+        "requirements": [job_requirement2_user1.pk],
+    }
+
+
+@pytest.fixture
 def job_pos_user1_api_valid_data(
         empl_type1,
         job_site1,
