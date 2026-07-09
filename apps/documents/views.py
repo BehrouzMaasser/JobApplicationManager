@@ -156,7 +156,7 @@ class DocumentTypeDeleteView(
             document_type_id=self.kwargs["pk"],
         )
 
-        return redirect("document-type-list-web")
+        return redirect(reverse_lazy("document-type-list-web"))
 
     def build_extra_context(self):
 
@@ -294,7 +294,7 @@ class DocumentDeleteView(
             document_id=self.kwargs["pk"],
         )
 
-        return redirect("document-list-web")
+        return redirect(reverse_lazy("document-list-web"))
 
     def build_extra_context(self):
 
