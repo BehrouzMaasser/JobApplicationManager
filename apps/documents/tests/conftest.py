@@ -47,19 +47,19 @@ def doc_type1_user1_valid_data():
 
 
 @pytest.fixture
-def document_type_user1(user):
+def document_type_user1(user1):
 
     return DocumentType.objects.create(
-        owner=user,
+        owner=user1,
         name="Doc Type 1",
     )
 
 
 @pytest.fixture
-def document_type2_user1(user):
+def document_type2_user1(user1):
 
     return DocumentType.objects.create(
-        owner=user,
+        owner=user1,
         name="Doc Type 2",
     )
 
