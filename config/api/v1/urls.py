@@ -6,8 +6,8 @@ from rest_framework_simplejwt.views import (
 )
 
 from apps.applications.api.v1.views import (
-    JobApplicationNestedViewSet,
-    JobApplicationNoteNestedViewSet
+    NestedJobApplicationViewSet,
+    NestedJobApplicationNoteViewSet
 )
 
 from apps.companies.api.v1.views import (
@@ -155,14 +155,14 @@ urlpatterns += [
 
 
 # Nested Job Application URL Path Config
-job_application_list = JobApplicationNestedViewSet.as_view(
+job_application_list = NestedJobApplicationViewSet.as_view(
     {
         "get": "list",
         "post": "create",
     }
 )
 
-job_application_detail = JobApplicationNestedViewSet.as_view(
+job_application_detail = NestedJobApplicationViewSet.as_view(
     {
         "get": "retrieve",
         "put": "update",
@@ -185,14 +185,14 @@ urlpatterns += [
 ]
 
 # Nested Job Application Note URL Path Config
-job_application_note_list = JobApplicationNoteNestedViewSet.as_view(
+job_application_note_list = NestedJobApplicationNoteViewSet.as_view(
     {
         "get": "list",
         "post": "create",
     }
 )
 
-job_application_note_detail = JobApplicationNoteNestedViewSet.as_view(
+job_application_note_detail = NestedJobApplicationNoteViewSet.as_view(
     {
         "get": "retrieve",
         "put": "update",
