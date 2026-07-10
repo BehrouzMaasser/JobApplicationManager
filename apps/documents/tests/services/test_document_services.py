@@ -1,163 +1,270 @@
-import copy
-
 from unittest.mock import patch
 
 import pytest
 
-from rest_framework.exceptions import ValidationError
+from django.core.exceptions import ValidationError
 
 from apps.documents.services.document_service import DocumentService
 
-#   ----------------------------------- ****** -----------------------------------
+from apps.core.exceptions.exceptions import AccessDeniedError
 
 
-# Creation:
-
-@pytest.mark.django_db
-def test_create_successfully_returns_document(
-        user, doc1_user1_valid_data
-):
-
-    document = DocumentService.create(
-        user=user,
-        validated_data=doc1_user1_valid_data
-    )
-
-    assert document.id is not None
-    assert document.owner == user
-    assert document.name == doc1_user1_valid_data["name"]
-    assert document.document_type == doc1_user1_valid_data["document_type"]
-    assert document.file == doc1_user1_valid_data["file"]
-    assert document.file_hash is not None
-
+# =========================================================
+# CREATE
+# =========================================================
 
 @pytest.mark.django_db
-def test_create_calls_full_clean(user, doc1_user1_valid_data):
+class TestDocumentServiceCreate:
 
-    with patch("apps.documents.models.Document.full_clean") as mock_full_clean:
-
-        DocumentService.create(user=user, validated_data=doc1_user1_valid_data)
-
-        mock_full_clean.assert_called_once()
-
-
-@pytest.mark.django_db
-def test_create_calls_save(user, doc1_user1_valid_data):
-
-    with patch("apps.documents.models.Document.save") as mock_save:
-
-        DocumentService.create(user=user, validated_data=doc1_user1_valid_data)
-
-        mock_save.assert_called_once()
-
-#   ----------------------------------- ****** -----------------------------------
-
-
-# Updating
-
-@pytest.mark.django_db
-def test_update_successfully_returns_updated_document(
-        doc1_user1_valid_data, doc1_user1, document_type2_user1
-):
-
-    updated_data = copy.deepcopy(doc1_user1_valid_data)
-    updated_data["name"] = "Document 1 Updated"
-    updated_data["document_type"] = document_type2_user1
-
-    document = DocumentService.update(
-        user=doc1_user1.owner,
-        document_id=doc1_user1.id,
-        validated_data=updated_data,
-    )
-
-    assert document.id == doc1_user1.id
-    assert document.owner == doc1_user1.owner
-    assert document.name == updated_data["name"]
-    assert document.document_type == updated_data["document_type"]
-    assert document.file == updated_data["file"]
-    assert document.file_hash is not None
-
-
-@pytest.mark.django_db
-def test_update_calls_full_clean(doc1_user1_valid_data, doc1_user1):
-
-    with patch("apps.documents.models.Document.full_clean") as mock_full_clean:
-
-        DocumentService.update(
-            user=doc1_user1.owner,
+    def test_create_returns_document_successfully(
+        self,
+        user1,
+        doc1_user1_valid_data,
+    ):
+        document = DocumentService.create(
+            user=user1,
             validated_data=doc1_user1_valid_data,
-            document_id=doc1_user1.id
         )
 
-        mock_full_clean.assert_called_once()
-
-
-@pytest.mark.django_db
-def test_update_calls_save(doc1_user1_valid_data, doc1_user1):
-
-    with patch("apps.documents.models.Document.save") as mock_save:
-
-        DocumentService.update(
-            user=doc1_user1.owner,
-            validated_data=doc1_user1_valid_data,
-            document_id=doc1_user1.id
+        assert document.id is not None
+        assert document.owner == user1
+        assert document.name == doc1_user1_valid_data["name"]
+        assert document.document_type == (
+            doc1_user1_valid_data["document_type"]
         )
+        assert document.file_hash is not None
 
-        mock_save.assert_called_once()
+    def test_create_calls_model_methods(
+        self,
+        user1,
+        doc1_user1_valid_data,
+    ):
+        with patch(
+            "apps.documents.models.Document.full_clean"
+        ) as mock_clean, patch(
+            "apps.documents.models.Document.save"
+        ) as mock_save:
 
+            DocumentService.create(
+                user=user1,
+                validated_data=doc1_user1_valid_data,
+            )
+
+            mock_clean.assert_called_once()
+            mock_save.assert_called_once()
+
+    def test_create_rejects_foreign_document_type(
+        self,
+        user1,
+        doc1_user1_valid_data,
+        document_type_user2,
+    ):
+        doc1_user1_valid_data["document_type"] = document_type_user2
+
+        with pytest.raises(ValidationError):
+            DocumentService.create(
+                user=user1,
+                validated_data=doc1_user1_valid_data,
+            )
+
+
+# =========================================================
+# UPDATE
+# =========================================================
 
 @pytest.mark.django_db
-def test_update_calls_resolve_document(doc1_user1_valid_data, doc1_user1):
+class TestDocumentServiceUpdate:
 
-    with patch(
-        "apps.documents.services.document_service.DocumentService."
-        "_resolve_document"
-    ) as mock_resolve_document:
+    def test_update_returns_updated_document(
+        self,
+        doc1_user1,
+        doc1_user1_valid_data,
+        document_type2_user1,
+    ):
 
-        DocumentService.update(
+        doc1_user1_valid_data["name"] = "Updated Document"
+        doc1_user1_valid_data["document_type"] = document_type2_user1
+
+        document = DocumentService.update(
             user=doc1_user1.owner,
             document_id=doc1_user1.id,
             validated_data=doc1_user1_valid_data,
         )
 
-        mock_resolve_document.assert_called_once()
+        assert document.id == doc1_user1.id
+        assert document.name == doc1_user1_valid_data["name"]
+        assert document.document_type == doc1_user1_valid_data["document_type"]
 
-#   ----------------------------------- ****** -----------------------------------
+    def test_update_resolves_document(
+        self,
+        doc1_user1,
+        doc1_user1_valid_data,
+    ):
+        with patch(
+            "apps.documents.services.document_service.DocumentService."
+            "_resolve_document"
+        ) as mock_resolve:
+
+            mock_resolve.return_value = doc1_user1
+
+            DocumentService.update(
+                user=doc1_user1.owner,
+                document_id=doc1_user1.id,
+                validated_data=doc1_user1_valid_data,
+            )
+
+            mock_resolve.assert_called_once()
+
+    def test_update_calls_update_non_m2m_fields(
+        self,
+        doc1_user1,
+        doc1_user1_valid_data,
+    ):
+        with patch(
+            "apps.documents.services.document_service.DocumentService."
+            "_update_non_m2m_fields"
+        ) as mock_update, patch(
+            "apps.documents.services.document_service.DocumentService."
+            "_resolve_document",
+            return_value=doc1_user1,
+        ):
+
+            DocumentService.update(
+                user=doc1_user1.owner,
+                document_id=doc1_user1.id,
+                validated_data=doc1_user1_valid_data,
+            )
+
+            mock_update.assert_called_once()
+
+    def test_update_calls_model_methods(
+        self,
+        doc1_user1,
+        doc1_user1_valid_data,
+    ):
+        with patch(
+            "apps.documents.models.Document.full_clean"
+        ) as mock_clean, patch(
+            "apps.documents.models.Document.save"
+        ) as mock_save, patch(
+            "apps.documents.services.document_service.DocumentService."
+            "_resolve_document",
+            return_value=doc1_user1,
+        ):
+
+            DocumentService.update(
+                user=doc1_user1.owner,
+                document_id=doc1_user1.id,
+                validated_data=doc1_user1_valid_data,
+            )
+
+            mock_clean.assert_called_once()
+            mock_save.assert_called_once()
+
+    def test_partial_update_keeps_existing_fields(
+        self,
+        doc1_user1,
+        doc1_user1_valid_data,
+    ):
+        doc1_user1_valid_data.pop("file")
+
+        updated = DocumentService.update(
+            user=doc1_user1.owner,
+            document_id=doc1_user1.id,
+            validated_data=doc1_user1_valid_data,
+        )
+
+        assert updated.name == doc1_user1_valid_data["name"]
+        assert updated.document_type == doc1_user1_valid_data["document_type"]
+        assert updated.file == doc1_user1.file
 
 
-# Test Deleting
+# =========================================================
+# REMOVE
+# =========================================================
 
 @pytest.mark.django_db
-def test_delete_calls_resolve_document(
-        document_type2_user1, fake_file2, doc1_user1
-):
+class TestDocumentServiceRemove:
 
-    with patch(
-        "apps.documents.services.document_service.DocumentService."
-        "_resolve_document"
-    ) as mock_resolve_document:
+    def test_remove_resolves_document(
+        self,
+        doc1_user1,
+    ):
+        with patch(
+            "apps.documents.services.document_service.DocumentService."
+            "_resolve_document"
+        ) as mock_resolve:
 
-        DocumentService.remove(
+            mock_resolve.return_value = doc1_user1
+
+            DocumentService.remove(
+                user=doc1_user1.owner,
+                document_id=doc1_user1.id,
+            )
+
+            mock_resolve.assert_called_once()
+
+    def test_remove_calls_delete(
+            self,
+            doc1_user1,
+    ):
+        with patch(
+                "apps.documents.services.document_service.DocumentService."
+                "_resolve_document",
+                return_value=doc1_user1,
+        ), patch(
+            "apps.documents.models.Document.delete"
+        ) as mock_delete:
+            DocumentService.remove(
+                user=doc1_user1.owner,
+                document_id=doc1_user1.id,
+            )
+
+            mock_delete.assert_called_once()
+
+
+# =========================================================
+# RESOLVE
+# =========================================================
+
+@pytest.mark.django_db
+class TestDocumentServiceResolve:
+
+    def test_returns_document_successfully(
+        self,
+        doc1_user1,
+    ):
+        result = DocumentService._resolve_document(
             user=doc1_user1.owner,
             document_id=doc1_user1.id,
         )
 
-        mock_resolve_document.assert_called_once()
+        assert result == doc1_user1
 
-#   ----------------------------------- ****** -----------------------------------
+    def test_selector_is_used(
+        self,
+        doc1_user1,
+    ):
+        with patch(
+            "apps.documents.services.document_service.DocumentSelector.get",
+            return_value=doc1_user1,
+        ) as mock_get:
 
+            DocumentService._resolve_document(
+                user=doc1_user1.owner,
+                document_id=doc1_user1.id,
+            )
 
-# Test Retrieving
+            mock_get.assert_called_once()
 
-@pytest.mark.django_db
-def test_access_document_of_other_user_raises_error(
-        doc1_user1, other_user
-):
+    def test_accessing_other_users_document_raises_error(
+        self,
+        doc1_user1,
+        user2,
+    ):
+        with pytest.raises(AccessDeniedError):
 
-    with pytest.raises(ValidationError):
-        DocumentService._resolve_document(
-            user=other_user,
-            document_id=doc1_user1.id,
-        )
-
-#   ----------------------------------- ****** -----------------------------------
+            DocumentService._resolve_document(
+                user=user2,
+                document_id=doc1_user1.id,
+            )

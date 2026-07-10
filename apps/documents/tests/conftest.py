@@ -139,10 +139,18 @@ def doc1_user2(document_type_user2, fake_file1):
 @pytest.fixture
 def fake_file1():
 
-    return FakeFile("Some File".encode("utf-8"), 1)
+    return SimpleUploadedFile(
+        name="Doc.txt",
+        content="Some File".encode("utf-8"),
+        content_type="text/plain",
+    )
 
 
 @pytest.fixture
 def fake_file2():
 
-    return FakeFile("Some File 222".encode("utf-8"), 1)
+    return SimpleUploadedFile(
+        name="Doc2.txt",
+        content="Some File 222".encode("utf-8"),
+        content_type="text/plain",
+    )
