@@ -67,13 +67,13 @@ def test_job_application_requires_workspace(
 
 @pytest.mark.django_db
 def test_job_application_requires_job_position(
-        workspace_user1,
+        workspace1_user1,
         status1
 ):
 
     job_application = JobApplication(
-        owner=workspace_user1.owner,
-        workspace=workspace_user1,
+        owner=workspace1_user1.owner,
+        workspace=workspace1_user1,
         job_position=None,
         status=status1
     )
@@ -82,8 +82,8 @@ def test_job_application_requires_job_position(
         job_application.full_clean()
 
     job_application = JobApplication(
-        owner=workspace_user1.owner,
-        workspace=workspace_user1,
+        owner=workspace1_user1.owner,
+        workspace=workspace1_user1,
         status=status1
     )
 

@@ -22,10 +22,10 @@ def test_document_requires_owner(document_type_user1):
 
 
 @pytest.mark.django_db
-def test_document_requires_name(user, document_type_user1):
+def test_document_requires_name(user1, document_type_user1):
 
     doc = Document(
-        owner=user,
+        owner=user1,
         name=None,
         document_type=document_type_user1,
         file=FakeFile("Some File".encode("utf-8"), 1),
@@ -36,10 +36,10 @@ def test_document_requires_name(user, document_type_user1):
 
 
 @pytest.mark.django_db
-def test_document_requires_non_empty_name(user, document_type_user1):
+def test_document_requires_non_empty_name(user1, document_type_user1):
 
     doc = Document(
-        owner=user,
+        owner=user1,
         name="",
         document_type=document_type_user1,
         file=FakeFile("Some File".encode("utf-8"), 1),
@@ -51,11 +51,11 @@ def test_document_requires_non_empty_name(user, document_type_user1):
 
 @pytest.mark.django_db
 def test_document_owner_should_be_the_owner_of_the_document_type(
-        user, document_type_user2
+        user1, document_type_user2
 ):
 
     doc = Document(
-        owner=user,
+        owner=user1,
         name="Document 1",
         document_type=document_type_user2,
         file=FakeFile("Some File".encode("utf-8"), 1),
