@@ -7,7 +7,6 @@ inside services.
 
 from dataclasses import dataclass
 
-from django.core.exceptions import ValidationError
 from django.db.models import QuerySet
 
 # Models
@@ -58,7 +57,7 @@ class DocumentTypeSelector:
             raise ResourceNotFoundError(
                 resource=f"Document Type {document_type_id}"
             )
-        except ValidationError as e:
+        except Exception as e:
             raise InfraStructureViolationError(e) from e
 
         if document_type.owner != user:

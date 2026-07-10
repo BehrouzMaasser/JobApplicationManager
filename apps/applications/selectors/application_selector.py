@@ -8,7 +8,6 @@ inside services.
 from dataclasses import dataclass
 from datetime import datetime
 
-from django.core.exceptions import ValidationError
 from django.db.models import QuerySet
 
 # Models
@@ -64,7 +63,7 @@ class JobApplicationSelector:
             raise ResourceNotFoundError(
                 resource=f"Job Application {application_id}",
             )
-        except ValidationError as e:
+        except Exception as e:
             raise InfraStructureViolationError(e) from e
 
         if job_application.owner != user:

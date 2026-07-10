@@ -7,7 +7,6 @@ inside services.
 
 from dataclasses import dataclass
 
-from django.core.exceptions import ValidationError
 from django.db.models import QuerySet
 
 # Models
@@ -68,7 +67,7 @@ class JobApplicationNoteSelector:
             raise ResourceNotFoundError(
                 resource=f"Job Application Note {application_note_id}"
             )
-        except ValidationError as e:
+        except Exception as e:
             raise InfraStructureViolationError(e) from e
 
         if application_note.job_application.owner != user:
