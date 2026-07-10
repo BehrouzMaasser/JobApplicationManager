@@ -65,7 +65,7 @@ class TestWorkspaceCreateAPIView:
             format="json",
         )
 
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_201_CREATED
         assert response.data["name"] == payload["name"]
 
         assert Workspace.objects.filter(name=payload["name"]).exists()
