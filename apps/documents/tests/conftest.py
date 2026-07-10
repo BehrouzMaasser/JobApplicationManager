@@ -65,10 +65,10 @@ def document_type2_user1(user1):
 
 
 @pytest.fixture
-def document_type_user2(other_user):
+def document_type_user2(user2):
 
     return DocumentType.objects.create(
-        owner=other_user,
+        owner=user2,
         name="Doc Type 1",
     )
 
