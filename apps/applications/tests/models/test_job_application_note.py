@@ -6,171 +6,178 @@ from django.db import IntegrityError
 from apps.applications.models import JobApplicationNote
 
 
-#   ----------------------------------- ****** -----------------------------------
-
-# Invalid Creation:
-
-@pytest.mark.django_db
-def test_job_application_note_requires_job_application():
-
-    job_application_note = JobApplicationNote(
-        job_application=None,
-        title="Title",
-        content="Content",
-    )
-
-    with pytest.raises(ValidationError):
-        job_application_note.full_clean()
-
-    job_application_note = JobApplicationNote(
-        title="Title",
-        content="Content",
-    )
-
-    with pytest.raises(ValidationError):
-        job_application_note.full_clean()
+pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.django_db
-def test_job_application_note_requires_title(job_application1):
-
-    job_application_note = JobApplicationNote(
-        job_application=job_application1,
-        title=None,
-        content="Content",
-    )
-
-    with pytest.raises(ValidationError):
-        job_application_note.full_clean()
-
-    job_application_note = JobApplicationNote(
-        job_application=job_application1,
-        content="Content",
-    )
-
-    with pytest.raises(ValidationError):
-        job_application_note.full_clean()
+# ---------------------------------------------------------------------------
+# M-01: Persistence Schema
+# ---------------------------------------------------------------------------
 
 
-@pytest.mark.django_db
-def test_job_application_note_requires_non_empty_title(job_application1):
+class TestJobApplicationNoteSchema:
 
-    job_application_note = JobApplicationNote(
-        job_application=job_application1,
-        title="",
-        content="Content",
-    )
-
-    with pytest.raises(ValidationError):
-        job_application_note.full_clean()
-
-
-@pytest.mark.django_db
-def test_job_application_note_requires_content(job_application1):
-
-    job_application_note = JobApplicationNote(
-        job_application=job_application1,
-        title="Title",
-        content=None,
-    )
-
-    with pytest.raises(ValidationError):
-        job_application_note.full_clean()
-
-    job_application_note = JobApplicationNote(
-        job_application=job_application1,
-        title="Title",
-    )
-
-    with pytest.raises(ValidationError):
-        job_application_note.full_clean()
-
-
-@pytest.mark.django_db
-def test_job_application_note_requires_non_empty_content(job_application1):
-
-    job_application_note = JobApplicationNote(
-        job_application=job_application1,
-        title="Title",
-        content="",
-    )
-
-    with pytest.raises(ValidationError):
-        job_application_note.full_clean()
-
-
-# Constraint Check:
-
-@pytest.mark.django_db
-def test_job_application_note_lower_title_is_unique_for_each_job_application(
-        job_application1
-):
-
-    JobApplicationNote.objects.create(
-        job_application=job_application1,
-        title="Title",
-        content="Content",
-    )
-
-    with pytest.raises(IntegrityError):
-        JobApplicationNote.objects.create(
-            job_application=job_application1,
-            title="tITLe",
-            content="CONtENT",
+    def test_job_application_note_requires_job_application(self):
+        note = JobApplicationNote(
+            job_application=None,
+            title="Title",
+            content="Content",
         )
 
-#   ----------------------------------- ****** -----------------------------------
+        with pytest.raises(ValidationError):
+            note.full_clean()
+
+    def test_job_application_note_requires_title(
+        self,
+        job_application1,
+    ):
+        note = JobApplicationNote(
+            job_application=job_application1,
+            title=None,
+            content="Content",
+        )
+
+        with pytest.raises(ValidationError):
+            note.full_clean()
+
+    def test_job_application_note_title_cannot_be_blank(
+        self,
+        job_application1,
+    ):
+        note = JobApplicationNote(
+            job_application=job_application1,
+            title="",
+            content="Content",
+        )
+
+        with pytest.raises(ValidationError):
+            note.full_clean()
+
+    def test_job_application_note_requires_content(
+        self,
+        job_application1,
+    ):
+        note = JobApplicationNote(
+            job_application=job_application1,
+            title="Title",
+            content=None,
+        )
+
+        with pytest.raises(ValidationError):
+            note.full_clean()
+
+    def test_job_application_note_content_cannot_be_blank(
+        self,
+        job_application1,
+    ):
+        note = JobApplicationNote(
+            job_application=job_application1,
+            title="Title",
+            content="",
+        )
+
+        with pytest.raises(ValidationError):
+            note.full_clean()
+
+    def test_valid_job_application_note_creation(
+        self,
+        job_application1,
+    ):
+        note = JobApplicationNote(
+            job_application=job_application1,
+            title="Title",
+            content="Content",
+        )
+
+        note.full_clean()
+        note.save()
+
+        assert note.id is not None
+        assert note.job_application == job_application1
+        assert note.title == "Title"
+        assert note.content == "Content"
+
+    def test_notes_are_ordered_by_job_application_then_title(
+        self,
+        job_application1,
+    ):
+        note1 = JobApplicationNote.objects.create(
+            job_application=job_application1,
+            title="B title",
+            content="Content",
+        )
+
+        note2 = JobApplicationNote.objects.create(
+            job_application=job_application1,
+            title="A title",
+            content="Content",
+        )
+
+        notes = list(JobApplicationNote.objects.all())
+
+        assert notes == [
+            note2,
+            note1,
+        ]
 
 
-# Valid Creation:
+class TestJobApplicationNoteConstraints:
 
-@pytest.mark.django_db
-def test_valid_job_application_note(job_application1):
+    def test_note_title_is_case_insensitive_unique_per_application(
+        self,
+        job_application1,
+    ):
+        JobApplicationNote.objects.create(
+            job_application=job_application1,
+            title="Title",
+            content="Content",
+        )
 
-    job_application_note = JobApplicationNote(
-        job_application=job_application1,
-        title="Title",
-        content="Content",
-    )
+        with pytest.raises(IntegrityError):
+            JobApplicationNote.objects.create(
+                job_application=job_application1,
+                title="tITLe",
+                content="Different Content",
+            )
 
-    job_application_note.full_clean()
-    job_application_note.save()
+    def test_same_title_is_allowed_for_different_applications(
+        self,
+        job_application1,
+        job_application2,
+    ):
+        note1 = JobApplicationNote.objects.create(
+            job_application=job_application1,
+            title="Title",
+            content="Content",
+        )
 
-    assert job_application_note.id is not None
-    assert job_application_note.job_application.id == job_application1.id
-    assert job_application_note.title == "Title"
-    assert job_application_note.content == "Content"
+        note2 = JobApplicationNote.objects.create(
+            job_application=job_application2,
+            title="Title",
+            content="Content",
+        )
 
-
-@pytest.mark.django_db
-def test_same_title_for_different_job_application_is_allowed(
-        job_application1, job_application2
-):
-
-    job_application_note1 = JobApplicationNote(
-        job_application=job_application1,
-        title="Title",
-        content="Content",
-    )
-
-    job_application_note1.full_clean()
-    job_application_note1.save()
-
-    assert job_application_note1.title == "Title"
-    assert job_application_note1.content == "Content"
-
-    job_application_note2 = JobApplicationNote(
-        job_application=job_application2,
-        title="Title",
-        content="Content",
-    )
-
-    job_application_note2.full_clean()
-    job_application_note2.save()
-
-    assert job_application_note1.id != job_application2.id
-    assert job_application_note1.title == job_application_note2.title
-    assert job_application_note1.content == job_application_note2.content
+        assert note1.id != note2.id
+        assert note1.title == note2.title
+        assert note1.content == note2.content
 
 
-#   ----------------------------------- ****** -----------------------------------
+# ---------------------------------------------------------------------------
+# Model Convenience Behavior
+# ---------------------------------------------------------------------------
+
+
+class TestJobApplicationNoteProperties:
+
+    def test_string_representation(
+        self,
+        job_application1,
+    ):
+        note = JobApplicationNote(
+            job_application=job_application1,
+            title="Interview",
+            content="Content",
+        )
+
+        assert str(note) == (
+            f"{job_application1} - Interview"
+        )

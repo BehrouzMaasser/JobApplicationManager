@@ -1,141 +1,225 @@
 import pytest
 
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 
 from apps.documents.models import Document
 
-from apps.documents.tests.conftest import FakeFile
+
+pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.django_db
-def test_document_requires_owner(document_type_user1):
-
-    doc = Document(
-        owner=None,
-        name="Document 1",
-        document_type=document_type_user1,
-        file=FakeFile("Some File".encode("utf-8"), 1),
-    )
-
-    with pytest.raises(ValidationError):
-        doc.full_clean()
+# ---------------------------------------------------------------------------
+# M-01: Define the Persistence Schema
+# ---------------------------------------------------------------------------
 
 
-@pytest.mark.django_db
-def test_document_requires_name(user1, document_type_user1):
+class TestDocumentSchema:
 
-    doc = Document(
-        owner=user1,
-        name=None,
-        document_type=document_type_user1,
-        file=FakeFile("Some File".encode("utf-8"), 1),
-    )
+    def test_document_can_be_created_with_valid_data(
+        self,
+        document_type_user1,
+        fake_file1
+    ):
+        document = Document(
+            owner=document_type_user1.owner,
+            name="Document 1",
+            document_type=document_type_user1,
+            file=fake_file1,
+            file_hash="hash123",
+        )
 
-    with pytest.raises(ValidationError):
-        doc.full_clean()
+        document.full_clean()
+        document.save()
 
-
-@pytest.mark.django_db
-def test_document_requires_non_empty_name(user1, document_type_user1):
-
-    doc = Document(
-        owner=user1,
-        name="",
-        document_type=document_type_user1,
-        file=FakeFile("Some File".encode("utf-8"), 1),
-    )
-
-    with pytest.raises(ValidationError):
-        doc.full_clean()
+        assert document.id is not None
+        assert document.name == "Document 1"
+        assert document.owner == document_type_user1.owner
+        assert document.document_type == document_type_user1
+        assert document.file_hash == "hash123"
 
 
-@pytest.mark.django_db
-def test_document_owner_should_be_the_owner_of_the_document_type(
-        user1, document_type_user2
-):
+class TestDocumentConstraints:
 
-    doc = Document(
-        owner=user1,
-        name="Document 1",
-        document_type=document_type_user2,
-        file=FakeFile("Some File".encode("utf-8"), 1),
-    )
+    def test_document_name_must_be_unique_per_owner(
+        self,
+        document_type_user1,
+        fake_file1,
+        fake_file2
+    ):
+        Document.objects.create(
+            owner=document_type_user1.owner,
+            name="Document 1",
+            document_type=document_type_user1,
+            file=fake_file1,
+            file_hash="hash123",
+        )
 
-    with pytest.raises(ValidationError):
-        doc.full_clean()
+        with pytest.raises(IntegrityError):
+            Document.objects.create(
+                owner=document_type_user1.owner,
+                name="Document 1",
+                document_type=document_type_user1,
+                file=fake_file2,
+                file_hash="hash456",
+            )
+
+    def test_same_file_is_not_allowed_for_same_owner(
+        self,
+        document_type_user1,
+        fake_file1
+    ):
+        Document.objects.create(
+            owner=document_type_user1.owner,
+            name="Document 1",
+            document_type=document_type_user1,
+            file=fake_file1,
+            file_hash="hash123",
+        )
+
+        with pytest.raises(IntegrityError):
+            Document.objects.create(
+                owner=document_type_user1.owner,
+                name="Document 2",
+                document_type=document_type_user1,
+                file=fake_file1,
+                file_hash="hash123",
+            )
+
+    def test_same_file_is_allowed_for_different_users(
+        self,
+        document_type_user1,
+        document_type_user2,
+        fake_file1
+    ):
+        document1 = Document.objects.create(
+            owner=document_type_user1.owner,
+            name="Document 1",
+            document_type=document_type_user1,
+            file=fake_file1,
+            file_hash="hash123",
+        )
+
+        document2 = Document.objects.create(
+            owner=document_type_user2.owner,
+            name="Document 1",
+            document_type=document_type_user2,
+            file=fake_file1,
+            file_hash="hash123",
+        )
+
+        assert document1.owner != document2.owner
 
 
-@pytest.mark.django_db
-def test_valid_document(document_type_user1):
-
-    doc = Document(
-        owner=document_type_user1.owner,
-        name="Document 1",
-        document_type=document_type_user1,
-        file=FakeFile("Some File".encode("utf-8"), 1),
-    )
-    doc.full_clean()
-    doc.save()
-
-    assert doc.id is not None
-    assert doc.name == 'Document 1'
-    assert doc.owner == document_type_user1.owner
-    assert doc.document_type == document_type_user1
-    assert doc.file_hash is not None
+# ---------------------------------------------------------------------------
+# M-02: Enforce Domain Invariants
+# ---------------------------------------------------------------------------
 
 
-@pytest.mark.django_db
-def test_same_document_name_different_user_is_allowed(
-        document_type_user1, document_type_user2
-):
+class TestDocumentValidation:
 
-    doc1 = Document(
-        owner=document_type_user1.owner,
-        name="Document 1",
-        document_type=document_type_user1,
-        file=FakeFile("Some File".encode("utf-8"), 1),
-    )
-    doc1.full_clean()
-    doc1.save()
+    def test_document_requires_owner(
+        self,
+        document_type_user1,
+        fake_file1
+    ):
+        document = Document(
+            owner=None,
+            name="Document 1",
+            document_type=document_type_user1,
+            file=fake_file1,
+            file_hash="hash123",
+        )
 
-    doc2 = Document(
-        owner=document_type_user2.owner,
-        name="Document 1",
-        document_type=document_type_user2,
-        file=FakeFile("Some File".encode("utf-8"), 1),
-    )
-    doc2.full_clean()
-    doc2.save()
+        with pytest.raises(ValidationError):
+            document.full_clean()
 
-    assert doc1.id is not None
-    assert doc2.id is not None
+    def test_document_requires_name(
+        self,
+        user1,
+        document_type_user1,
+        fake_file1
+    ):
+        document = Document(
+            owner=user1,
+            name=None,
+            document_type=document_type_user1,
+            file=fake_file1,
+            file_hash="hash123",
+        )
 
-    assert doc1.name == doc2.name
-    assert doc1.owner != doc2.owner
+        with pytest.raises(ValidationError):
+            document.full_clean()
+
+    def test_document_name_cannot_be_blank(
+        self,
+        user1,
+        document_type_user1,
+        fake_file1
+    ):
+        document = Document(
+            owner=user1,
+            name="",
+            document_type=document_type_user1,
+            file=fake_file1,
+            file_hash="hash123",
+        )
+
+        with pytest.raises(ValidationError):
+            document.full_clean()
+
+    def test_document_requires_file_hash(
+        self,
+        document_type_user1,
+        fake_file1
+    ):
+        document = Document(
+            owner=document_type_user1.owner,
+            name="Document 1",
+            document_type=document_type_user1,
+            file=fake_file1,
+            file_hash="",
+        )
+
+        with pytest.raises(ValidationError):
+            document.full_clean()
+
+    def test_document_owner_must_match_document_type_owner(
+        self,
+        user1,
+        document_type_user2,
+        fake_file1
+    ):
+        document = Document(
+            owner=user1,
+            name="Document 1",
+            document_type=document_type_user2,
+            file=fake_file1,
+            file_hash="hash123",
+        )
+
+        with pytest.raises(ValidationError):
+            document.full_clean()
 
 
-@pytest.mark.django_db
-def test_duplicate_file_will_use_the_existing_file_hash_instead_of_saving_a_copy(
-        document_type_user1
-):
+# ---------------------------------------------------------------------------
+# Model Convenience Behavior
+# ---------------------------------------------------------------------------
 
-    doc1 = Document(
-        owner=document_type_user1.owner,
-        name="Document 1",
-        document_type=document_type_user1,
-        file=FakeFile("Some File".encode("utf-8"), 1),
-    )
-    doc1.full_clean()
-    doc1.save()
 
-    doc2 = Document(
-        owner=document_type_user1.owner,
-        name="Document 2",
-        document_type=document_type_user1,
-        file=FakeFile("Some File".encode("utf-8"), 1),
-    )
-    doc2.full_clean()
-    doc2.save()
+class TestDocumentProperties:
 
-    assert doc1.name != doc2.name
-    assert doc1.file_hash == doc2.file_hash
+    def test_document_string_representation(
+        self,
+        document_type_user1,
+        fake_file1
+    ):
+        document = Document(
+            owner=document_type_user1.owner,
+            name="Document 1",
+            document_type=document_type_user1,
+            file=fake_file1,
+            file_hash="hash123",
+        )
+
+        assert str(document) == "Document 1"

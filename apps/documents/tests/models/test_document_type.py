@@ -6,102 +6,181 @@ from django.db import IntegrityError
 from apps.documents.models import DocumentType
 
 
-@pytest.mark.django_db
-def test_document_type_requires_owner():
-
-    doc_type = DocumentType(owner=None, name='Document Type')
-
-    with pytest.raises(ValidationError):
-        doc_type.full_clean()
+pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.django_db
-def test_document_type_requires_name(user1):
-
-    doc_type = DocumentType(owner=user1, name=None)
-
-    with pytest.raises(ValidationError):
-        doc_type.full_clean()
+# ---------------------------------------------------------------------------
+# M-01: Define the Persistence Schema
+# ---------------------------------------------------------------------------
 
 
-@pytest.mark.django_db
-def test_document_type_requires_non_empty_name(user1):
+class TestDocumentTypeSchema:
 
-    doc_type = DocumentType(owner=user1, name="")
+    def test_document_type_can_be_created_with_valid_data(self, user1):
+        document_type = DocumentType(
+            owner=user1,
+            name="Document Type",
+        )
 
-    with pytest.raises(ValidationError):
-        doc_type.full_clean()
+        document_type.full_clean()
+        document_type.save()
 
+        assert document_type.id is not None
+        assert document_type.owner == user1
+        assert document_type.name == "Document Type"
 
-@pytest.mark.django_db
-def test_lower_name_is_unique_per_user(user1):
+    def test_document_type_description_can_be_optional(self, user1):
+        empty_description = DocumentType(
+            owner=user1,
+            name="Type 1",
+            description="",
+        )
 
-    DocumentType.objects.create(owner=user1, name='Document Type1')
+        no_description = DocumentType(
+            owner=user1,
+            name="Type 2",
+            description=None,
+        )
 
-    with pytest.raises(IntegrityError):
-        DocumentType.objects.create(owner=user1, name='document type1')
+        empty_description.full_clean()
+        no_description.full_clean()
 
-
-@pytest.mark.django_db
-def test_valid_document_type(user1):
-
-    doc_type = DocumentType(owner=user1, name='Document Type')
-
-    doc_type.full_clean()
-    doc_type.save()
-
-    assert doc_type.id is not None
-    assert doc_type.name == 'Document Type'
-    assert doc_type.owner == user1
-    assert doc_type.description is None
-
-
-@pytest.mark.django_db
-def test_same_name_different_user_is_allowed(user1, user2):
-
-    doc_type1 = DocumentType.objects.create(owner=user1, name='Document Type')
-    doc_type2 = DocumentType.objects.create(owner=user2, name='Document Type')
-
-    assert doc_type1.id is not None
-    assert doc_type2.id is not None
-
-    assert doc_type1.name == doc_type2.name
-    assert doc_type1.owner != doc_type2.owner
+        assert empty_description.description == ""
+        assert no_description.description is None
 
 
-@pytest.mark.django_db
-def test_description_is_optional(user1):
+class TestDocumentTypeConstraints:
 
-    # Description has value
-    doc_type1 = DocumentType(
-        owner=user1,
-        name='Document Type',
-        description='Some Description'
-    )
-    doc_type1.full_clean()
+    def test_document_type_name_is_case_insensitive_unique_per_owner(
+        self,
+        user1,
+    ):
+        DocumentType.objects.create(
+            owner=user1,
+            name="Document Type",
+        )
 
-    # Description is empty string
-    doc_type2 = DocumentType(
-        owner=user1,
-        name='Document Type',
-        description=''
-    )
-    doc_type2.full_clean()
+        with pytest.raises(IntegrityError):
+            DocumentType.objects.create(
+                owner=user1,
+                name="document type",
+            )
 
-    # Description is None
-    doc_type3 = DocumentType(
-        owner=user1,
-        name='Document Type',
-    )
-    doc_type3.full_clean()
+    def test_same_document_type_name_is_allowed_for_different_users(
+        self,
+        user1,
+        user2,
+    ):
+        document_type1 = DocumentType.objects.create(
+            owner=user1,
+            name="Document Type",
+        )
+
+        document_type2 = DocumentType.objects.create(
+            owner=user2,
+            name="Document Type",
+        )
+
+        assert document_type1.owner != document_type2.owner
+        assert document_type1.name == document_type2.name
 
 
-@pytest.mark.django_db
-def test_empty_or_missing_description_assigns_none_after_save(user1):
+# ---------------------------------------------------------------------------
+# M-02: Enforce Domain Invariants
+# ---------------------------------------------------------------------------
 
-    doc_type = DocumentType(owner=user1, name='Document Type')
 
-    doc_type.full_clean()
-    doc_type.save()
+class TestDocumentTypeValidation:
 
-    assert doc_type.description is None
+    def test_document_type_requires_owner(self):
+        document_type = DocumentType(
+            owner=None,
+            name="Document Type",
+        )
+
+        with pytest.raises(ValidationError):
+            document_type.full_clean()
+
+    def test_document_type_requires_name(self, user1):
+        document_type = DocumentType(
+            owner=user1,
+            name=None,
+        )
+
+        with pytest.raises(ValidationError):
+            document_type.full_clean()
+
+    def test_document_type_name_cannot_be_blank(self, user1):
+        document_type = DocumentType(
+            owner=user1,
+            name="",
+        )
+
+        with pytest.raises(ValidationError):
+            document_type.full_clean()
+
+
+# ---------------------------------------------------------------------------
+# M-03: Persistence Normalization
+# ---------------------------------------------------------------------------
+
+
+class TestDocumentTypeNormalization:
+
+    def test_empty_description_is_normalized_to_none_after_save(
+        self,
+        user1,
+    ):
+        document_type = DocumentType(
+            owner=user1,
+            name="Document Type",
+            description="",
+        )
+
+        document_type.save()
+
+        assert document_type.description is None
+
+    def test_whitespace_description_is_normalized_to_none_after_save(
+        self,
+        user1,
+    ):
+        document_type = DocumentType(
+            owner=user1,
+            name="Document Type",
+            description="   ",
+        )
+
+        document_type.save()
+
+        assert document_type.description is None
+
+    def test_existing_description_is_preserved_after_save(
+        self,
+        user1,
+    ):
+        document_type = DocumentType(
+            owner=user1,
+            name="Document Type",
+            description="Some Description",
+        )
+
+        document_type.save()
+
+        assert document_type.description == "Some Description"
+
+
+# ---------------------------------------------------------------------------
+# Model Convenience Behavior
+# ---------------------------------------------------------------------------
+
+
+class TestDocumentTypeProperties:
+
+    def test_document_type_string_representation(self, user1):
+        document_type = DocumentType(
+            owner=user1,
+            name="Document Type",
+        )
+
+        assert str(document_type) == "Document Type"
