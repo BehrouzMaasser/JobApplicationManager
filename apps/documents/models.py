@@ -5,7 +5,6 @@ This module defines document types and uploaded documents, along with helper
 functions for generating upload paths and calculating file hashes.
 """
 
-import hashlib
 import os
 import uuid
 
@@ -14,6 +13,9 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.functions import Lower
 from django.utils.text import slugify
+
+
+from apps.core.utils.model_helpers import normalize_text_fields
 
 
 # =========================================================
@@ -50,7 +52,8 @@ def document_upload_path(instance, filename):
     if len(file_name_extension) != 2:
         raise ValidationError(
             {
-                "file_name": "File should not have '.' in its name!"
+                "file_name": "Besides the file extension, the file should not have"
+                             " '.' in its name!"
             }
         )
 
@@ -62,26 +65,6 @@ def document_upload_path(instance, filename):
         document_type,
         unique_name,
     )
-
-
-def calculate_file_hash(file_obj):
-    """
-    Calculate the SHA-256 hash of an uploaded file.
-
-    Args:
-        file_obj:
-            Uploaded file object.
-
-    Returns:
-        Hexadecimal SHA-256 digest.
-    """
-
-    sha256 = hashlib.sha256()
-
-    for chunk in file_obj.chunks():
-        sha256.update(chunk)
-
-    return sha256.hexdigest()
 
 
 # =========================================================
@@ -129,8 +112,7 @@ class DocumentType(models.Model):
     def save(self, *args, **kwargs):
         """Normalize optional fields before saving."""
 
-        if not self.description:
-            self.description = None
+        normalize_text_fields(self, ["description"], None)
 
         super().save(*args, **kwargs)
 
@@ -176,6 +158,12 @@ class Document(models.Model):
                 name="unique_document_name_per_user",
                 violation_error_code="duplicate_document_name",
                 violation_error_message="A document with this name already exists.",
+            ),
+            models.UniqueConstraint(
+                fields=["owner", "file_hash"],
+                name="unique_document_file_per_user",
+                violation_error_code="duplicate_document",
+                violation_error_message="The uploaded file already exists.",
             )
         ]
 
@@ -193,7 +181,14 @@ class Document(models.Model):
         Validate ownership consistency between the document and its type.
         """
 
-        if [self.owner_id, self.document_type_id, self.file.name].count(None):
+        if not self.file_hash:
+            raise ValidationError(
+                {
+                    "file_hash": "Document hash is required."
+                }
+            )
+
+        if [self.owner_id, self.document_type_id].count(None):
             return
 
         if self.owner_id != self.document_type.owner_id:
@@ -207,23 +202,3 @@ class Document(models.Model):
                     ],
                 }
             )
-
-    def save(self, *args, **kwargs):
-        """
-        Calculate the file hash and reuse an existing stored file when an
-        identical file has already been uploaded by the same user.
-        """
-
-        if not self.file_hash:
-            self.file_hash = calculate_file_hash(self.file)
-
-            existing_file = Document.objects.filter(
-                owner=self.owner,
-                file_hash=self.file_hash,
-            ).first()
-
-            if existing_file:
-                self.file = existing_file.file
-                self.file_hash = existing_file.file_hash
-
-        super().save(*args, **kwargs)

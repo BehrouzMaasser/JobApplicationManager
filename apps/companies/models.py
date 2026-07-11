@@ -13,6 +13,7 @@ from django.db import models
 from django.db.models.functions import Lower
 from django.utils import timezone
 
+from apps.core.utils.model_helpers import normalize_text_fields
 from apps.workspaces.models import Workspace
 
 
@@ -56,8 +57,7 @@ class Company(models.Model):
     def save(self, *args, **kwargs):
         """Normalize optional fields before saving."""
 
-        if self.website == "":
-            self.website = None
+        normalize_text_fields(self, ["website"], None)
 
         super().save(*args, **kwargs)
 
@@ -232,8 +232,7 @@ class JobBenefit(models.Model):
     def save(self, *args, **kwargs):
         """Normalize optional fields before saving."""
 
-        if self.description is None:
-            self.description = ""
+        normalize_text_fields(self, ["description"], "")
 
         super().save(*args, **kwargs)
 
@@ -277,8 +276,7 @@ class JobTask(models.Model):
     def save(self, *args, **kwargs):
         """Normalize optional fields before saving."""
 
-        if self.description is None:
-            self.description = ""
+        normalize_text_fields(self, ["description"], "")
 
         super().save(*args, **kwargs)
 
@@ -300,8 +298,8 @@ class JobRequirement(models.Model):
 
         constraints = [
             models.UniqueConstraint(
-                Lower("description"),
                 Lower("title"),
+                Lower("description"),
                 "user",
                 name="unique_job_requirement_per_user",
                 violation_error_message="A job requirement with this title and "
@@ -319,8 +317,7 @@ class JobRequirement(models.Model):
     def save(self, *args, **kwargs):
         """Normalize optional fields before saving."""
 
-        if self.description is None:
-            self.description = ""
+        normalize_text_fields(self, ["description"], "")
 
         super().save(*args, **kwargs)
 
@@ -398,19 +395,16 @@ class JobPosition(models.Model):
     def save(self, *args, **kwargs):
         """Normalize optional fields before saving."""
 
-        if self.job_position_ad_url == "":
-            self.job_position_ad_url = None
-
-        if self.job_location_url == "":
-            self.job_location_url = None
-
-        if self.job_portal_url == "":
-            self.job_portal_url = None
-
-        if self.portal_username == "":
-            self.portal_username = None
-
-        if self.portal_password == "":
-            self.portal_password = None
+        normalize_text_fields(
+            self,
+            [
+                "job_position_ad_url",
+                "job_location_url",
+                "job_portal_url",
+                "portal_username",
+                "portal_password"
+            ],
+            None
+        )
 
         super().save(*args, **kwargs)

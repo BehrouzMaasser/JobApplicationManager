@@ -220,14 +220,6 @@ class JobApplication(models.Model):
 
         return True
 
-    def save(self, *args, **kwargs):
-        """Normalize optional fields before saving."""
-
-        if not self.date_applied:
-            self.date_applied = None
-
-        super().save(*args, **kwargs)
-
 
 # =========================================================
 # Job Application Note
