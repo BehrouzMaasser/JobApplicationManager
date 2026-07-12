@@ -36,27 +36,27 @@ class JobApplicationNoteSelector(BaseSelector[JobApplicationNote]):
             filters: JobApplicationNoteQueryFilter
     ) -> QuerySet[JobApplicationNote]:
 
-        if workspace_id := filters.workspace_id:
+        if (workspace_id := filters.workspace_id) is not None:
             queryset = queryset.filter(
                 job_application__workspace__workspace_id=workspace_id
             )
 
-        if company_id := filters.company_id:
+        if (company_id := filters.company_id) is not None:
             queryset = queryset.filter(
                 job_application__job_position__company__pk=company_id
             )
 
-        if job_position_id := filters.job_position_id:
+        if (job_position_id := filters.job_position_id) is not None:
             queryset = queryset.filter(
                 job_application__job_position__pk=job_position_id
             )
 
-        if job_application_id := filters.job_application_id:
+        if (job_application_id := filters.job_application_id) is not None:
             queryset = queryset.filter(
                 job_application__pk=job_application_id
             )
 
-        if filters.id:
+        if filters.id is not None:
             queryset = queryset.filter(pk=filters.id)
 
         return queryset

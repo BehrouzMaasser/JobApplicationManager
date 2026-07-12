@@ -23,4 +23,4 @@ class JobTaskSelector(BaseSelector[JobTask]):
     MODEL = JobTask
     RESOURCE_NAME = "Job Task"
     LOOKUP_FIELD = "pk"
-    OWNER_PATH = "owner"
+    OWNER_PATH = "user"

@@ -36,13 +36,13 @@ class CompanyNoteSelector(BaseSelector[CompanyNote]):
             filters: CompanyNoteQueryFilter
     ) -> QuerySet[CompanyNote]:
 
-        if workspace_id := filters.workspace_id:
+        if (workspace_id := filters.workspace_id) is not None:
             queryset = queryset.filter(company__workspace__workspace_id=workspace_id)
 
-        if company_id := filters.company_id:
+        if (company_id := filters.company_id) is not None:
             queryset = queryset.filter(company__pk=company_id)
 
-        if filters.id:
+        if filters.id is not None:
             queryset = queryset.filter(pk=filters.id)
 
         return queryset

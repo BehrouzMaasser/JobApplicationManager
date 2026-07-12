@@ -16,7 +16,7 @@ from django.db.models import QuerySet
 from apps.documents.models import DocumentType
 
 
-class DocumentTypeSelector(BaseSelector):
+class DocumentTypeSelector(BaseSelector[DocumentType]):
     """
     Selector responsible for retrieving DocumentType objects.
 
@@ -36,7 +36,7 @@ class DocumentTypeSelector(BaseSelector):
             filters: DocumentTypeQueryFilter
     ) -> QuerySet[DocumentType]:
 
-        if filters.id:
+        if filters.id is not None:
             queryset = queryset.filter(pk=filters.id)
 
         return queryset

@@ -36,10 +36,10 @@ class CompanySelector(BaseSelector[Company]):
             filters: CompanyQueryFilter
     ) -> QuerySet[Company]:
 
-        if workspace_id := filters.workspace_id:
+        if (workspace_id := filters.workspace_id) is not None:
             queryset = queryset.filter(workspace__workspace_id=workspace_id)
 
-        if filters.id:
+        if filters.id is not None:
             queryset = queryset.filter(pk=filters.id)
 
         return queryset

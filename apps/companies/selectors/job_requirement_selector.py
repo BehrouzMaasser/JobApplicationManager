@@ -23,4 +23,4 @@ class JobRequirementSelector(BaseSelector[JobRequirement]):
     MODEL = JobRequirement
     RESOURCE_NAME = "Job Requirement"
     LOOKUP_FIELD = "pk"
-    OWNER_PATH = "owner"
+    OWNER_PATH = "user"

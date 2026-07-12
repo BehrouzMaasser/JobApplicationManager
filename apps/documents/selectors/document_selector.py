@@ -36,10 +36,10 @@ class DocumentSelector(BaseSelector[Document]):
             filters: DocumentQueryFilter
     ) -> QuerySet[Document]:
 
-        if document_type_id := filters.document_type_id:
+        if (document_type_id := filters.document_type_id) is not None:
             queryset = queryset.filter(document_type__pk=document_type_id)
 
-        if filters.id:
+        if filters.id is not None:
             queryset = queryset.filter(pk=filters.id)
 
         return queryset

@@ -23,4 +23,4 @@ class JobBenefitSelector(BaseSelector[JobBenefit]):
     MODEL = JobBenefit
     RESOURCE_NAME = "Job Benefit"
     LOOKUP_FIELD = "pk"
-    OWNER_PATH = "owner"
+    OWNER_PATH = "user"
