@@ -64,6 +64,12 @@ that only authorized users can retrieve it.
 
 Ownership filtering should be applied before resources are returned.
 
+Selectors representing globally accessible resources must explicitly override
+`accessible_queryset()` to define their access policy.
+
+The default behavior of `accessible_queryset`() is restrictive and must not
+expose resources without explicit authorization rules.
+
 ---
 
 ## S-04. Base Queryset
@@ -227,8 +233,8 @@ These values describe the selector's target model and retrieval strategy.
 
 Selectors for user-owned resources should define `OWNER_PATH`.
 
-Selectors representing globally accessible resources may omit `OWNER_PATH`,
-provided unrestricted access is intentional and documented.
+Selectors representing globally accessible resources should explicitly override 
+`accessible_queryset()` to document their unrestricted access policy.
 
 ---
 
