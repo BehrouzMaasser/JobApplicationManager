@@ -37,7 +37,7 @@ class WorkspaceSelector(BaseSelector[Workspace]):
             filters: WorkspaceQueryFilter
     ) -> QuerySet[Workspace]:
 
-        if filters.workspace_id:
+        if filters.workspace_id is not None:
             queryset = queryset.filter(workspace_id=filters.workspace_id)
 
         return queryset
