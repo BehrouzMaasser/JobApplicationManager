@@ -5,103 +5,36 @@ Selectors encapsulate data retrieval logic while keeping business logic
 inside services.
 """
 
-from dataclasses import dataclass
-from datetime import datetime
-
-from django.db.models import QuerySet
-
 # Models
-from apps.accounts.models import User
 from apps.applications.models import JobApplication
 
-# Exceptions
-from apps.core.exceptions.exceptions import (
-    AccessDeniedError,
-    InfraStructureViolationError,
-    ResourceNotFoundError,
-)
+# Base Selector
+from apps.core.common.selectors.base_selector import BaseSelector
+
+# For typings
+from apps.core.common.types.filters import JobApplicationQueryFilter
+from django.db.models import QuerySet
 
 
-class JobApplicationSelector:
+class JobApplicationSelector(BaseSelector[JobApplication]):
     """
-    Provides reusable read operations for JobApplication objects.
+    Selector responsible for retrieving JobApplication objects.
+
+    Provides reusable read operations while enforcing ownership
+    restrictions defined by BaseSelector.
     """
 
-    @dataclass
-    class QueryFilter:
-        workspace_id: str | None = None
-        company_id: int | None = None
-        job_position_id: int | None = None
-        id: int | None = None
-        status_id: int | None = None
-        date_applied: datetime | None = None
+    MODEL = JobApplication
+    RESOURCE_NAME = "Job Application"
+    LOOKUP_FIELD = "pk"
+    OWNER_PATH = "owner"
 
-    @staticmethod
-    def get(*, user: User, application_id: int) -> JobApplication | Exception:
-        """
-        Retrieve a JobApplication from the JobApplications database.
-
-        Returns:
-            JobApplication:
-                JobApplication of the provided user from the database.
-
-        Raises:
-            ResourceNotFoundError:
-                If the JobApplication does not exist.
-
-            AccessDeniedError:
-                If the JobApplication does not belong to this user.
-
-            InfraStructureViolationError:
-                If an unexpected internal error is encountered while retrieving
-                the JobApplication.
-        """
-
-        try:
-            job_application = JobApplication.objects.get(pk=application_id)
-        except JobApplication.DoesNotExist:
-            raise ResourceNotFoundError(
-                resource=f"Job Application {application_id}",
-            )
-        except Exception as e:
-            raise InfraStructureViolationError(e) from e
-
-        if job_application.owner != user:
-            raise AccessDeniedError(
-                resource=f"Job Application {application_id}",
-                message=f"Job Application {application_id} does not belong to {user}",
-            )
-
-        return job_application
-
-    @staticmethod
-    def list(
-        *,
-        user: User,
-        filters: None | QueryFilter = None,
+    @classmethod
+    def apply_filters(
+            cls,
+            queryset: QuerySet[JobApplication],
+            filters: JobApplicationQueryFilter
     ) -> QuerySet[JobApplication]:
-        """
-        Retrieve a queryset of JobApplications from the JobApplications database.
-
-        Args:
-            user (User):
-                User who owns the JobApplications.
-
-            filters (QueryFilter | None = None):
-                Query filters applied to the JobApplications.
-
-        Returns:
-            QuerySet[JobApplication]:
-                - A queryset of the JobApplications owned by the user based on
-                filters provided.
-                - An empty queryset if the user owns no JobApplications or
-                nothing matches the filters provided.
-        """
-
-        queryset = JobApplication.objects.filter(owner=user)
-
-        if not filters:
-            return queryset
 
         if workspace_id := filters.workspace_id:
             queryset = queryset.filter(workspace__workspace_id=workspace_id)

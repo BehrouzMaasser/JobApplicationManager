@@ -5,99 +5,37 @@ Selectors encapsulate data retrieval logic while keeping business logic
 inside services.
 """
 
-from dataclasses import dataclass
-from uuid import UUID
-
-from django.core.exceptions import ValidationError
 from django.db.models import QuerySet
 
 # Models
-from apps.accounts.models import User
 from apps.workspaces.models import Workspace
 
-# Exceptions
-from apps.core.exceptions.exceptions import (
-    ResourceNotFoundError,
-    AccessDeniedError,
-    InfraStructureViolationError
-)
+# Base Selector
+from apps.core.common.selectors.base_selector import BaseSelector
+
+# Filters for typing
+from apps.core.common.types.filters import WorkspaceQueryFilter
 
 
-class WorkspaceSelector:
+class WorkspaceSelector(BaseSelector[Workspace]):
     """
-    Provides reusable read operations for Workspace objects.
+    Selector responsible for retrieving Workspace objects.
+
+    Provides reusable read operations while enforcing ownership
+    restrictions defined by BaseSelector.
     """
 
-    @dataclass
-    class QueryFilter:
+    MODEL = Workspace
+    RESOURCE_NAME = "Workspace"
+    LOOKUP_FIELD = "workspace_id"
+    OWNER_PATH = "owner"
 
-        workspace_id: str | None = None
-
-    @staticmethod
-    def get(user: User, workspace_id: UUID) -> Workspace | Exception:
-        """
-        Retrieve a Workspace from the Workspaces database.
-
-        Returns:
-            Workspace:
-                Workspace of the provided user from the database.
-
-        Raises:
-            ResourceNotFoundError:
-                If the Workspace does not exist.
-
-            AccessDeniedError:
-                If the Workspace does not belong to this user.
-
-            InfraStructureViolationError:
-                If an unexpected internal error is encountered while retrieving the
-                Workspace.
-
-        """
-
-        try:
-            workspace = Workspace.objects.get(workspace_id=workspace_id)
-        except Workspace.DoesNotExist:
-            raise ResourceNotFoundError(resource=f"Workspace {workspace_id}")
-        except ValidationError as e:
-            raise InfraStructureViolationError(e) from e
-
-        if workspace.owner != user:
-            raise AccessDeniedError(
-                resource=f"Workspace {workspace_id}",
-                message=f"Workspace {workspace_id} does not belong to {user}"
-            )
-
-        return workspace
-
-    @staticmethod
-    def list(
-            *,
-            user: User,
-            filters: QueryFilter | None = None
+    @classmethod
+    def apply_filters(
+            cls,
+            queryset: QuerySet[Workspace],
+            filters: WorkspaceQueryFilter
     ) -> QuerySet[Workspace]:
-        """
-        Retrieve a queryset of Workspaces from the Workspaces database.
-
-        Args:
-            user (User):
-                User who owns the Workspaces.
-
-            filters (QueryFilter | None = None):
-                Query filters applied to the Workspaces.
-
-        Returns:
-            QuerySet[Workspace]:
-                - A queryset of the Workspaces owned by the user based on
-                filters provided.
-                - An Empty queryset if user owned no workspaces and nothing matches
-                the filters provided.
-        """
-
-        queryset = Workspace.objects.filter(owner=user)
-
-        if not filters:
-            return queryset
 
         if filters.workspace_id:
             queryset = queryset.filter(workspace_id=filters.workspace_id)

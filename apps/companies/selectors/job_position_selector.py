@@ -5,101 +5,36 @@ Selectors encapsulate data retrieval logic while keeping business logic
 inside services.
 """
 
-from dataclasses import dataclass
-
-from django.core.exceptions import ValidationError
+# For typings
 from django.db.models import QuerySet
+from apps.core.common.types.filters import JobPositionQueryFilter
 
 # Models
-from apps.accounts.models import User
 from apps.companies.models import JobPosition
 
-# Exceptions
-from apps.core.exceptions.exceptions import (
-    ResourceNotFoundError,
-    AccessDeniedError,
-    InfraStructureViolationError
-)
+# Base Selector
+from apps.core.common.selectors.base_selector import BaseSelector
 
 
-class JobPositionSelector:
+class JobPositionSelector(BaseSelector[JobPosition]):
     """
-    Provides reusable read operations for JobPosition objects.
+    Selector responsible for retrieving JobPosition objects.
+
+    Provides reusable read operations while enforcing ownership
+    restrictions defined by BaseSelector.
     """
 
-    @dataclass
-    class QueryFilter:
-        workspace_id: str | None = None
-        company_id: str | None = None
-        id: int | None = None
+    MODEL = JobPosition
+    RESOURCE_NAME = "Job Position"
+    LOOKUP_FIELD = "pk"
+    OWNER_PATH = "company.workspace.owner"
 
-    @staticmethod
-    def get(*, user: User, job_position_id: int) -> JobPosition | Exception:
-        """
-        Retrieve a JobPosition from the JobPositions database.
-
-        Returns:
-            JobPosition:
-                JobPosition of the provided user from the database.
-
-        Raises:
-            ResourceNotFoundError:
-                If the JobPosition does not exist.
-
-            AccessDeniedError:
-                If the JobPosition does not belong to this user.
-
-            InfraStructureViolationError:
-                If an unexpected internal error is encountered while retrieving the
-                JobPosition.
-
-        """
-
-        try:
-            job_position = JobPosition.objects.get(pk=job_position_id)
-        except JobPosition.DoesNotExist:
-            raise ResourceNotFoundError(
-                resource=f"Job Position {job_position_id}"
-            )
-        except ValidationError as e:
-            raise InfraStructureViolationError(e) from e
-
-        if job_position.company.workspace.owner != user:
-            raise AccessDeniedError(
-                resource=f"Job Position {job_position_id}",
-                message=f"Job Position {job_position_id} does not belong to {user}"
-            )
-
-        return job_position
-
-    @staticmethod
-    def list(
-            *,
-            user: User,
-            filters: None | QueryFilter = None
+    @classmethod
+    def apply_filters(
+            cls,
+            queryset: QuerySet[JobPosition],
+            filters: JobPositionQueryFilter
     ) -> QuerySet[JobPosition]:
-        """
-        Retrieve a queryset of JobPositions from the JobPositions database.
-
-        Args:
-            user (User):
-                User who owns the JobPositions.
-
-            filters (QueryFilter | None = None):
-                Query filters applied to the JobPositions.
-
-        Returns:
-            QuerySet[JobPosition]:
-                - A queryset of the JobPositions owned by the user based on
-                filters provided.
-                - An Empty queryset if user owned no JobPositions and nothing
-                matches the filters provided.
-        """
-
-        queryset = JobPosition.objects.filter(company__workspace__owner=user)
-
-        if not filters:
-            return queryset
 
         if workspace_id := filters.workspace_id:
             queryset = queryset.filter(company__workspace__workspace_id=workspace_id)
