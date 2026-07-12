@@ -111,17 +111,19 @@ def doc1_user1(document_type_user1, fake_file1):
         owner=document_type_user1.owner,
         document_type=document_type_user1,
         file=fake_file1,
+        file_hash="hash_1"
     )
 
 
 @pytest.fixture
-def doc2_user1(document_type2_user1, fake_file1):
+def doc2_user1(document_type2_user1, fake_file2):
 
     return Document.objects.create(
         name="Document 2",
         owner=document_type2_user1.owner,
         document_type=document_type2_user1,
-        file=fake_file1,
+        file=fake_file2,
+        file_hash="hash_2"
     )
 
 
@@ -133,6 +135,7 @@ def doc1_user2(document_type_user2, fake_file1):
         owner=document_type_user2.owner,
         document_type=document_type_user2,
         file=fake_file1,
+        file_hash="hash_1"
     )
 
 
