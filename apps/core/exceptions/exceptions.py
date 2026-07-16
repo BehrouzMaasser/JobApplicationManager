@@ -1,7 +1,19 @@
 # core/exceptions.py
 
 class AppError(Exception):
-    pass
+
+    default_message = "Application error."
+
+    def __init__(self, message: str | None = None):
+
+        self._message = message
+
+        super().__init__(self.message)
+
+    @property
+    def message(self):
+
+        return self._message or self.default_message
 
 
 class DomainInvariantViolationError(AppError):
@@ -9,7 +21,7 @@ class DomainInvariantViolationError(AppError):
 
     def __init__(self, message: str):
 
-        self.message = message
+        self._message = message
 
         super().__init__(self.message)
 
@@ -59,10 +71,15 @@ class BusinessRuleViolationError(AppError):
         self.messages = messages
         self.fields = fields
 
-        if self.messages is not None and len(self.messages) != len(self.fields):
-            raise InfraStructureViolationError(
-                "BusinessRuleViolationError raised error: Number of messages and "
-                "fields do not match"
+        if (messages is None) != (fields is None):
+            raise InfrastructureViolationError(
+                "messages and fields must either both be supplied or both "
+                "be omitted."
+            )
+
+        if messages is not None and len(messages) != len(fields):
+            raise InfrastructureViolationError(
+                "messages and fields must have identical lengths."
             )
 
     @property
@@ -81,5 +98,6 @@ class BusinessRuleViolationError(AppError):
         return None
 
 
-class InfraStructureViolationError(AppError):
-    pass
+class InfrastructureViolationError(AppError):
+
+    default_message = "Unexpected infrastructure failure."
