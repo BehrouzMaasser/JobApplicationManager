@@ -13,7 +13,7 @@ from apps.core.exceptions.exceptions import (
 )
 
 # Services
-from apps.workspaces.services.base_service import BaseService
+from apps.core.common.services.base_service import BaseService
 
 #   ----------------------------------- ****** -----------------------------------
 

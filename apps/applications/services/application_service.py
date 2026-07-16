@@ -8,8 +8,6 @@ and email ownership rules.
 
 from typing import Any, Iterable
 
-from django.db import transaction
-
 # Models
 from apps.accounts.models import User
 from apps.applications.models import JobApplication
@@ -17,6 +15,7 @@ from apps.companies.models import (
     CompanyEmail,
     JobPosition,
 )
+from apps.core.common.services.base_service import BaseService
 from apps.documents.models import Document
 
 # Selectors
@@ -25,11 +24,9 @@ from apps.applications.selectors.application_selector import (
 )
 
 # Contexts
-from apps.applications.services.contexts.application_context import (
-    JobApplicationContext,
-)
-from apps.companies.services.contexts.company_context import (
+from apps.core.common.contexts.base_context import (
     CompanyChildContext,
+    JobApplicationContext,
 )
 
 # Exceptions
@@ -43,7 +40,7 @@ from apps.companies.services.job_position_service import JobPositionService
 
 
 # Job Application Service
-class JobApplicationService(JobPositionService):
+class JobApplicationService(BaseService):
     """
     Service responsible for managing JobApplication domain operations.
 
@@ -51,254 +48,118 @@ class JobApplicationService(JobPositionService):
     ownership validation for all operations.
     """
 
-    REQUIRED_M2M_FIELDS = set()
+    MODEL = JobApplication
+    SELECTOR = JobApplicationSelector
 
-    NON_M2M_FIELDS = {
+    CREATE_FIELDS = (
+        "owner",
+        "workspace",
+        "job_position",
         "status",
         "date_applied",
-    }
-
-    CREATE_REQUIRED_FIELDS = {
-        *REQUIRED_M2M_FIELDS,
+    )
+    SCALAR_UPDATABLE_FIELDS = (
         "status",
-    }
-
-    M2M_FIELDS = {
-        *REQUIRED_M2M_FIELDS,
+        "date_applied",
+    )
+    REQUIRED_M2M_FIELDS = ()
+    M2M_UPDATABLE_FIELDS = (
         "emails",
         "documents",
-    }
+    )
+    NON_EMPTY_M2M_FIELDS = REQUIRED_M2M_FIELDS
+    M2M_OWNER_FIELD_MAP = {}
 
-    UPDATABLE_FIELDS = {
-        *CREATE_REQUIRED_FIELDS,
-        *M2M_FIELDS,
-        "date_applied",
-    }
+    @classmethod
+    def _create_validate(
+            cls,
+            *,
+            user: User,
+            instance: JobApplication,
+            validated_data: dict[str, Any],
+    ):
 
-    M2M_FIELD_OWNERSHIP_MAP = {
-        "emails": "owner",
-        "documents": "owner",
-    }
-
-    @staticmethod
-    @transaction.atomic
-    def create(
-        *,
-        user: User,
-        context: JobApplicationContext,
-        validated_data: dict[str, Any],
-    ) -> JobApplication:
-        """
-        Create a new JobApplication under a JobPosition.
-
-        Calls:
-            - _resolve_job_position() to retrieve the parent job position.
-            - _validate_emails_ownership() to validate email ownership.
-            - _validate_documents_ownership() to validate document ownership.
-            - django.db.models.base.Model.full_clean()
-            - django.db.models.base.Model.save()
-            - _add_m2m_fields() to add many-to-many relationships.
-
-        Raises:
-            ValidationError:
-                If model validation fails.
-
-            BusinessRuleViolationError:
-                If the provided emails or documents violate ownership rules.
-
-            DomainInvariantViolationError:
-                If the job position does not belong to the specified company or
-                workspace.
-
-        Returns:
-            JobApplication:
-                The created job application instance.
-        """
-
-        # Check if Context follows business rules and resolve Job Position
-        job_position = JobApplicationService._resolve_job_position(
-            user=user,
-            context=CompanyChildContext(
-                id=context.job_position_id,
-                workspace_id=context.workspace_id,
-                company_id=context.company_id,
-            ),
-        )
-
-        # ----------------------*****---------------------
-
-        # Validate many-to-many ownership
         if validated_data.get("emails"):
-            JobApplicationService._validate_emails_ownership(
+            cls._validate_emails_ownership(
                 user=user,
                 emails=validated_data["emails"],
-                job_position=job_position,
+                job_position=instance.job_position,
             )
 
         if validated_data.get("documents"):
-            JobApplicationService._validate_documents_ownership(
+            cls._validate_documents_ownership(
                 user=user,
                 documents=validated_data["documents"],
             )
 
-        # ----------------------*****---------------------
+    @classmethod
+    def _update_validate(
+            cls,
+            *,
+            user: User,
+            instance: JobApplication,
+            validated_data: dict[str, Any],
+    ):
 
-        # Create the instance
-        instance = JobApplication(
-            owner=user,
-            workspace=job_position.company.workspace,
-            job_position=job_position,
-            status=validated_data.get("status"),
-            date_applied=validated_data.get("date_applied"),
-        )
-
-        # ----------------------*****---------------------
-
-        # Cleaning and saving the instance
-        instance.full_clean()
-        instance.save()
-
-        # ----------------------*****---------------------
-
-        # Add many-to-many relations
-        JobApplicationService._add_m2m_fields(
-            instance=instance,
-            validated_data=validated_data,
-            m2m_fields=JobApplicationService.M2M_FIELDS,
-        )
-
-        # ----------------------*****---------------------
-
-        return instance
-
-    @staticmethod
-    @transaction.atomic
-    def update(
-        *,
-        user: User,
-        context: JobApplicationContext,
-        validated_data: dict[str, Any],
-    ) -> JobApplication:
-        """
-        Update an existing JobApplication instance.
-
-        Calls:
-            - _resolve_job_application() to retrieve the target instance.
-            - _validate_emails_ownership() to validate email ownership.
-            - _validate_documents_ownership() to validate document ownership.
-            - _update_non_m2m_fields() to update scalar fields.
-            - django.db.models.base.Model.full_clean()
-            - django.db.models.base.Model.save()
-            - _update_m2m_fields() to update many-to-many relationships.
-
-        Raises:
-            ValidationError:
-                If model validation fails.
-
-            ResourceNotFoundError:
-                If the JobApplication does not exist.
-
-            AccessDeniedError:
-                If the user does not own the resource.
-
-            BusinessRuleViolationError:
-                If the provided emails or documents violate ownership rules.
-
-            DomainInvariantViolationError:
-                If the job application does not belong to the specified job
-                position, company, or workspace.
-
-        Returns:
-            JobApplication:
-                The updated job application instance.
-        """
-
-        # Check if Context follows business rules and resolve Job Application
-        instance = JobApplicationService._resolve_job_application(
-            user=user,
-            context=context,
-        )
-
-        # ----------------------*****---------------------
-
-        # Validate many-to-many ownership
-        JobApplicationService._validate_emails_ownership(
+        cls._validate_emails_ownership(
             user=user,
             emails=validated_data.get("emails", []),
             job_position=instance.job_position,
         )
 
-        JobApplicationService._validate_documents_ownership(
+        cls._validate_documents_ownership(
             user=user,
             documents=validated_data.get("documents", []),
         )
 
-        # ----------------------*****---------------------
+    @classmethod
+    def _resolve_create_dependencies(
+            cls,
+            user: User,
+            context: JobApplicationContext
+    ) -> dict[str, Any]:
 
-        # Update scalar fields
-        JobApplicationService._update_non_m2m_fields(
-            instance=instance,
-            validated_data=validated_data,
-            fields_to_update=JobApplicationService.NON_M2M_FIELDS,
+        job_position: JobPosition = JobPositionService._resolve_instance(
+            user=user,
+            context=CompanyChildContext(
+                id=context.company_id,
+                workspace_id=context.workspace_id,
+                company_id=context.company_id,
+            ),
         )
 
-        # ----------------------*****---------------------
+        return {
+            "owner": user,
+            "job_position": job_position,
+            "workspace": job_position.company.workspace,
+        }
 
-        # Cleaning and saving the instance
-        instance.full_clean()
-        instance.save()
-
-        # ----------------------*****---------------------
-
-        # Update many-to-many relationships
-        JobApplicationService._update_m2m_fields(
-            instance=instance,
-            validated_data=validated_data,
-            fields_to_update=JobApplicationService.M2M_FIELDS,
-        )
-
-        # ----------------------*****---------------------
-
-        return instance
-
-    @staticmethod
-    @transaction.atomic
-    def remove(
+    @classmethod
+    def _validate_resolved_instance(
+        cls,
         *,
-        user: User,
+        instance: JobApplication,
         context: JobApplicationContext,
     ) -> None:
-        """
-        Remove a JobApplication instance.
 
-        Calls:
-            - _resolve_job_application() to retrieve the target instance.
-            - django.db.models.base.Model.delete()
+        if instance.job_position.pk != context.job_position_id:
+            raise DomainInvariantViolationError(
+                f"JobApplication {context.id} does not belong to "
+                f"JobPosition {context.job_position_id}"
+            )
 
-        Raises:
-            ResourceNotFoundError:
-                If the JobApplication does not exist.
+        if instance.job_position.company.pk != context.company_id:
+            raise DomainInvariantViolationError(
+                f"JobApplication {context.id}'s JobPosition "
+                f"{context.job_position_id} does not belong to "
+                f"Company {context.company_id}"
+            )
 
-            AccessDeniedError:
-                If the user does not own the resource.
-
-            DomainInvariantViolationError:
-                If the job application does not belong to the specified job
-                position, company, or workspace.
-
-        Returns:
-            None
-        """
-
-        # Check if Context follows business rules and resolve Job Application
-        instance = JobApplicationService._resolve_job_application(
-            user=user,
-            context=context,
-        )
-
-        # ----------------------*****---------------------
-
-        instance.delete()
+        if instance.workspace.workspace_id != context.workspace_id:
+            raise DomainInvariantViolationError(
+                f"JobApplication {context.id}'s workspace does not belong to "
+                f"Workspace {context.workspace_id}"
+            )
 
     @staticmethod
     def _validate_emails_ownership(
@@ -353,58 +214,3 @@ class JobApplicationService(JobPositionService):
                 fields=["documents"],
                 messages=["Not All Documents Belong To User"],
             )
-
-    @staticmethod
-    def _resolve_job_application(
-        *,
-        user: User,
-        context: JobApplicationContext,
-    ) -> JobApplication:
-        """
-        Resolve a JobApplication and validate workspace, company, and job
-        position ownership.
-
-        Calls:
-            JobApplicationSelector.get()
-
-        Raises:
-            ResourceNotFoundError:
-                If the JobApplication does not exist.
-
-            AccessDeniedError:
-                If the user does not own the resource.
-
-            DomainInvariantViolationError:
-                If the job application does not belong to the specified job
-                position, company, or workspace.
-
-        Returns:
-            JobApplication:
-                The resolved job application instance.
-        """
-
-        job_application = JobApplicationSelector.get(
-            user=user,
-            application_id=context.id,
-        )
-
-        if job_application.job_position.pk != context.job_position_id:
-            raise DomainInvariantViolationError(
-                f"JobApplication {context.id} does not belong to "
-                f"JobPosition {context.job_position_id}"
-            )
-
-        if job_application.job_position.company.pk != context.company_id:
-            raise DomainInvariantViolationError(
-                f"JobApplication {context.id}'s JobPosition "
-                f"{context.job_position_id} does not belong to "
-                f"Company {context.company_id}"
-            )
-
-        if job_application.workspace.workspace_id != context.workspace_id:
-            raise DomainInvariantViolationError(
-                f"JobApplication {context.id}'s workspace does not belong to "
-                f"Workspace {context.workspace_id}"
-            )
-
-        return job_application

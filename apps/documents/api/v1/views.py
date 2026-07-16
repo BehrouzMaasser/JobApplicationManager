@@ -13,6 +13,7 @@ from django.db.models import QuerySet
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 
+from apps.core.common.types.filters import DocumentQueryFilter
 # Mixins
 from apps.core.mixins.document_file_response_mixin import (
     DocumentFileResponseMixin,
@@ -128,12 +129,12 @@ class DocumentViewSet(
 
     def _get_queryset_filters(
         self,
-    ) -> DocumentSelector.QueryFilter:
+    ) -> DocumentQueryFilter:
         """
         Build selector filter object from query parameters.
         """
 
-        return DocumentSelector.QueryFilter(
+        return DocumentQueryFilter(
             document_type_id=self.request.query_params.get(
                 "document_type"
             ),

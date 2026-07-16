@@ -6,10 +6,9 @@ with a company, ensuring workspace and company-level ownership validation.
 """
 
 from typing import Any
-from django.db import transaction
 
-# Models
 from apps.accounts.models import User
+# Models
 from apps.companies.models import CompanyNote
 
 # Selectors
@@ -19,8 +18,9 @@ from apps.companies.selectors.company_note_selector import CompanyNoteSelector
 from apps.companies.services.company_service import CompanyService
 
 # Contexts
-from apps.companies.services.contexts.company_context import (
-    CompanyChildContext
+from apps.core.common.contexts.base_context import (
+    CompanyChildContext,
+    CompanyContext
 )
 
 # Exceptions
@@ -36,192 +36,49 @@ class CompanyNoteService(CompanyService):
     and workspace boundaries.
     """
 
-    CREATE_REQUIRED_FIELDS = {
-        "title",
-        "content",
-    }
+    MODEL = CompanyNote
+    SELECTOR = CompanyNoteSelector
 
-    UPDATABLE_FIELDS = CREATE_REQUIRED_FIELDS
+    CREATE_FIELDS = ("company", "title", "content")
+    SCALAR_UPDATABLE_FIELDS = ("title", "content")
+    M2M_UPDATABLE_FIELDS = ()
+    REQUIRED_M2M_FIELDS = ()
+    NON_EMPTY_M2M_FIELDS = ()
+    M2M_OWNER_FIELD_MAP = {}
 
-    @staticmethod
-    @transaction.atomic
-    def create(
-        *,
-        user: User,
-        context: CompanyChildContext,
-        validated_data: dict[str, Any],
-    ) -> CompanyNote:
-        """
-        Create a new CompanyNote under a company.
+    @classmethod
+    def _resolve_create_dependencies(
+            cls,
+            user: User,
+            context: CompanyChildContext
+    ) -> dict[str, Any]:
 
-        Calls: In order
-            _resolve_company() to retrieve the company building the company note in.
-            django.db.models.base.Model.full_clean()
-            django.db.models.base.Model.save()
-
-        Raises:
-            ValidationError:
-                If model validation fails.
-
-        Returns:
-            CompanyNote:
-                The company instance created.
-        """
-
-        company = CompanyNoteService._resolve_company(
+        company = CompanyService._resolve_instance(
             user=user,
-            workspace_id=context.workspace_id,
-            company_id=context.company_id,
+            context=CompanyContext(
+                id=context.company_id,
+                workspace_id=context.workspace_id,
+            ),
         )
 
-        instance = CompanyNote(
-            company=company,
-            title=validated_data.get("title"),
-            content=validated_data.get("content"),
-        )
+        return {"company": company}
 
-        instance.full_clean()
-        instance.save()
-
-        return instance
-
-    @staticmethod
-    @transaction.atomic
-    def update(
+    @classmethod
+    def _validate_resolved_instance(
+        cls,
         *,
-        user: User,
-        context: CompanyChildContext,
-        validated_data: dict[str, Any],
-    ) -> CompanyNote:
-        """
-        Update an existing CompanyNote instance.
-
-        Calls: In order
-            _resolve_company_note() to retrieve the company note instance to update.
-            _update_non_m2m_fields() to assign the new values to the company note.
-            django.db.models.base.Model.full_clean()
-            django.db.models.base.Model.save()
-
-        Raises:
-            ResourceNotFoundError:
-                If the Company Note does not exist.
-
-            AccessDeniedError:
-                If the Company Note does not belong to this user.
-
-            InfraStructureViolationError:
-                If an unexpected internal error is encountered while retrieving the
-                Company Note to update.
-
-            ValidationError:
-                If model validation fails.
-
-        Returns:
-            Company:
-                The Company Note instance updated.
-        """
-
-        instance = CompanyNoteService._resolve_company_note(
-            user=user,
-            context=context,
-        )
-
-        CompanyNoteService._update_non_m2m_fields(
-            instance=instance,
-            validated_data=validated_data,
-            fields_to_update=CompanyNoteService.UPDATABLE_FIELDS,
-        )
-
-        instance.full_clean()
-        instance.save()
-
-        return instance
-
-    @staticmethod
-    @transaction.atomic
-    def remove(
-        *,
-        user: User,
-        context: CompanyChildContext,
+        instance: CompanyNote,
+        context: CompanyChildContext
     ) -> None:
-        """
-        Delete a CompanyNote for a user from the database if the company note exists.
 
-        Calls: In order
-            _resolve_company_note() to retrieve the company note instance to update.
-            django.db.models.base.Model.delete()
-
-        Raises:
-            ResourceNotFoundError:
-                If the Company Note does not exist.
-
-            AccessDeniedError:
-                If the Company Note does not belong to this user.
-
-            InfraStructureViolationError:
-                If an unexpected internal error is encountered while retrieving the
-                Company Note to delete.
-
-        Returns:
-            None
-        """
-
-        instance = CompanyNoteService._resolve_company_note(
-            user=user,
-            context=context,
-        )
-
-        instance.delete()
-
-    @staticmethod
-    def _resolve_company_note(
-        *,
-        user: User,
-        context: CompanyChildContext,
-    ) -> CompanyNote:
-        """
-        Resolve a company note and validate workspace/company ownership.
-
-        Calls:
-            CompanyNoteSelector.get()
-
-        Raises:
-            ResourceNotFoundError:
-                If the Company Note does not exist.
-
-            AccessDeniedError:
-                If the Company Note does not belong to this user.
-
-            InfraStructureViolationError:
-                If an unexpected internal error is encountered while retrieving the
-                Company Note.
-
-            DomainInvariantViolationError:
-                If the company of the company note does not belong to the workspace
-                 provided.
-
-                If the company note does not belong to the company provided.
-
-        Returns:
-            CompanyNote:
-                The company note retrieved from the database.
-        """
-
-        company_note = CompanyNoteSelector.get(
-            user=user,
-            company_note_id=context.id,
-        )
-
-        if company_note.company.pk != context.company_id:
+        if instance.company.pk != context.company_id:
             raise DomainInvariantViolationError(
                 f"Company Note {context.id} does not belong to Company "
                 f"{context.company_id}"
             )
 
-        if company_note.company.workspace.workspace_id != context.workspace_id:
+        if instance.company.workspace.workspace_id != context.workspace_id:
             raise DomainInvariantViolationError(
                 f"Company Note {context.id}'s company {context.company_id} does not"
                 f" belong to Workspace {context.workspace_id}"
             )
-
-        return company_note

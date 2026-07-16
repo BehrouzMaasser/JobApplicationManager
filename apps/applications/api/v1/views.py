@@ -48,6 +48,8 @@ from apps.core.common.api.viewsets import (
     BaseReadOnlyViewSet,
     BaseContextServiceViewSet,
 )
+from apps.core.common.types.filters import JobApplicationQueryFilter, \
+    JobApplicationNoteQueryFilter
 
 
 # =========================================================
@@ -83,12 +85,12 @@ class JobApplicationViewSet(BaseReadOnlyViewSet):
 
     def _get_queryset_filters(
         self,
-    ) -> JobApplicationSelector.QueryFilter:
+    ) -> JobApplicationQueryFilter:
         """
         Build selector filter object from query parameters.
         """
 
-        return JobApplicationSelector.QueryFilter(
+        return JobApplicationQueryFilter(
             workspace_id=self.request.query_params.get("workspace_id"),
             company_id=self.request.query_params.get("company_id"),
             job_position_id=self.request.query_params.get("job_position_id"),
@@ -152,8 +154,8 @@ class NestedJobApplicationViewSet(BaseContextServiceViewSet):
 
     def _get_queryset_filters(
         self,
-    ) -> JobApplicationSelector.QueryFilter:
-        return JobApplicationSelector.QueryFilter(
+    ) -> JobApplicationQueryFilter:
+        return JobApplicationQueryFilter(
             workspace_id=self.kwargs["workspace_id"],
             company_id=self.kwargs["company_id"],
             job_position_id=self.kwargs["job_position_id"],
@@ -193,12 +195,12 @@ class JobApplicationNoteViewSet(BaseReadOnlyViewSet):
 
     def _get_queryset_filters(
         self,
-    ) -> JobApplicationNoteSelector.QueryFilter:
+    ) -> JobApplicationNoteQueryFilter:
         """
         Build selector filter object from query parameters.
         """
 
-        return JobApplicationNoteSelector.QueryFilter(
+        return JobApplicationNoteQueryFilter(
             workspace_id=self.request.query_params.get("workspace_id"),
             company_id=self.request.query_params.get("company_id"),
             job_position_id=self.request.query_params.get("job_position_id"),
@@ -266,8 +268,8 @@ class NestedJobApplicationNoteViewSet(BaseContextServiceViewSet):
 
     def _get_queryset_filters(
         self,
-    ) -> JobApplicationNoteSelector.QueryFilter:
-        return JobApplicationNoteSelector.QueryFilter(
+    ) -> JobApplicationNoteQueryFilter:
+        return JobApplicationNoteQueryFilter(
             workspace_id=self.kwargs["workspace_id"],
             company_id=self.kwargs["company_id"],
             job_position_id=self.kwargs["job_position_id"],
