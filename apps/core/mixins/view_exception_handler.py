@@ -9,7 +9,7 @@ from apps.core.exceptions.exceptions import (
     ResourceNotFoundError,
     AccessDeniedError,
     DomainInvariantViolationError,
-    InfraStructureViolationError,
+    InfrastructureViolationError,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,6 +28,6 @@ class ViewExceptionHandlerMixin:
         except AccessDeniedError as exc:
             raise PermissionDenied(exc.message)
 
-        except (DomainInvariantViolationError, InfraStructureViolationError) as exc:
+        except (DomainInvariantViolationError, InfrastructureViolationError) as exc:
             logger.exception(exc)
             raise

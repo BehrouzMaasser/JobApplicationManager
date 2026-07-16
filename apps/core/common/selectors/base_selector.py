@@ -8,7 +8,7 @@ from apps.accounts.models import User
 
 from apps.core.exceptions.exceptions import (
     ResourceNotFoundError,
-    InfraStructureViolationError
+    InfrastructureViolationError
 )
 
 DjangoModel = TypeVar("DjangoModel", bound=Model)
@@ -97,7 +97,7 @@ class BaseSelector(ABC, Generic[DjangoModel]):
         except cls.MODEL.DoesNotExist:
             raise ResourceNotFoundError(f"{cls.RESOURCE_NAME} {obj_id} not found")
         except Exception as e:
-            raise InfraStructureViolationError(
+            raise InfrastructureViolationError(
                 f"Failed retrieving {cls.RESOURCE_NAME} {obj_id}."
             ) from e
 
