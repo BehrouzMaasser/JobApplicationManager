@@ -20,7 +20,7 @@ from apps.core.common.services.base_service import BaseService
 
 
 # Job Requirement Service
-class JobRequirementService(BaseService):
+class JobRequirementService(BaseService[JobRequirement]):
     """
     Service responsible for managing JobRequirement domain operations.
 

@@ -22,13 +22,14 @@ from apps.core.common.contexts.base_context import (
     CompanyChildContext,
     CompanyContext
 )
+from apps.core.common.services.base_service import BaseService
 
 # Exceptions
 from apps.core.exceptions.exceptions import DomainInvariantViolationError
 
 
 # Company Note Service
-class CompanyNoteService(CompanyService):
+class CompanyNoteService(BaseService[CompanyNote]):
     """
     Service responsible for managing CompanyNote domain operations.
 

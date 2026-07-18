@@ -36,7 +36,7 @@ from apps.core.exceptions.exceptions import (
 
 
 # Job Application Note Service
-class JobApplicationNoteService(BaseService):
+class JobApplicationNoteService(BaseService[JobApplicationNote]):
     """
     Service responsible for managing JobApplicationNote domain operations.
 
@@ -64,7 +64,7 @@ class JobApplicationNoteService(BaseService):
         job_application = JobApplicationService._resolve_instance(
             user=user,
             context=JobApplicationContext(
-                id=context.company_id,
+                id=context.job_application_id,
                 workspace_id=context.workspace_id,
                 company_id=context.company_id,
                 job_position_id=context.job_position_id,

@@ -21,7 +21,7 @@ from apps.core.common.services.base_service import BaseService
 
 
 # Document Service
-class DocumentService(BaseService):
+class DocumentService(BaseService[Document]):
     """
     Service responsible for managing Document domain operations.
 
@@ -84,3 +84,18 @@ class DocumentService(BaseService):
             hasher.update(chunk)
 
         instance.file_hash = hasher.hexdigest()
+
+    @classmethod
+    def _apply_scalar_updates(
+            cls,
+            *,
+            instance: Document,
+            validated_data: dict[str, Any]
+    ) -> None:
+        super()._apply_scalar_updates(
+            instance=instance,
+            validated_data=validated_data,
+        )
+
+        if "file" in validated_data:
+            cls._add_file_hash(instance)

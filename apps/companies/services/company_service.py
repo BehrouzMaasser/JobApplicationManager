@@ -12,6 +12,7 @@ from apps.accounts.models import User
 # Models
 from apps.companies.models import Company
 from apps.core.common.contexts.base_context import WorkspaceContext, CompanyContext
+from apps.core.common.services.base_service import BaseService
 
 # Exceptions
 from apps.core.exceptions.exceptions import DomainInvariantViolationError
@@ -24,7 +25,7 @@ from apps.companies.selectors.company_selector import CompanySelector
 
 
 # Company Service
-class CompanyService(WorkspaceService):
+class CompanyService(BaseService[Company]):
     """
     Service responsible for handling Company domain operations.
 

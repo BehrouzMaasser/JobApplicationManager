@@ -7,7 +7,6 @@ workspace instances while enforcing business rules.
 
 # Imports for typings
 from typing import Any
-from django.db import models
 
 from apps.accounts.models import User
 from apps.core.common.contexts.base_context import WorkspaceContext
@@ -22,7 +21,7 @@ from apps.core.common.services.base_service import BaseService
 
 
 # Workspace Service
-class WorkspaceService(BaseService):
+class WorkspaceService(BaseService[Workspace]):
     """
     Implements business operations for the Workspace domain.
     All persistence and business-rule validation related to workspaces
@@ -52,7 +51,7 @@ class WorkspaceService(BaseService):
     def _validate_resolved_instance(
         cls,
         *,
-        instance: models.Model,
+        instance: Workspace,
         context: WorkspaceContext
     ) -> None:
         """Workspace is the aggregate root; no additional validation required."""

@@ -21,14 +21,14 @@ from apps.companies.services.company_service import CompanyService
 from apps.companies.selectors.company_email_selector import CompanyEmailSelector
 
 # Contexts
-from apps.companies.services.contexts.company_context import CompanyContext
+from apps.core.common.contexts.base_context import CompanyContext
 
 # Exceptions
 from apps.core.exceptions.exceptions import DomainInvariantViolationError
 
 
 # Company Email Service
-class CompanyEmailService(BaseService):
+class CompanyEmailService(BaseService[CompanyEmail]):
     """
     Service responsible for managing CompanyEmail domain operations.
 

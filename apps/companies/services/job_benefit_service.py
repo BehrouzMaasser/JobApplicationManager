@@ -20,7 +20,7 @@ from apps.core.common.services.base_service import BaseService
 
 
 # Job Benefit Service
-class JobBenefitService(BaseService):
+class JobBenefitService(BaseService[JobBenefit]):
     """
     Service responsible for managing JobBenefit domain operations.
 

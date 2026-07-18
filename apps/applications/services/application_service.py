@@ -40,7 +40,7 @@ from apps.companies.services.job_position_service import JobPositionService
 
 
 # Job Application Service
-class JobApplicationService(BaseService):
+class JobApplicationService(BaseService[JobApplication]):
     """
     Service responsible for managing JobApplication domain operations.
 
@@ -122,7 +122,7 @@ class JobApplicationService(BaseService):
         job_position: JobPosition = JobPositionService._resolve_instance(
             user=user,
             context=CompanyChildContext(
-                id=context.company_id,
+                id=context.job_position_id,
                 workspace_id=context.workspace_id,
                 company_id=context.company_id,
             ),

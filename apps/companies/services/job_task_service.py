@@ -20,7 +20,7 @@ from apps.core.common.services.base_service import BaseService
 
 
 # Job Task Service
-class JobTaskService(BaseService):
+class JobTaskService(BaseService[JobTask]):
     """
     Service responsible for managing JobTask domain operations.
 

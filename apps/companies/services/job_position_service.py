@@ -23,6 +23,7 @@ from apps.core.common.contexts.base_context import (
     CompanyChildContext,
     CompanyContext,
 )
+from apps.core.common.services.base_service import BaseService
 
 # Exceptions
 from apps.core.exceptions.exceptions import (
@@ -32,7 +33,7 @@ from apps.core.exceptions.exceptions import (
 
 
 # Job Position Service
-class JobPositionService(CompanyService):
+class JobPositionService(BaseService[JobPosition]):
     """
     Service responsible for managing JobPosition domain operations.
 
@@ -131,6 +132,8 @@ class JobPositionService(CompanyService):
             )
 
         if instance.company.workspace.workspace_id != context.workspace_id:
+            print(instance.company.workspace.workspace_id)
+            print(context.workspace_id)
             raise DomainInvariantViolationError(
                 f"Workspace of Job position {context.id} don't match the given"
                 f" workspace_id = {context.workspace_id}"

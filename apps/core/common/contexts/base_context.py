@@ -14,6 +14,17 @@ class BaseContext:
 
 
 @dataclass(frozen=True, slots=True)
+class EmptyContext(BaseContext):
+    """
+    Base context for document-related operations.
+
+    Attributes:
+        id: None
+    """
+    id = None
+
+
+@dataclass(frozen=True, slots=True)
 class DocumentContext(BaseContext):
     """
     Base context for document-related operations.
