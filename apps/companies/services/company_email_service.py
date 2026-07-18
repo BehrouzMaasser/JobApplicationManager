@@ -11,7 +11,7 @@ from typing import Any
 from apps.accounts.models import User
 # Models
 from apps.companies.models import CompanyEmail
-from apps.core.common.contexts.base_context import CompanyChildContext
+from apps.core.common.contexts.contexts import CompanyChildContext
 
 # Services
 from apps.core.common.services.base_service import BaseService
@@ -21,7 +21,7 @@ from apps.companies.services.company_service import CompanyService
 from apps.companies.selectors.company_email_selector import CompanyEmailSelector
 
 # Contexts
-from apps.core.common.contexts.base_context import CompanyContext
+from apps.core.common.contexts.contexts import CompanyContext
 
 # Exceptions
 from apps.core.exceptions.exceptions import DomainInvariantViolationError

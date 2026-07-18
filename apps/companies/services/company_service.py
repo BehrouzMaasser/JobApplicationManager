@@ -11,7 +11,7 @@ from typing import Any
 from apps.accounts.models import User
 # Models
 from apps.companies.models import Company
-from apps.core.common.contexts.base_context import WorkspaceContext, CompanyContext
+from apps.core.common.contexts.contexts import WorkspaceContext, CompanyContext
 from apps.core.common.services.base_service import BaseService
 
 # Exceptions

@@ -9,7 +9,7 @@ from typing import Any
 
 # Models
 from apps.accounts.models import User
-from apps.core.common.contexts.base_context import DocumentTypeContext
+from apps.core.common.contexts.contexts import DocumentTypeContext
 from apps.documents.models import DocumentType
 
 # Selectors

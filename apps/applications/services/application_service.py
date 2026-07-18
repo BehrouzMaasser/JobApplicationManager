@@ -24,7 +24,7 @@ from apps.applications.selectors.application_selector import (
 )
 
 # Contexts
-from apps.core.common.contexts.base_context import (
+from apps.core.common.contexts.contexts import (
     CompanyChildContext,
     JobApplicationContext,
 )

@@ -24,7 +24,7 @@ from apps.applications.services.application_service import (
 )
 
 # Contexts
-from apps.core.common.contexts.base_context import (
+from apps.core.common.contexts.contexts import (
     JobApplicationChildContext,
     JobApplicationContext,
 )

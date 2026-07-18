@@ -16,7 +16,7 @@ from django.db import models, transaction
 
 # Models
 from apps.accounts.models import User
-from apps.core.common.contexts.base_context import BaseContext
+from apps.core.common.contexts.contexts import BaseContext
 from apps.core.common.selectors.base_selector import BaseSelector
 
 # Exceptions

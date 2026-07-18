@@ -9,7 +9,7 @@ workspace instances while enforcing business rules.
 from typing import Any
 
 from apps.accounts.models import User
-from apps.core.common.contexts.base_context import WorkspaceContext
+from apps.core.common.contexts.contexts import WorkspaceContext
 # Models
 from apps.workspaces.models import Workspace
 

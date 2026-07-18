@@ -19,7 +19,7 @@ from apps.companies.selectors.job_position_selector import JobPositionSelector
 from apps.companies.services.company_service import CompanyService
 
 # Contexts
-from apps.core.common.contexts.base_context import (
+from apps.core.common.contexts.contexts import (
     CompanyChildContext,
     CompanyContext,
 )

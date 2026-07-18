@@ -13,7 +13,7 @@ from apps.companies.models import JobBenefit
 
 # Selectors
 from apps.companies.selectors.job_benefit_selector import JobBenefitSelector
-from apps.core.common.contexts.base_context import JobBenefitContext
+from apps.core.common.contexts.contexts import JobBenefitContext
 
 # Services
 from apps.core.common.services.base_service import BaseService

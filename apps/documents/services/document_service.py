@@ -9,7 +9,7 @@ from typing import Any
 
 # Models
 from apps.accounts.models import User
-from apps.core.common.contexts.base_context import DocumentContext
+from apps.core.common.contexts.contexts import DocumentContext
 from apps.core.exceptions.exceptions import BusinessRuleViolationError
 from apps.documents.models import Document
 

@@ -13,7 +13,7 @@ from apps.companies.models import JobTask
 
 # Selectors
 from apps.companies.selectors.job_task_selector import JobTaskSelector
-from apps.core.common.contexts.base_context import JobTaskContext
+from apps.core.common.contexts.contexts import JobTaskContext
 
 # Services
 from apps.core.common.services.base_service import BaseService

@@ -13,7 +13,7 @@ from apps.companies.models import JobRequirement
 
 # Selectors
 from apps.companies.selectors.job_requirement_selector import JobRequirementSelector
-from apps.core.common.contexts.base_context import JobRequirementContext
+from apps.core.common.contexts.contexts import JobRequirementContext
 
 # Services
 from apps.core.common.services.base_service import BaseService
