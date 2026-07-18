@@ -10,8 +10,8 @@ changes.
 
 Services are the only layer responsible for mutating domain models.
 
-Services coordinate business operations, enforce business invariants, delegate
-entity validation to models, and persist changes.
+Services coordinate business operations, enforce business invariants,
+delegate entity validation to models, and persist changes.
 
 ---
 
@@ -23,7 +23,7 @@ A service is responsible for:
 - Validating cross-aggregate relationships.
 - Enforcing business rules.
 - Validating ownership of related objects.
-- Creating, updating and deleting model instances.
+- Creating, updating, and deleting model instances.
 - Delegating model validation to `Model.full_clean()`.
 - Persisting changes.
 
@@ -67,6 +67,15 @@ These methods define the public write API of the aggregate.
 
 ---
 
+# Transaction Guarantees
+
+All public write operations execute inside a single database transaction.
+
+If any validation, persistence, or post-save operation fails, the
+entire operation is rolled back and no partial changes are committed.
+
+---
+
 # Lifecycle
 
 ## Create
@@ -77,10 +86,9 @@ The create workflow executes in the following order:
 2. Build the model instance.
 3. Execute create-specific business validations.
 4. Execute common pre-save validations.
-5. Call `full_clean()`.
-6. Persist the model.
-7. Apply many-to-many relationships.
-8. Validate required non-empty many-to-many relations.
+5. Validate and persist the model.
+6. Execute common post-save operations.
+7. Return the persisted instance.
 
 ---
 
@@ -93,10 +101,19 @@ The update workflow executes in the following order:
 3. Execute update-specific business validations.
 4. Execute common pre-save validations.
 5. Apply scalar field updates.
-6. Call `full_clean()`.
-7. Persist the model.
-8. Apply many-to-many updates.
-9. Validate required non-empty many-to-many relations.
+6. Validate and persist the model.
+7. Execute common post-save operations.
+8. Return the updated instance.
+
+---
+
+## Remove
+
+The remove workflow executes in the following order:
+
+1. Resolve the target aggregate.
+2. Validate the resolved aggregate against the supplied context.
+3. Delete the aggregate.
 
 ---
 
@@ -110,20 +127,41 @@ Understanding the lifecycle of the instance is important when extending
 
 | Hook | Instance State |
 |------|----------------|
+| `_resolve_create_dependencies()` | No model instance exists yet. Used to resolve related aggregates required for creation. |
 | `_build_model()` | A new model instance has been constructed in memory. It has **not** been validated or persisted. |
 | `_create_validate()` | A new model instance exists in memory. It has **not** been validated or persisted. This hook should only validate create-specific business rules. |
+| `_create_pre_save()` | The model instance has not yet been validated or persisted. Used for common pre-save validations before persistence. |
 | `_resolve_instance()` | A persisted model instance has been retrieved from the database. No modifications have been applied. |
 | `_validate_resolved_instance()` | Receives the persisted instance returned by the selector. The instance is unchanged and should only be validated against the supplied context. |
 | `_update_validate()` | Receives the persisted instance before any scalar updates have been applied. This hook should validate whether the requested update is allowed. |
+| `_update_pre_save()` | The resolved instance has not yet been modified. Used for common pre-save validations before updates are applied. |
 | `_apply_scalar_updates()` | Applies scalar field updates **in memory only**. The instance has not yet been validated or saved. |
 | `_save()` | Validates the instance using `full_clean()` and persists it. After this method returns successfully, the instance is synchronized with the database. |
-| `_create_post_save()` | Receives a persisted instance. Many-to-many relations may safely be created or modified. |
-| `_update_post_save()` | Receives a persisted instance after scalar updates have been saved. Many-to-many relations may safely be synchronized. |
+| `_create_post_save()` | Receives a persisted instance. Performs common post-save operations such as creating many-to-many relationships and validating post-save business rules. |
+| `_update_post_save()` | Receives a persisted instance after scalar updates have been saved. Performs common post-save operations such as synchronizing many-to-many relationships and validating post-save business rules. |
 | `_add_m2m_fields()` | Receives a persisted instance. Used only during creation to add many-to-many relations. |
 | `_apply_m2m_updates()` | Receives a persisted instance. Used only during updates to synchronize many-to-many relations. |
 | `_m2m_non_empty_validation()` | Receives a persisted instance with its many-to-many relations already applied. Validates that configured many-to-many relations are not empty. |
 
-## Hook Guidelines
+---
+
+# Hook Ordering Guarantees
+
+`BaseService` guarantees that hooks execute in a deterministic order.
+
+Subclasses may rely on the following guarantees:
+
+- `_create_validate()` executes before `_create_pre_save()`.
+- `_create_pre_save()` executes before persistence.
+- `_create_post_save()` executes only after successful persistence.
+- `_update_validate()` executes before `_update_pre_save()`.
+- `_update_pre_save()` executes before scalar updates are applied.
+- `_apply_scalar_updates()` executes before persistence.
+- `_update_post_save()` executes only after successful persistence.
+
+---
+
+# Hook Guidelines
 
 When implementing or overriding service hooks:
 
@@ -131,23 +169,17 @@ When implementing or overriding service hooks:
   explicitly states so.
 - Do not access many-to-many relationships before the instance has been
   saved.
-- Do not call full_clean() or duplicate model validation inside service hooks.
-  is delegated to `Model.full_clean()` through `_save()`.
+- Do not call `full_clean()` or duplicate model validation inside service
+  hooks. Model validation is delegated to `Model.full_clean()` through
+  `_save()`.
 - Business validation hooks should validate domain rules but should not
   persist changes.
+- Pre-save hooks should perform validation only.
+- Post-save hooks may modify many-to-many relationships because the
+  instance has already been persisted.
 - Field mutation should occur only through the provided helper methods
   (`_apply_scalar_updates()`, `_add_m2m_fields()`,
   `_apply_m2m_updates()`).
-
----
-
-## Remove
-
-The remove workflow executes in the following order:
-
-1. Resolve the target aggregate.
-2. Validate the resolved aggregate against the supplied context.
-3. Delete the aggregate.
 
 ---
 
@@ -210,7 +242,7 @@ behavior is required.
 
 Resolve any related aggregates required during creation.
 
-The default implementation returns empty dictionary `{}`.
+The default implementation returns an empty dictionary `{}`.
 
 ---
 
@@ -239,6 +271,44 @@ aggregate boundaries.
 
 The default implementation performs no additional validation, although
 most services are expected to override it.
+
+---
+
+## `_create_pre_save()`
+
+Execute common pre-save validations before persisting a newly created
+instance.
+
+The default implementation validates ownership and required
+many-to-many fields.
+
+---
+
+## `_update_pre_save()`
+
+Execute common pre-save validations before updating an existing
+instance.
+
+The default implementation validates ownership of supplied
+many-to-many relations.
+
+---
+
+## `_create_post_save()`
+
+Execute common post-save operations after a successful create.
+
+The default implementation applies many-to-many relationships and
+validates configured non-empty many-to-many constraints.
+
+---
+
+## `_update_post_save()`
+
+Execute common post-save operations after a successful update.
+
+The default implementation synchronizes many-to-many relationships and
+validates configured non-empty many-to-many constraints.
 
 ---
 
@@ -287,15 +357,15 @@ Examples include:
 
 ## InfrastructureViolationError
 
-Raised when an unexpected infrastructure failure prevents the service from
-completing.
+Raised when an unexpected infrastructure failure prevents the service
+from completing.
 
 Examples include:
 
-- database failures
-- unexpected ORM errors
-- invalid framework state
-- unexpected runtime failures originating from the persistence layer
+- Database failures.
+- Unexpected ORM errors.
+- Invalid framework state.
+- Unexpected runtime failures originating from the persistence layer.
 
 Services should translate unexpected persistence exceptions into
 `InfrastructureViolationError` rather than allowing framework-specific

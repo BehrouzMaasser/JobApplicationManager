@@ -1,19 +1,18 @@
 """
 Base class for write services.
 
-Services coordinate business use-cases, enforce business rules,
-validate models, and persist changes.
+Services coordinate write use-cases, enforce business rules, delegate
+model validation, and persist aggregate changes.
 
-Subclasses should only implement domain-specific behavior while
-delegating common persistence logic to this base class.
+Concrete services should implement only domain-specific behavior while
+reusing the generic write workflow provided by this base class.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 from django.core.exceptions import ValidationError
-from django.db import models
-from django.db import transaction
+from django.db import models, transaction
 
 # Models
 from apps.accounts.models import User
@@ -22,12 +21,24 @@ from apps.core.common.selectors.base_selector import BaseSelector
 
 # Exceptions
 from apps.core.exceptions.exceptions import (
+    AppError,
     BusinessRuleViolationError,
-    DomainInvariantViolationError, AppError, InfrastructureViolationError
+    DomainInvariantViolationError,
+    InfrastructureViolationError,
 )
 
+DjangoModel = TypeVar("DjangoModel", bound=models.Model)
 
-class BaseService(ABC):
+
+class BaseService(ABC, Generic[DjangoModel]):
+    """
+    Base implementation of the service contract.
+
+    A service encapsulates a write use-case of a single aggregate root.
+    It coordinates business validation, delegates model validation to
+    ``Model.full_clean()``, persists changes, and translates unexpected
+    infrastructure failures into domain-level exceptions.
+    """
 
     _REQUIRED_CONFIG = (
         "MODEL",
@@ -44,7 +55,7 @@ class BaseService(ABC):
     # Service configuration
     #
 
-    MODEL: type[models.Model] = None
+    MODEL: type[DjangoModel] = None
     SELECTOR: type[BaseSelector] = None
 
     CREATE_FIELDS: tuple[str, ...] = None
@@ -55,9 +66,7 @@ class BaseService(ABC):
     M2M_OWNER_FIELD_MAP: dict[str, str] = None
 
     def __init_subclass__(cls):
-
         super().__init_subclass__()
-
         cls._validate_configuration()
 
     #
@@ -67,35 +76,45 @@ class BaseService(ABC):
     @classmethod
     @transaction.atomic
     def create(
-            cls, user: User, context: BaseContext, validated_data: dict[str, Any]
-    ) -> models.Model:
-        """Create and persist a new model instance."""
+        cls,
+        user: User,
+        context: BaseContext,
+        validated_data: dict[str, Any],
+    ) -> DjangoModel:
+        """
+        Create and persist a new aggregate instance.
+        """
 
         try:
-
             model_data = {**validated_data}
 
             create_dependencies = cls._resolve_create_dependencies(
-                user,
-                context
+                user=user,
+                context=context,
             )
 
-            if create_dependencies and isinstance(create_dependencies, dict):
-                model_data = {**model_data, **create_dependencies}
+            if create_dependencies:
+                model_data.update(create_dependencies)
 
-            instance = cls._build_model(**model_data)
+            instance = cls._build_instance(**model_data)
 
             cls._create_validate(
                 user=user,
                 instance=instance,
-                validated_data=validated_data
+                validated_data=validated_data,
             )
 
-            cls._pre_save(user=user, validated_data=validated_data)
+            cls._create_pre_save(
+                user=user,
+                validated_data=validated_data,
+            )
 
             cls._save(instance)
 
-            cls._create_post_save(instance, validated_data)
+            cls._create_post_save(
+                instance=instance,
+                validated_data=validated_data,
+            )
 
             return instance
 
@@ -110,32 +129,43 @@ class BaseService(ABC):
     @classmethod
     @transaction.atomic
     def update(
-            cls,
-            user: User,
-            context: BaseContext,
-            validated_data: dict[str, Any]
-    ) -> models.Model:
-        """Update and persist an existing model instance."""
+        cls,
+        user: User,
+        context: BaseContext,
+        validated_data: dict[str, Any],
+    ) -> DjangoModel:
+        """
+        Update and persist an existing aggregate instance.
+        """
 
         try:
-            instance = cls._resolve_instance(user=user, context=context)
+            instance = cls._resolve_instance(
+                user=user,
+                context=context,
+            )
 
             cls._update_validate(
                 user=user,
                 instance=instance,
-                validated_data=validated_data
+                validated_data=validated_data,
             )
 
-            cls._pre_save(user=user, validated_data=validated_data)
+            cls._update_pre_save(
+                user=user,
+                validated_data=validated_data,
+            )
 
             cls._apply_scalar_updates(
                 instance=instance,
-                validated_data=validated_data
+                validated_data=validated_data,
             )
 
             cls._save(instance)
 
-            cls._update_post_save(instance, validated_data)
+            cls._update_post_save(
+                instance=instance,
+                validated_data=validated_data,
+            )
 
             return instance
 
@@ -148,110 +178,22 @@ class BaseService(ABC):
             ) from exc
 
     @classmethod
-    def _resolve_create_dependencies(
-            cls,
-            user: User,
-            context: BaseContext
-    ) -> dict[str, Any]:
-        """
-        Resolve additional model fields required during creation.
-
-        Returns a mapping whose keys are model field names and whose values
-        will be merged into the data passed to `_build_model()`.
-
-        The default implementation returns an empty dictionary.
-        """
-
-        return {}
-
-    @classmethod
-    def _pre_save(cls, *, user: User, validated_data: dict[str, Any]) -> None:
-
-        cls._validate_m2m_ownership(user=user, validated_data=validated_data)
-        cls._validate_required_m2m_fields(validated_data=validated_data)
-
-    @classmethod
-    def _create_post_save(
-            cls,
-            instance: models.Model,
-            validated_data: dict[str, Any]
-    ) -> None:
-        """
-        Execute common post-save operations for updated instances.
-
-        `instance` has already been updated, validated and persisted.
-
-        This hook is responsible for synchronizing many-to-many
-        relationships and validating post-save business rules.
-        """
-
-        cls._add_m2m_fields(instance=instance, validated_data=validated_data)
-        cls._m2m_non_empty_validation(instance)
-
-    @classmethod
-    def _update_post_save(
-            cls,
-            instance: models.Model,
-            validated_data: dict[str, Any]
-    ) -> None:
-        """
-        Execute common post-save operations for newly created instances.
-
-        `instance` has already been validated and persisted to the database.
-
-        This hook is responsible for applying many-to-many relationships and
-        validating post-save business rules.
-        """
-
-        cls._apply_m2m_updates(instance=instance, validated_data=validated_data)
-        cls._m2m_non_empty_validation(instance)
-
-    @classmethod
-    def _create_validate(
-            cls,
-            *,
-            user: User,
-            instance: models.Model,
-            validated_data: dict[str, Any]
-    ) -> None:
-        """
-        Execute business validations specific to the create operation.
-
-        `instance` is a newly constructed model instance that has **not**
-        been validated or persisted yet.
-
-        This hook should validate business rules without mutating the model.
-        """
-
-        pass
-
-    @classmethod
-    def _update_validate(
-            cls,
-            *,
-            user: User,
-            instance: models.Model,
-            validated_data: dict[str, Any]
-    ) -> None:
-        """
-        Execute business validations specific to the update operation.
-
-        `instance` is the current persisted model retrieved from the
-        database. Scalar updates have **not** been applied yet.
-
-        This hook should validate whether the requested update is allowed
-        before the instance is modified.
-        """
-
-        pass
-
-    @classmethod
     @transaction.atomic
-    def remove(cls, *, user: User, context: BaseContext) -> None:
-        """Delete an existing model instance."""
+    def remove(
+        cls,
+        *,
+        user: User,
+        context: BaseContext,
+    ) -> None:
+        """
+        Delete an existing aggregate instance.
+        """
 
         try:
-            instance = cls._resolve_instance(user=user, context=context)
+            instance = cls._resolve_instance(
+                user=user,
+                context=context,
+            )
 
             instance.delete()
 
@@ -263,49 +205,199 @@ class BaseService(ABC):
                 f"Unexpected error while removing {cls.MODEL.__name__}."
             ) from exc
 
+    #
+    # Workflow hooks
+    #
+
     @classmethod
-    def _resolve_instance(cls, *, user: User, context: BaseContext) -> models.Model:
+    def _resolve_create_dependencies(
+        cls,
+        user: User,
+        context: BaseContext,
+    ) -> dict[str, Any]:
+        """
+        Resolve additional model fields required during creation.
+
+        The returned mapping is merged into the arguments passed to
+        `_build_instance()`.
+
+        The default implementation returns an empty dictionary.
+        """
+
+        return {}
+
+    @classmethod
+    def _resolve_instance(
+        cls,
+        *,
+        user: User,
+        context: BaseContext,
+    ) -> DjangoModel:
         """
         Resolve the aggregate being modified.
 
+        The resolved instance is validated against the supplied context
+        before being returned.
         """
 
-        instance = cls.SELECTOR.get(user=user, obj_id=context.id)
+        instance = cls.SELECTOR.get(
+            user=user,
+            obj_id=context.id,
+        )
 
-        cls._validate_resolved_instance(instance=instance, context=context)
+        cls._validate_resolved_instance(
+            instance=instance,
+            context=context,
+        )
 
         return instance
 
     @classmethod
     @abstractmethod
     def _validate_resolved_instance(
-            cls,
-            *,
-            instance: models.Model,
-            context: BaseContext
+        cls,
+        *,
+        instance: DjangoModel,
+        context: BaseContext,
     ) -> None:
         """
         Validate that the resolved aggregate matches the supplied context.
 
-        `instance` is the persisted model returned by the configured
-        selector.
+        Override this hook to enforce aggregate hierarchy constraints and
+        other domain invariants.
 
-        Override this hook to validate parent-child relationships or other
-        aggregate invariants.
+        The default implementation performs no validation.
         """
         ...
 
-    #
-    # Validation helpers
-    #
+    @classmethod
+    def _create_validate(
+        cls,
+        *,
+        user: User,
+        instance: DjangoModel,
+        validated_data: dict[str, Any],
+    ) -> None:
+        """
+        Execute business validations specific to the create operation.
+
+        `instance` exists only in memory and has not yet been validated or
+        persisted.
+        """
+
+        pass
 
     @classmethod
-    def _m2m_non_empty_validation(cls, instance: models.Model) -> None:
+    def _update_validate(
+        cls,
+        *,
+        user: User,
+        instance: DjangoModel,
+        validated_data: dict[str, Any],
+    ) -> None:
         """
-        Validate that configured many-to-many fields are not empty.
+        Execute business validations specific to the update operation.
 
-        `instance` must already be persisted because many-to-many relations
-        are queried through the database.
+        `instance` is the persisted model before any scalar updates have
+        been applied.
+        """
+
+        pass
+
+    @classmethod
+    def _create_pre_save(
+        cls,
+        *,
+        user: User,
+        validated_data: dict[str, Any],
+    ) -> None:
+        """
+        Execute common pre-save validations for create operations.
+
+        The default implementation validates ownership and required
+        many-to-many fields.
+        """
+
+        cls._validate_m2m_ownership(
+            user=user,
+            validated_data=validated_data,
+        )
+
+        cls._validate_required_m2m_fields_exist(
+            validated_data=validated_data,
+        )
+
+    @classmethod
+    def _update_pre_save(
+        cls,
+        *,
+        user: User,
+        validated_data: dict[str, Any],
+    ) -> None:
+        """
+        Execute common pre-save validations for update operations.
+
+        The default implementation validates ownership of supplied
+        many-to-many relations.
+        """
+
+        cls._validate_m2m_ownership(
+            user=user,
+            validated_data=validated_data,
+        )
+
+    @classmethod
+    def _create_post_save(
+        cls,
+        instance: DjangoModel,
+        validated_data: dict[str, Any],
+    ) -> None:
+        """
+        Execute common post-save operations for newly created instances.
+
+        `instance` has already been validated and persisted.
+        """
+
+        cls._add_m2m_fields(
+            instance=instance,
+            validated_data=validated_data,
+        )
+
+        cls._m2m_non_empty_validation(instance)
+
+    @classmethod
+    def _update_post_save(
+        cls,
+        instance: DjangoModel,
+        validated_data: dict[str, Any],
+    ) -> None:
+        """
+        Execute common post-save operations for updated instances.
+
+        `instance` has already been validated and persisted.
+        """
+
+        cls._apply_m2m_updates(
+            instance=instance,
+            validated_data=validated_data,
+        )
+
+        cls._m2m_non_empty_validation(instance)
+
+        #
+        # Validation helpers
+        #
+
+    @classmethod
+    def _m2m_non_empty_validation(
+            cls,
+            instance: DjangoModel,
+    ) -> None:
+        """
+        Validate that configured many-to-many relations are not empty.
+
+        `instance` must already be persisted because many-to-many
+        relationships are queried through the database.
 
         Raises:
             BusinessRuleViolationError:
@@ -321,49 +413,25 @@ class BaseService(ABC):
         if empty_required_fields:
             raise BusinessRuleViolationError(
                 fields=empty_required_fields,
-                messages=["Should not be empty" for _ in empty_required_fields]
+                messages=[
+                    "Should not be empty"
+                    for _ in empty_required_fields
+                ],
             )
 
     @classmethod
-    def _validate_m2m_ownership(
+    def _validate_required_m2m_fields_exist(
             cls,
             *,
-            user: User,
             validated_data: dict[str, Any],
     ) -> None:
+        """
+        Validate that all configured required many-to-many fields were
+        supplied during creation.
 
-        # Make sure the m2m fields are associated to the user
-        invalid_fields_with_ids: dict[str, list[str]] = dict()
-
-        for field_name, ownership in cls.M2M_OWNER_FIELD_MAP.items():
-            if field_name in validated_data:
-                for data in validated_data[field_name]:
-                    # Some related models may not expose the configured ownership
-                    # attribute.
-                    # Those objects are ignored because ownership cannot be
-                    # validated for them.
-                    try:
-                        if getattr(data, ownership) != user:
-                            invalid_fields_with_ids.setdefault(
-                                field_name, []
-                            ).append(data.pk)
-                    except AttributeError:
-                        continue
-
-        if invalid_fields_with_ids:
-            raise DomainInvariantViolationError(
-                message="; ".join(
-                    f"Current user does not own {field}: {ids}"
-                    for field, ids in invalid_fields_with_ids.items()
-                )
-            )
-
-    @classmethod
-    def _validate_required_m2m_fields(
-        cls,
-        *,
-        validated_data: dict[str, Any],
-    ) -> None:
+        This validates field presence only. Non-empty validation occurs
+        after persistence.
+        """
 
         missing = [
             field
@@ -374,7 +442,56 @@ class BaseService(ABC):
         if missing:
             raise BusinessRuleViolationError(
                 fields=missing,
-                messages=["This field is required." for _ in missing]
+                messages=[
+                    "This field is required."
+                    for _ in missing
+                ],
+            )
+
+    @classmethod
+    def _validate_m2m_ownership(
+            cls,
+            *,
+            user: User,
+            validated_data: dict[str, Any],
+    ) -> None:
+        """
+        Validate ownership of supplied many-to-many related objects.
+
+        Only fields present in `validated_data` are validated.
+
+        Related objects that do not expose the configured ownership
+        attribute are ignored because ownership cannot be determined.
+        """
+
+        invalid_fields_with_ids: dict[str, list[Any]] = {}
+
+        for field_name, owner_field in cls.M2M_OWNER_FIELD_MAP.items():
+
+            if field_name not in validated_data:
+                continue
+
+            for related_object in validated_data[field_name]:
+
+                try:
+                    if getattr(related_object, owner_field) != user:
+                        invalid_fields_with_ids.setdefault(
+                            field_name,
+                            [],
+                        ).append(related_object.pk)
+
+                except AttributeError:
+                    continue
+
+        if invalid_fields_with_ids:
+            raise DomainInvariantViolationError(
+                message="; ".join(
+                    (
+                        f"Current user does not own "
+                        f"{field}: {ids}"
+                    )
+                    for field, ids in invalid_fields_with_ids.items()
+                )
             )
 
     #
@@ -382,73 +499,87 @@ class BaseService(ABC):
     #
 
     @classmethod
-    def _add_m2m_fields(
-            cls,
-            *,
-            instance: models.Model,
-            validated_data: dict[str, Any],
-    ) -> None:
-        """
-        Add many-to-many relations to a newly created instance.
-
-        `instance` must already be persisted because many-to-many relations
-        cannot be assigned before the primary key exists.
-        """
-
-        for field in cls.M2M_UPDATABLE_FIELDS:
-            if field in validated_data:
-                getattr(instance, field).add(*validated_data[field])
-
-    @classmethod
-    def _apply_m2m_updates(
-            cls,
-            *,
-            instance: models.Model,
-            validated_data: dict[str, Any],
-    ) -> None:
-        """
-        Synchronize many-to-many relations of an existing persisted model.
-
-        `instance` must already exist in the database.
-        """
-
-        for field in cls.M2M_UPDATABLE_FIELDS:
-            if field in validated_data:
-                getattr(instance, field).set(validated_data.get(field))
-
-    @classmethod
     def _apply_scalar_updates(
             cls,
             *,
-            instance: models.Model,
+            instance: DjangoModel,
             validated_data: dict[str, Any],
     ) -> None:
         """
         Apply scalar field updates in memory.
 
-        `instance` is the persisted model retrieved from the database.
-
-        This method only mutates the in-memory object. Validation and
-        persistence occur later through `_save()`.
+        Validation and persistence occur later through `_save()`.
         """
 
         for field in cls.SCALAR_UPDATABLE_FIELDS:
+
             if field in validated_data:
-                setattr(instance, field, validated_data[field])
+                setattr(
+                    instance,
+                    field,
+                    validated_data[field],
+                )
+
+    @classmethod
+    def _add_m2m_fields(
+            cls,
+            *,
+            instance: DjangoModel,
+            validated_data: dict[str, Any],
+    ) -> None:
+        """
+        Add many-to-many relations to a newly created instance.
+
+        `instance` must already be persisted because many-to-many
+        relationships require a primary key.
+        """
+
+        for field in cls.M2M_UPDATABLE_FIELDS:
+
+            if field in validated_data:
+                getattr(
+                    instance,
+                    field,
+                ).add(*validated_data[field])
+
+    @classmethod
+    def _apply_m2m_updates(
+            cls,
+            *,
+            instance: DjangoModel,
+            validated_data: dict[str, Any],
+    ) -> None:
+        """
+        Synchronize many-to-many relations of an existing instance.
+
+        Relations are replaced only for fields supplied in
+        `validated_data`.
+        """
+
+        for field in cls.M2M_UPDATABLE_FIELDS:
+
+            if field in validated_data:
+                getattr(
+                    instance,
+                    field,
+                ).set(validated_data[field])
 
     #
     # Persistence helpers
     #
 
     @classmethod
-    def _save(cls, instance: models.Model) -> None:
+    def _save(
+            cls,
+            instance: DjangoModel,
+    ) -> None:
         """
         Validate and persist the supplied model instance.
 
-        Calls `full_clean()` before saving.
+        `Model.full_clean()` is executed before saving.
 
-        After this method returns successfully, `instance` is guaranteed to
-        be persisted and synchronized with the database.
+        After this method returns successfully, `instance` is guaranteed
+        to be synchronized with the database.
         """
 
         instance.full_clean()
@@ -459,7 +590,16 @@ class BaseService(ABC):
     #
 
     @classmethod
-    def _build_model(cls, **kwargs) -> models.Model:
+    def _build_instance(
+            cls,
+            **kwargs,
+    ) -> DjangoModel:
+        """
+        Construct a new model instance from the configured create fields.
+
+        The returned instance exists only in memory and has not yet been
+        validated or persisted.
+        """
 
         return cls.MODEL(
             **{
@@ -468,11 +608,26 @@ class BaseService(ABC):
             }
         )
 
+    #
+    # Configuration validation
+    #
+
     @classmethod
-    def _validate_configuration(cls):
+    def _validate_configuration(cls) -> None:
+        """
+        Validate the concrete service configuration.
+
+        This method is executed automatically when a subclass is created.
+        It verifies that all required configuration attributes exist and
+        are internally consistent.
+        """
 
         if cls is BaseService:
             return
+
+        #
+        # Required attributes
+        #
 
         for attr in cls._REQUIRED_CONFIG:
             if getattr(cls, attr, None) is None:
@@ -480,15 +635,24 @@ class BaseService(ABC):
                     f"{cls.__name__} must define {attr}"
                 )
 
+        #
+        # Required types
+        #
+
         if not issubclass(cls.MODEL, models.Model):
             raise TypeError(
-                f"{cls.__name__}.MODEL must inherit from django.db.models.Model"
+                f"{cls.__name__}.MODEL must inherit from "
+                "django.db.models.Model"
             )
 
         if not issubclass(cls.SELECTOR, BaseSelector):
             raise TypeError(
                 f"{cls.__name__}.SELECTOR must inherit from BaseSelector"
             )
+
+        #
+        # Tuple configuration
+        #
 
         cls._validate_tuple_of_strings(
             "CREATE_FIELDS",
@@ -517,6 +681,10 @@ class BaseService(ABC):
 
         cls._validate_owner_field_map()
 
+        #
+        # Cross-configuration validation
+        #
+
         overlap = (
             set(cls.SCALAR_UPDATABLE_FIELDS)
             & set(cls.M2M_UPDATABLE_FIELDS)
@@ -532,11 +700,15 @@ class BaseService(ABC):
 
     @classmethod
     def _validate_model_fields(cls) -> None:
-        """Validate that all configured field names exist on the model."""
+        """
+        Validate that every configured field exists on the configured
+        model.
+        """
 
         model_fields = {
             field.name
-            for field in cls.MODEL._meta.get_fields() if hasattr(field, "name")
+            for field in cls.MODEL._meta.get_fields()
+            if hasattr(field, "name")
         }
 
         configured_fields = (
@@ -557,16 +729,28 @@ class BaseService(ABC):
             )
 
     @classmethod
-    def _validate_tuple_of_strings(cls, name: str, value) -> None:
-        """Validate that a configuration value is a tuple of unique strings."""
+    def _validate_tuple_of_strings(
+        cls,
+        name: str,
+        value: tuple[str, ...],
+    ) -> None:
+        """
+        Validate that a configuration value is a tuple of unique field
+        names.
+        """
 
         if not isinstance(value, tuple):
-            raise TypeError(f"{name} must be an instance of tuple")
+            raise TypeError(
+                f"{name} must be an instance of tuple"
+            )
 
         if len(value) != len(set(value)):
-            raise TypeError(f"{name} must not contain duplicate field names")
+            raise TypeError(
+                f"{name} must not contain duplicate field names"
+            )
 
         for field in value:
+
             if not isinstance(field, str):
                 raise TypeError(
                     f"{name} must contain only field names (str), "
@@ -575,12 +759,16 @@ class BaseService(ABC):
 
     @classmethod
     def _validate_owner_field_map(cls) -> None:
-        """Validate the M2M_OWNER_FIELD_MAP configuration."""
+        """
+        Validate the `M2M_OWNER_FIELD_MAP` configuration.
+        """
 
         value = cls.M2M_OWNER_FIELD_MAP
 
         if not isinstance(value, dict):
-            raise TypeError("M2M_OWNER_FIELD_MAP must be an instance of dict")
+            raise TypeError(
+                "M2M_OWNER_FIELD_MAP must be an instance of dict"
+            )
 
         for field, owner in value.items():
 
@@ -591,5 +779,6 @@ class BaseService(ABC):
 
             if not isinstance(owner, str):
                 raise TypeError(
-                    "M2M_OWNER_FIELD_MAP values must be attribute paths (str)"
+                    "M2M_OWNER_FIELD_MAP values must be attribute "
+                    "paths (str)"
                 )
