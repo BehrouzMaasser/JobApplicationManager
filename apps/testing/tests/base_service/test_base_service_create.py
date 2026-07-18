@@ -35,17 +35,17 @@ class DummyCreateService(BaseService):
         return {"owner": user}
 
     @classmethod
-    def _build_model(cls, **kwargs):
-        cls.calls.append("_build_model")
-        return super()._build_model(**kwargs)
+    def _build_instance(cls, **kwargs):
+        cls.calls.append("_build_instance")
+        return super()._build_instance(**kwargs)
 
     @classmethod
     def _create_validate(cls, **kwargs):
         cls.calls.append("_create_validate")
 
     @classmethod
-    def _pre_save(cls, **kwargs):
-        cls.calls.append("_pre_save")
+    def _create_pre_save(cls, **kwargs):
+        cls.calls.append("_create_pre_save")
 
     @classmethod
     def _save(cls, instance):
@@ -61,7 +61,7 @@ class DummyCreateService(BaseService):
 
 
 @pytest.mark.django_db
-def test_create_executes_hooks_in_contract_order(user1):
+def test_create_executes_create_workflow_in_contract_order(user1):
 
     DummyCreateService.calls = []
 
@@ -75,9 +75,9 @@ def test_create_executes_hooks_in_contract_order(user1):
 
     assert DummyCreateService.calls == [
         "_resolve_create_dependencies",
-        "_build_model",
+        "_build_instance",
         "_create_validate",
-        "_pre_save",
+        "_create_pre_save",
         "_save",
         "_create_post_save",
     ]
@@ -91,7 +91,7 @@ def test_create_merges_resolved_dependencies(user1):
     class Service(DummyCreateService):
 
         @classmethod
-        def _build_model(cls, **kwargs):
+        def _build_instance(cls, **kwargs):
             captured.update(kwargs)
             return DummyItem(**kwargs)
 
@@ -126,20 +126,22 @@ def test_create_returns_created_instance(user1):
 
     assert isinstance(instance, DummyItem)
     assert instance.pk is not None
+    assert instance.owner == user1
+    assert instance.name == "Example"
 
 
 @pytest.mark.django_db
-def test_create_calls_build_model_only_once(user1):
+def test_create_calls_build_instance_only_once(user1):
 
     count = 0
 
     class Service(DummyCreateService):
 
         @classmethod
-        def _build_model(cls, **kwargs):
+        def _build_instance(cls, **kwargs):
             nonlocal count
             count += 1
-            return super()._build_model(**kwargs)
+            return super()._build_instance(**kwargs)
 
     Service.create(
         user=user1,

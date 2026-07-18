@@ -6,9 +6,43 @@ from apps.testing.models import DummyItem
 from apps.testing.selectors import DummyItemSelector
 
 
+class ValidService(BaseService):
+
+    MODEL = DummyItem
+    SELECTOR = DummyItemSelector
+
+    CREATE_FIELDS = (
+        "owner",
+        "name",
+    )
+
+    SCALAR_UPDATABLE_FIELDS = (
+        "name",
+    )
+
+    M2M_UPDATABLE_FIELDS = ()
+
+    REQUIRED_M2M_FIELDS = ()
+
+    NON_EMPTY_M2M_FIELDS = ()
+
+    M2M_OWNER_FIELD_MAP = {}
+
+    @classmethod
+    def _validate_resolved_instance(cls, **kwargs):
+        pass
+
+
+def test_valid_service_configuration_is_accepted():
+
+    assert ValidService.MODEL is DummyItem
+    assert ValidService.SELECTOR is DummyItemSelector
+
+
 # ---------------------------------------------------------------------
 # Missing required configuration
 # ---------------------------------------------------------------------
+
 
 def test_missing_model_configuration_raises_type_error():
 
@@ -72,7 +106,9 @@ def test_missing_required_configuration(attribute):
         "REQUIRED_M2M_FIELDS": (),
         "NON_EMPTY_M2M_FIELDS": (),
         "M2M_OWNER_FIELD_MAP": {},
-        "_validate_resolved_instance": classmethod(lambda cls, **kwargs: None),
+        "_validate_resolved_instance": classmethod(
+            lambda cls, **kwargs: None
+        ),
     }
 
     namespace.pop(attribute)
@@ -82,8 +118,9 @@ def test_missing_required_configuration(attribute):
 
 
 # ---------------------------------------------------------------------
-# Invalid MODEL
+# Invalid MODEL / SELECTOR
 # ---------------------------------------------------------------------
+
 
 def test_model_must_inherit_from_django_model():
 
@@ -108,10 +145,6 @@ def test_model_must_inherit_from_django_model():
             def _validate_resolved_instance(cls, **kwargs):
                 pass
 
-
-# ---------------------------------------------------------------------
-# Invalid SELECTOR
-# ---------------------------------------------------------------------
 
 def test_selector_must_inherit_from_base_selector():
 
@@ -141,6 +174,7 @@ def test_selector_must_inherit_from_base_selector():
 # Invalid configuration types
 # ---------------------------------------------------------------------
 
+
 @pytest.mark.parametrize(
     "attribute,value",
     (
@@ -163,7 +197,9 @@ def test_configuration_has_expected_type(attribute, value):
         "REQUIRED_M2M_FIELDS": (),
         "NON_EMPTY_M2M_FIELDS": (),
         "M2M_OWNER_FIELD_MAP": {},
-        "_validate_resolved_instance": classmethod(lambda cls, **kwargs: None),
+        "_validate_resolved_instance": classmethod(
+            lambda cls, **kwargs: None
+        ),
     }
 
     namespace[attribute] = value
@@ -182,7 +218,7 @@ def test_configuration_has_expected_type(attribute, value):
         "NON_EMPTY_M2M_FIELDS",
     ),
 )
-def test_tuple_configuration_must_contain_only_strings(attribute):
+def test_tuple_configuration_contains_only_strings(attribute):
 
     namespace = {
         "MODEL": DummyItem,
@@ -193,10 +229,15 @@ def test_tuple_configuration_must_contain_only_strings(attribute):
         "REQUIRED_M2M_FIELDS": (),
         "NON_EMPTY_M2M_FIELDS": (),
         "M2M_OWNER_FIELD_MAP": {},
-        "_validate_resolved_instance": classmethod(lambda cls, **kwargs: None),
+        "_validate_resolved_instance": classmethod(
+            lambda cls, **kwargs: None
+        ),
     }
 
-    namespace[attribute] = ("valid", 123)
+    namespace[attribute] = (
+        "valid",
+        123,
+    )
 
     with pytest.raises(TypeError):
         type("InvalidService", (BaseService,), namespace)
@@ -212,7 +253,7 @@ def test_tuple_configuration_must_contain_only_strings(attribute):
         "NON_EMPTY_M2M_FIELDS",
     ),
 )
-def test_tuple_configuration_must_not_contain_duplicates(attribute):
+def test_tuple_configuration_rejects_duplicates(attribute):
 
     namespace = {
         "MODEL": DummyItem,
@@ -223,7 +264,9 @@ def test_tuple_configuration_must_not_contain_duplicates(attribute):
         "REQUIRED_M2M_FIELDS": (),
         "NON_EMPTY_M2M_FIELDS": (),
         "M2M_OWNER_FIELD_MAP": {},
-        "_validate_resolved_instance": classmethod(lambda cls, **kwargs: None),
+        "_validate_resolved_instance": classmethod(
+            lambda cls, **kwargs: None
+        ),
     }
 
     namespace[attribute] = (
@@ -248,7 +291,9 @@ def test_owner_field_map_keys_must_be_strings():
         "M2M_OWNER_FIELD_MAP": {
             123: "owner",
         },
-        "_validate_resolved_instance": classmethod(lambda cls, **kwargs: None),
+        "_validate_resolved_instance": classmethod(
+            lambda cls, **kwargs: None
+        ),
     }
 
     with pytest.raises(TypeError):
@@ -268,11 +313,40 @@ def test_owner_field_map_values_must_be_strings():
         "M2M_OWNER_FIELD_MAP": {
             "tags": object(),
         },
-        "_validate_resolved_instance": classmethod(lambda cls, **kwargs: None),
+        "_validate_resolved_instance": classmethod(
+            lambda cls, **kwargs: None
+        ),
     }
 
     with pytest.raises(TypeError):
         type("InvalidService", (BaseService,), namespace)
+
+
+def test_owner_field_map_fields_must_exist_on_model():
+
+    namespace = {
+        "MODEL": DummyItem,
+        "SELECTOR": DummyItemSelector,
+        "CREATE_FIELDS": (),
+        "SCALAR_UPDATABLE_FIELDS": (),
+        "M2M_UPDATABLE_FIELDS": (),
+        "REQUIRED_M2M_FIELDS": (),
+        "NON_EMPTY_M2M_FIELDS": (),
+        "M2M_OWNER_FIELD_MAP": {
+            "missing": "owner",
+        },
+        "_validate_resolved_instance": classmethod(
+            lambda cls, **kwargs: None
+        ),
+    }
+
+    with pytest.raises(TypeError):
+        type("InvalidService", (BaseService,), namespace)
+
+
+# ---------------------------------------------------------------------
+# Field conflicts
+# ---------------------------------------------------------------------
 
 
 def test_scalar_and_m2m_updatable_fields_must_not_overlap():
@@ -290,7 +364,9 @@ def test_scalar_and_m2m_updatable_fields_must_not_overlap():
         "REQUIRED_M2M_FIELDS": (),
         "NON_EMPTY_M2M_FIELDS": (),
         "M2M_OWNER_FIELD_MAP": {},
-        "_validate_resolved_instance": classmethod(lambda cls, **kwargs: None),
+        "_validate_resolved_instance": classmethod(
+            lambda cls, **kwargs: None
+        ),
     }
 
     with pytest.raises(TypeError):
@@ -310,7 +386,9 @@ def test_configuration_fields_must_exist_on_model():
         "REQUIRED_M2M_FIELDS": (),
         "NON_EMPTY_M2M_FIELDS": (),
         "M2M_OWNER_FIELD_MAP": {},
-        "_validate_resolved_instance": classmethod(lambda cls, **kwargs: None),
+        "_validate_resolved_instance": classmethod(
+            lambda cls, **kwargs: None
+        ),
     }
 
     with pytest.raises(TypeError):

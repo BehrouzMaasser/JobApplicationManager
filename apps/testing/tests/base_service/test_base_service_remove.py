@@ -38,7 +38,7 @@ class DummyRemoveService(BaseService):
 
 
 @pytest.mark.django_db
-def test_remove_resolves_instance_before_deleting(item1):
+def test_remove_executes_remove_workflow_in_contract_order(item1):
 
     DummyRemoveService.calls = []
 
@@ -95,4 +95,3 @@ def test_remove_returns_none(item1):
     )
 
     assert result is None
-    

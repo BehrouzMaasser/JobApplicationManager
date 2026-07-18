@@ -39,8 +39,8 @@ class DummyUpdateService(BaseService):
         cls.calls.append("_update_validate")
 
     @classmethod
-    def _pre_save(cls, **kwargs):
-        cls.calls.append("_pre_save")
+    def _update_pre_save(cls, **kwargs):
+        cls.calls.append("_update_pre_save")
 
     @classmethod
     def _apply_scalar_updates(cls, **kwargs):
@@ -60,7 +60,7 @@ class DummyUpdateService(BaseService):
 
 
 @pytest.mark.django_db
-def test_update_executes_hooks_in_contract_order(item1):
+def test_update_executes_update_workflow_in_contract_order(item1):
 
     DummyUpdateService.calls = []
 
@@ -75,7 +75,7 @@ def test_update_executes_hooks_in_contract_order(item1):
     assert DummyUpdateService.calls == [
         "_resolve_instance",
         "_update_validate",
-        "_pre_save",
+        "_update_pre_save",
         "_apply_scalar_updates",
         "_save",
         "_update_post_save",
@@ -112,7 +112,12 @@ def test_update_passes_resolved_instance_to_scalar_updates(item1):
     class Service(DummyUpdateService):
 
         @classmethod
-        def _apply_scalar_updates(cls, *, instance, validated_data):
+        def _apply_scalar_updates(
+            cls,
+            *,
+            instance,
+            validated_data,
+        ):
             nonlocal received
             received = instance
 
@@ -168,6 +173,7 @@ def test_update_returns_updated_instance(item1):
     )
 
     assert result is item1
+    assert result.pk is not None
 
 
 @pytest.mark.django_db
@@ -178,11 +184,22 @@ def test_update_validate_receives_unmodified_instance(item1):
     class Service(DummyUpdateService):
 
         @classmethod
-        def _update_validate(cls, *, instance, validated_data, **kwargs):
+        def _update_validate(
+            cls,
+            *,
+            instance,
+            validated_data,
+            **kwargs,
+        ):
             assert instance.name == original_name
 
         @classmethod
-        def _apply_scalar_updates(cls, *, instance, validated_data):
+        def _apply_scalar_updates(
+            cls,
+            *,
+            instance,
+            validated_data,
+        ):
             instance.name = validated_data["name"]
 
         @classmethod
