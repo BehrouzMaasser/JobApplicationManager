@@ -38,7 +38,7 @@ from apps.applications.services.application_note_service import (
 )
 
 # Contexts
-from apps.applications.services.contexts.application_context import (
+from apps.core.common.contexts.contexts import (
     JobApplicationContext,
     JobApplicationChildContext,
 )

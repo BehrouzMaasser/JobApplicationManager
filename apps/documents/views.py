@@ -89,7 +89,7 @@ class DocumentTypeDetailView(
     def get_object(self, queryset=None):
 
         return DocumentTypeSelector.get(
-            user=self.request.user, document_type_id=self.kwargs["pk"]
+            user=self.request.user, obj_id=self.kwargs["pk"]
         )
 
 
@@ -104,7 +104,7 @@ class DocumentTypeUpdateView(
     def get_object(self, queryset=None):
 
         return DocumentTypeSelector.get(
-            user=self.request.user, document_type_id=self.kwargs["pk"]
+            user=self.request.user, obj_id=self.kwargs["pk"]
         )
 
     def form_valid(self, form):
@@ -146,7 +146,7 @@ class DocumentTypeDeleteView(
     def get_object(self, queryset=None):
 
         return DocumentTypeSelector.get(
-            user=self.request.user, document_type_id=self.kwargs["pk"]
+            user=self.request.user, obj_id=self.kwargs["pk"]
         )
 
     def post(self, request, *args, **kwargs):
@@ -223,7 +223,7 @@ class DocumentDetailView(ViewExceptionHandlerMixin, LoginRequiredMixin, DetailVi
     def get_object(self, queryset=None):
 
         return DocumentSelector.get(
-            user=self.request.user, document_id=self.kwargs["pk"]
+            user=self.request.user, obj_id=self.kwargs["pk"]
         )
 
 
@@ -242,7 +242,7 @@ class DocumentUpdateView(
     def get_object(self, queryset=None):
 
         return DocumentSelector.get(
-            user=self.request.user, document_id=self.kwargs["pk"]
+            user=self.request.user, obj_id=self.kwargs["pk"]
         )
 
     def form_valid(self, form):
@@ -284,7 +284,7 @@ class DocumentDeleteView(
     def get_object(self, queryset=None):
 
         return DocumentSelector.get(
-            user=self.request.user, document_id=self.kwargs["pk"]
+            user=self.request.user, obj_id=self.kwargs["pk"]
         )
 
     def post(self, request, *args, **kwargs):
@@ -311,7 +311,7 @@ class BaseDocumentFileView(
     def get_document(self):
 
         return DocumentSelector.get(
-            user=self.request.user, document_id=self.kwargs["pk"]
+            user=self.request.user, obj_id=self.kwargs["pk"]
         )
 
     def get(self, request, *args, **kwargs):

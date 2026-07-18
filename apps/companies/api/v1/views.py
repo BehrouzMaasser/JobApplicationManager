@@ -50,7 +50,7 @@ from apps.companies.services.job_requirement_service import JobRequirementServic
 from apps.companies.services.job_task_service import JobTaskService
 
 # Contexts
-from apps.companies.services.contexts.company_context import (
+from apps.core.common.contexts.contexts import (
     CompanyContext,
     CompanyChildContext,
 )
