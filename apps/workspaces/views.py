@@ -1,5 +1,7 @@
 # Mixins
 from django.contrib.auth.mixins import LoginRequiredMixin
+
+from ..core.common.contexts.contexts import EmptyContext, WorkspaceContext
 from ..core.mixins.app_context_mixin import AppContextMixin
 
 # Django
@@ -57,6 +59,7 @@ class WorkspaceCreateView(
 
         WorkspaceService.create(
             user=self.request.user,
+            context=EmptyContext(),
             validated_data=form.cleaned_data
         )
 
@@ -82,7 +85,7 @@ class WorkspaceDetailView(
 
         return WorkspaceSelector.get(
             user=self.request.user,
-            workspace_id=self.kwargs["workspace_id"]
+            obj_id=self.kwargs["workspace_id"]
         )
 
     def build_app_context(self):
@@ -104,14 +107,14 @@ class WorkspaceUpdateView(ViewExceptionHandlerMixin, LoginRequiredMixin, UpdateV
 
         return WorkspaceSelector.get(
             user=self.request.user,
-            workspace_id=self.kwargs["workspace_id"]
+            obj_id=self.kwargs["workspace_id"]
         )
 
     def form_valid(self, form):
 
         WorkspaceService.update(
             user=self.request.user,
-            workspace_id=self.kwargs["workspace_id"],
+            context=WorkspaceContext(id=self.kwargs["workspace_id"]),
             validated_data=form.cleaned_data
         )
 
@@ -142,14 +145,14 @@ class WorkspaceDeleteView(ViewExceptionHandlerMixin, LoginRequiredMixin, DeleteV
 
         return WorkspaceSelector.get(
             user=self.request.user,
-            workspace_id=self.kwargs["workspace_id"]
+            obj_id=self.kwargs["workspace_id"]
         )
 
     def post(self, request, *args, **kwargs):
 
         WorkspaceService.remove(
             user=self.request.user,
-            workspace_id=self.kwargs["workspace_id"]
+            context=WorkspaceContext(id=self.kwargs["workspace_id"]),
         )
 
         return redirect(self.success_url)

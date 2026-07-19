@@ -30,10 +30,12 @@ from apps.applications.services.application_note_service import (
 from apps.applications.services.application_service import JobApplicationService
 
 # Contexts
-from apps.applications.services.contexts.application_context import (
+from apps.core.common.contexts.contexts import (
     JobApplicationContext,
     JobApplicationChildContext
 )
+from apps.core.common.types.filters import JobApplicationQueryFilter, \
+    JobApplicationNoteQueryFilter
 
 # View Contexts and Mixins
 from apps.core.contexts.app_context import AppContext
@@ -87,7 +89,7 @@ class JobApplicationListView(
 
         return JobApplicationSelector.list(
             user=self.request.user,
-            filters=JobApplicationSelector.QueryFilter(
+            filters=JobApplicationQueryFilter(
                 workspace_id=self.request.GET.get("workspace_id"),
                 company_id=self.request.GET.get("company_id"),
                 job_position_id=self.request.GET.get("job_position_id"),
@@ -183,7 +185,7 @@ class JobApplicationDetailView(
     def get_object(self, queryset=None):
 
         return JobApplicationSelector.get(
-            user=self.request.user, application_id=self.kwargs["pk"]
+            user=self.request.user, obj_id=self.kwargs["pk"]
         )
 
     def build_app_context(self):
@@ -224,7 +226,7 @@ class JobApplicationUpdateView(
     def get_object(self, queryset=None):
 
         return JobApplicationSelector.get(
-            user=self.request.user, application_id=self.kwargs["pk"]
+            user=self.request.user, obj_id=self.kwargs["pk"]
         )
 
     def form_valid(self, form):
@@ -285,7 +287,7 @@ class JobApplicationDeleteView(
     def get_object(self, queryset=None):
 
         return JobApplicationSelector.get(
-            user=self.request.user, application_id=self.kwargs["pk"]
+            user=self.request.user, obj_id=self.kwargs["pk"]
         )
 
     def post(self, request, *args, **kwargs):
@@ -338,7 +340,7 @@ class JobApplicationNoteListView(
 
         return JobApplicationNoteSelector.list(
             user=self.request.user,
-            filters=JobApplicationNoteSelector.QueryFilter(
+            filters=JobApplicationNoteQueryFilter(
                 workspace_id=self.request.GET.get("workspace_id"),
                 company_id=self.request.GET.get("company_id"),
                 job_position_id=self.request.GET.get("job_position_id"),
@@ -367,7 +369,7 @@ class JobApplicationNoteCreateView(
     def form_valid(self, form):
 
         job_application = JobApplicationSelector.get(
-            user=self.request.user, application_id=self.kwargs["job_application_id"]
+            user=self.request.user, obj_id=self.kwargs["job_application_id"]
         )
 
         JobApplicationNoteService.create(
@@ -430,7 +432,7 @@ class JobApplicationNoteDetailView(
     def get_object(self, queryset=None):
 
         return JobApplicationNoteSelector.get(
-            user=self.request.user, application_note_id=self.kwargs["pk"]
+            user=self.request.user, obj_id=self.kwargs["pk"]
         )
 
     def build_app_context(self):
@@ -460,7 +462,7 @@ class JobApplicationNoteUpdateView(
     def get_object(self, queryset=None):
 
         return JobApplicationNoteSelector.get(
-            user=self.request.user, application_note_id=self.kwargs["pk"]
+            user=self.request.user, obj_id=self.kwargs["pk"]
         )
 
     def form_valid(self, form):
@@ -525,7 +527,7 @@ class JobApplicationNoteDeleteView(
     def get_object(self, queryset=None):
 
         return JobApplicationNoteSelector.get(
-            user=self.request.user, application_note_id=self.kwargs["pk"]
+            user=self.request.user, obj_id=self.kwargs["pk"]
         )
 
     def post(self, request, *args, **kwargs):

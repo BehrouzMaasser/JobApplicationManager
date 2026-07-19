@@ -4,24 +4,24 @@ Service layer for Document domain logic.
 This module handles creation, update, and deletion of document records
 while enforcing document ownership and validation rules.
 """
-
+import hashlib
 from typing import Any
-
-from django.db import transaction
 
 # Models
 from apps.accounts.models import User
+from apps.core.common.contexts.contexts import DocumentContext
+from apps.core.exceptions.exceptions import BusinessRuleViolationError
 from apps.documents.models import Document
 
 # Selectors
 from apps.documents.selectors.document_selector import DocumentSelector
 
 # Services
-from apps.workspaces.services.base_service import BaseService
+from apps.core.common.services.base_service import BaseService
 
 
 # Document Service
-class DocumentService(BaseService):
+class DocumentService(BaseService[Document]):
     """
     Service responsible for managing Document domain operations.
 
@@ -29,155 +29,73 @@ class DocumentService(BaseService):
     logic to selectors while maintaining validation consistency.
     """
 
-    CREATE_REQUIRED_FIELDS = {
-        "name",
-        "document_type",
-        "file",
-    }
+    MODEL = Document
+    SELECTOR = DocumentSelector
 
-    UPDATABLE_FIELDS = CREATE_REQUIRED_FIELDS
+    CREATE_FIELDS = ("owner", "name", "document_type", "file")
+    SCALAR_UPDATABLE_FIELDS = ("name", "document_type", "file")
+    M2M_UPDATABLE_FIELDS = ()
+    REQUIRED_M2M_FIELDS = ()
+    NON_EMPTY_M2M_FIELDS = ()
+    M2M_OWNER_FIELD_MAP = {}
 
-    @staticmethod
-    @transaction.atomic
-    def create(
+    @classmethod
+    def _create_validate(
+            cls,
+            *,
+            user: User,
+            instance: Document,
+            validated_data: dict[str, Any]
+    ) -> None:
+
+        if instance.file:
+            cls._add_file_hash(instance=instance)
+        else:
+            raise BusinessRuleViolationError(
+                fields=["file"],
+                messages=["Please upload a file for this document."]
+            )
+
+    @classmethod
+    def _resolve_create_dependencies(
+            cls,
+            user: User,
+            context: DocumentContext
+    ) -> dict[str, Any]:
+
+        return {"owner": user}
+
+    @classmethod
+    def _validate_resolved_instance(
+        cls,
         *,
-        user: User,
-        validated_data: dict[str, Any],
-    ) -> Document:
-        """
-        Create a new Document instance.
+        instance: Document,
+        context: DocumentContext
+    ) -> None:
+        """Document is the aggregate root; no additional validation required."""
 
-        Calls:
-            - django.db.models.base.Model.full_clean()
-            - django.db.models.base.Model.save()
+        pass
 
-        Raises:
-            ValidationError:
-                If model validation fails.
+    @classmethod
+    def _add_file_hash(cls, instance: Document) -> None:
 
-        Returns:
-            Document:
-                The created document instance.
-        """
+        hasher = hashlib.sha256()
+        for chunk in instance.file.chunks():
+            hasher.update(chunk)
 
-        instance = Document(
-            owner=user,
-            name=validated_data.get("name"),
-            document_type=validated_data.get("document_type"),
-            file=validated_data.get("file"),
-        )
+        instance.file_hash = hasher.hexdigest()
 
-        # Cleaning and saving the instance
-        instance.full_clean()
-        instance.save()
-
-        return instance
-
-    @staticmethod
-    @transaction.atomic
-    def update(
-        *,
-        user: User,
-        document_id: int,
-        validated_data: dict[str, Any],
-    ) -> Document:
-        """
-        Update an existing Document instance.
-
-        Calls:
-            - _resolve_document() to retrieve the target instance.
-            - _update_non_m2m_fields() to apply updates.
-            - django.db.models.base.Model.full_clean()
-            - django.db.models.base.Model.save()
-
-        Raises:
-            ResourceNotFoundError:
-                If the Document does not exist.
-
-            AccessDeniedError:
-                If the Document does not belong to the user.
-
-            ValidationError:
-                If model validation fails.
-
-        Returns:
-            Document:
-                The updated document instance.
-        """
-
-        instance = DocumentService._resolve_document(
-            user=user,
-            document_id=document_id,
-        )
-
-        DocumentService._update_non_m2m_fields(
+    @classmethod
+    def _apply_scalar_updates(
+            cls,
+            *,
+            instance: Document,
+            validated_data: dict[str, Any]
+    ) -> None:
+        super()._apply_scalar_updates(
             instance=instance,
             validated_data=validated_data,
-            fields_to_update=DocumentService.UPDATABLE_FIELDS,
         )
 
-        instance.full_clean()
-        instance.save()
-
-        return instance
-
-    @staticmethod
-    @transaction.atomic
-    def remove(
-        *,
-        user: User,
-        document_id: int,
-    ) -> None:
-        """
-        Remove a Document instance.
-
-        Calls:
-            - _resolve_document() to retrieve the target instance.
-            - django.db.models.base.Model.delete()
-
-        Raises:
-            ResourceNotFoundError:
-                If the Document does not exist.
-
-            AccessDeniedError:
-                If the Document does not belong to the user.
-
-        Returns:
-            None
-        """
-
-        instance = DocumentService._resolve_document(
-            user=user,
-            document_id=document_id,
-        )
-
-        instance.delete()
-
-    @staticmethod
-    def _resolve_document(
-        *,
-        user: User,
-        document_id: int,
-    ) -> Document:
-        """
-        Resolve a Document instance.
-
-        Calls:
-            DocumentSelector.get()
-
-        Raises:
-            ResourceNotFoundError:
-                If the Document does not exist.
-
-            AccessDeniedError:
-                If the Document does not belong to the user.
-
-        Returns:
-            Document:
-                The resolved document instance.
-        """
-
-        return DocumentSelector.get(
-            user=user,
-            document_id=document_id,
-        )
+        if "file" in validated_data:
+            cls._add_file_hash(instance)

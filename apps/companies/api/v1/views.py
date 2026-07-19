@@ -50,7 +50,7 @@ from apps.companies.services.job_requirement_service import JobRequirementServic
 from apps.companies.services.job_task_service import JobTaskService
 
 # Contexts
-from apps.companies.services.contexts.company_context import (
+from apps.core.common.contexts.contexts import (
     CompanyContext,
     CompanyChildContext,
 )
@@ -61,6 +61,8 @@ from apps.core.common.api.viewsets import (
     BaseContextServiceViewSet,
     BaseIdServiceViewSet,
 )
+from apps.core.common.types.filters import CompanyQueryFilter, \
+    CompanyNoteQueryFilter, CompanyEmailQueryFilter, JobPositionQueryFilter
 
 
 # =========================================================
@@ -94,7 +96,7 @@ class CompanyViewSet(BaseReadOnlyViewSet):
             filters=self._get_queryset_filters(),
         )
 
-    def _get_queryset_filters(self) -> CompanySelector.QueryFilter:
+    def _get_queryset_filters(self) -> CompanyQueryFilter:
         """
         Build selector filter object from query parameters.
         """
@@ -153,8 +155,8 @@ class NestedCompanyViewSet(BaseContextServiceViewSet):
             id=self.kwargs["id"],
         )
 
-    def _get_queryset_filters(self) -> CompanySelector.QueryFilter:
-        return CompanySelector.QueryFilter(
+    def _get_queryset_filters(self) -> CompanyQueryFilter:
+        return CompanyQueryFilter(
             workspace_id=self.kwargs["workspace_id"],
         )
 
@@ -184,8 +186,8 @@ class CompanyNoteViewSet(BaseReadOnlyViewSet):
             filters=self._get_queryset_filters(),
         )
 
-    def _get_queryset_filters(self) -> CompanyNoteSelector.QueryFilter:
-        return CompanyNoteSelector.QueryFilter(
+    def _get_queryset_filters(self) -> CompanyNoteQueryFilter:
+        return CompanyNoteQueryFilter(
             workspace_id=self.request.query_params.get("workspace_id"),
             company_id=self.request.query_params.get("company_id"),
         )
@@ -229,8 +231,8 @@ class NestedCompanyNoteViewSet(BaseContextServiceViewSet):
             id=self.kwargs["id"],
         )
 
-    def _get_queryset_filters(self) -> CompanyNoteSelector.QueryFilter:
-        return CompanyNoteSelector.QueryFilter(
+    def _get_queryset_filters(self) -> CompanyNoteQueryFilter:
+        return CompanyNoteQueryFilter(
             workspace_id=self.request.query_params.get("workspace_id"),
             company_id=self.request.query_params.get("company_id"),
         )
@@ -258,8 +260,8 @@ class CompanyEmailViewSet(BaseReadOnlyViewSet):
             filters=self._get_queryset_filters(),
         )
 
-    def _get_queryset_filters(self) -> CompanyEmailSelector.QueryFilter:
-        return CompanyEmailSelector.QueryFilter(
+    def _get_queryset_filters(self) -> CompanyEmailQueryFilter:
+        return CompanyEmailQueryFilter(
             workspace_id=self.request.query_params.get("workspace_id"),
             company_id=self.request.query_params.get("company_id"),
         )
@@ -299,8 +301,8 @@ class NestedCompanyEmailViewSet(BaseContextServiceViewSet):
             id=self.kwargs["id"],
         )
 
-    def _get_queryset_filters(self) -> CompanyEmailSelector.QueryFilter:
-        return CompanyEmailSelector.QueryFilter(
+    def _get_queryset_filters(self) -> CompanyEmailQueryFilter:
+        return CompanyEmailQueryFilter(
             workspace_id=self.request.query_params.get("workspace_id"),
             company_id=self.request.query_params.get("company_id"),
         )
@@ -437,8 +439,8 @@ class NestedJobPositionViewSet(BaseContextServiceViewSet):
             id=self.kwargs["id"],
         )
 
-    def _get_queryset_filters(self) -> JobPositionSelector.QueryFilter:
-        return JobPositionSelector.QueryFilter(
+    def _get_queryset_filters(self) -> JobPositionQueryFilter:
+        return JobPositionQueryFilter(
             workspace_id=self.kwargs["workspace_id"],
             company_id=self.kwargs["company_id"],
             id=self.kwargs.get("id"),

@@ -61,6 +61,9 @@ INSTALLED_APPS = [
     "apps.applications",
     "apps.documents",
     # "apps.analytics",
+
+    # Testing Apps
+    "apps.testing"
 ]
 
 REST_FRAMEWORK = {

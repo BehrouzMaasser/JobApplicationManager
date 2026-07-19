@@ -27,12 +27,14 @@ from .services.company_email_service import CompanyEmailService
 from .services.company_note_service import CompanyNoteService
 from .services.company_service import CompanyService
 
-from .services.contexts.company_context import (
+from apps.core.common.contexts.contexts import (
     CompanyContext,
     CompanyChildContext
 )
 from .services.job_position_service import JobPositionService
 from ..applications.views import application_list_url
+from ..core.common.types.filters import CompanyQueryFilter, CompanyEmailQueryFilter, \
+    CompanyNoteQueryFilter, JobPositionQueryFilter
 
 # View Contexts and Mixins
 from ..core.contexts.app_context import AppContext
@@ -104,7 +106,7 @@ class CompanyListView(
 
         return CompanySelector.list(
             user=self.request.user,
-            filters=CompanySelector.QueryFilter(
+            filters=CompanyQueryFilter(
                 workspace_id=self.request.GET.get("workspace_id"),
             )
         )
@@ -178,7 +180,7 @@ class CompanyDetailView(
     def get_object(self, queryset=None):
 
         return CompanySelector.get(
-            user=self.request.user, company_id=self.kwargs["pk"],
+            user=self.request.user, obj_id=self.kwargs["pk"],
         )
 
     def build_app_context(self):
@@ -218,7 +220,7 @@ class CompanyUpdateView(
     def get_object(self, queryset=None):
 
         return CompanySelector.get(
-            user=self.request.user, company_id=self.kwargs["pk"],
+            user=self.request.user, obj_id=self.kwargs["pk"],
         )
 
     def form_valid(self, form):
@@ -278,7 +280,7 @@ class CompanyDeleteView(
     def get_object(self, queryset=None):
 
         return CompanySelector.get(
-            user=self.request.user, company_id=self.kwargs["pk"],
+            user=self.request.user, obj_id=self.kwargs["pk"],
         )
 
     def post(self, request, *args, **kwargs):
@@ -327,7 +329,7 @@ class CompanyEmailListView(
 
         return CompanyEmailSelector.list(
             user=self.request.user,
-            filters=CompanyEmailSelector.QueryFilter(
+            filters=CompanyEmailQueryFilter(
                 workspace_id=self.request.GET.get("workspace_id"),
                 company_id=self.request.GET.get("company_id")
             )
@@ -340,7 +342,7 @@ class CompanyEmailListView(
 
         company = CompanySelector.list(
             user=self.request.user,
-            filters=CompanySelector.QueryFilter(
+            filters=CompanyQueryFilter(
                 id=company_id
             )
         ).first()
@@ -419,7 +421,7 @@ class CompanyEmailDetailView(
     def get_object(self, queryset=None):
 
         return CompanyEmailSelector.get(
-            user=self.request.user, company_email_id=self.kwargs["pk"],
+            user=self.request.user, obj_id=self.kwargs["pk"],
         )
 
     def build_app_context(self):
@@ -447,7 +449,7 @@ class CompanyEmailUpdateView(
     def get_object(self, queryset=None):
 
         return CompanyEmailSelector.get(
-            user=self.request.user, company_email_id=self.kwargs["pk"],
+            user=self.request.user, obj_id=self.kwargs["pk"],
         )
 
     def form_valid(self, form):
@@ -506,7 +508,7 @@ class CompanyEmailDeleteView(
     def get_object(self, queryset=None):
 
         return CompanyEmailSelector.get(
-            user=self.request.user, company_email_id=self.kwargs["pk"],
+            user=self.request.user, obj_id=self.kwargs["pk"],
         )
 
     def post(self, request, *args, **kwargs):
@@ -552,7 +554,7 @@ class CompanyNoteListView(
 
         return CompanyNoteSelector.list(
             user=self.request.user,
-            filters=CompanyNoteSelector.QueryFilter(
+            filters=CompanyNoteQueryFilter(
                 workspace_id=self.request.GET.get("workspace_id"),
                 company_id=self.request.GET.get("company_id"),
             )
@@ -565,7 +567,7 @@ class CompanyNoteListView(
 
         company = CompanySelector.list(
             user=self.request.user,
-            filters=CompanySelector.QueryFilter(
+            filters=CompanyQueryFilter(
                 id=company_id
             )
         ).first()
@@ -644,7 +646,7 @@ class CompanyNoteDetailView(
     def get_object(self, queryset=None):
 
         return CompanyNoteSelector.get(
-            user=self.request.user, company_note_id=self.kwargs["pk"],
+            user=self.request.user, obj_id=self.kwargs["pk"],
         )
 
     def build_app_context(self):
@@ -672,7 +674,7 @@ class CompanyNoteUpdateView(
     def get_object(self, queryset=None):
 
         return CompanyNoteSelector.get(
-            user=self.request.user, company_note_id=self.kwargs["pk"],
+            user=self.request.user, obj_id=self.kwargs["pk"],
         )
 
     def form_valid(self, form):
@@ -731,7 +733,7 @@ class CompanyNoteDeleteView(
     def get_object(self, queryset=None):
 
         return CompanyNoteSelector.get(
-            user=self.request.user, company_note_id=self.kwargs["pk"],
+            user=self.request.user, obj_id=self.kwargs["pk"],
         )
 
     def post(self, request, *args, **kwargs):
@@ -777,7 +779,7 @@ class JobPositionListView(
 
         return JobPositionSelector.list(
             user=self.request.user,
-            filters=JobPositionSelector.QueryFilter(
+            filters=JobPositionQueryFilter(
                 workspace_id=self.request.GET.get("workspace_id"),
                 company_id=self.request.GET.get("company_id"),
             )
@@ -790,7 +792,7 @@ class JobPositionListView(
 
         company = CompanySelector.list(
             user=self.request.user,
-            filters=CompanySelector.QueryFilter(
+            filters=CompanyQueryFilter(
                 id=self.request.GET.get("company_id")
             )
         ).first()
@@ -889,7 +891,7 @@ class JobPositionDetailView(
     def get_object(self, queryset=None):
 
         return JobPositionSelector.get(
-            user=self.request.user, job_position_id=self.kwargs["pk"],
+            user=self.request.user, obj_id=self.kwargs["pk"],
         )
 
     def build_app_context(self):
@@ -943,7 +945,7 @@ class JobPositionUpdateView(
     def get_object(self, queryset=None):
 
         return JobPositionSelector.get(
-            user=self.request.user, job_position_id=self.kwargs["pk"],
+            user=self.request.user, obj_id=self.kwargs["pk"],
         )
 
     def form_valid(self, form):
@@ -1008,7 +1010,7 @@ class JobPositionDeleteView(LoginRequiredMixin, AppContextMixin, DeleteView):
     def get_object(self, queryset=None):
 
         return JobPositionSelector.get(
-            user=self.request.user, job_position_id=self.kwargs["pk"],
+            user=self.request.user, obj_id=self.kwargs["pk"],
         )
 
     def post(self, request, *args, **kwargs):

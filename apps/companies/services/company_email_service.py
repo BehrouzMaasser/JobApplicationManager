@@ -7,209 +7,77 @@ ownership rules.
 """
 
 from typing import Any
-from django.db import transaction
 
-# Models
 from apps.accounts.models import User
+# Models
 from apps.companies.models import CompanyEmail
+from apps.core.common.contexts.contexts import CompanyChildContext
 
 # Services
+from apps.core.common.services.base_service import BaseService
 from apps.companies.services.company_service import CompanyService
-
-# Contexts
-from apps.companies.services.contexts.company_context import CompanyChildContext
 
 # Selectors
 from apps.companies.selectors.company_email_selector import CompanyEmailSelector
+
+# Contexts
+from apps.core.common.contexts.contexts import CompanyContext
 
 # Exceptions
 from apps.core.exceptions.exceptions import DomainInvariantViolationError
 
 
 # Company Email Service
-class CompanyEmailService(CompanyService):
+class CompanyEmailService(BaseService[CompanyEmail]):
     """
     Service responsible for managing CompanyEmail domain operations.
 
     Ensures strict workspace and company ownership validation for all operations.
     """
 
-    CREATE_REQUIRED_FIELDS = {"title", "email"}
-    UPDATABLE_FIELDS = CREATE_REQUIRED_FIELDS
+    MODEL = CompanyEmail
+    SELECTOR = CompanyEmailSelector
 
-    @staticmethod
-    @transaction.atomic
-    def create(
-        *,
-        user: User,
-        context: CompanyChildContext,
-        validated_data: dict[str, Any],
-    ) -> CompanyEmail:
-        """
-        Create a new CompanyEmail under a company.
+    CREATE_FIELDS = ("company", "title", "email")
+    SCALAR_UPDATABLE_FIELDS = ("title", "email")
+    M2M_UPDATABLE_FIELDS = ()
+    REQUIRED_M2M_FIELDS = ()
+    NON_EMPTY_M2M_FIELDS = ()
+    M2M_OWNER_FIELD_MAP = {}
 
-        Calls:
-            _resolve_company() to retrieve the company context.
-            django.db.models.base.Model.full_clean()
-            django.db.models.base.Model.save()
+    @classmethod
+    def _resolve_create_dependencies(
+            cls,
+            user: User,
+            context: CompanyChildContext
+    ) -> dict[str, Any]:
 
-        Raises:
-            ValidationError:
-                If model validation fails.
-
-            DomainInvariantViolationError:
-                If the company does not belong to the workspace.
-
-        Returns:
-            CompanyEmail:
-                The created company email instance.
-        """
-
-        company = CompanyEmailService._resolve_company(
+        company = CompanyService._resolve_instance(
             user=user,
-            workspace_id=context.workspace_id,
-            company_id=context.company_id,
+            context=CompanyContext(
+                id=context.company_id,
+                workspace_id=context.workspace_id,
+            ),
         )
 
-        instance = CompanyEmail(
-            company=company,
-            title=validated_data.get("title"),
-            email=validated_data.get("email"),
-        )
+        return {"company": company}
 
-        instance.full_clean()
-        instance.save()
-
-        return instance
-
-    @staticmethod
-    @transaction.atomic
-    def update(
+    @classmethod
+    def _validate_resolved_instance(
+        cls,
         *,
-        user: User,
-        context: CompanyChildContext,
-        validated_data: dict[str, Any],
-    ) -> CompanyEmail:
-        """
-        Update an existing CompanyEmail instance.
-
-        Calls:
-            _resolve_company_email() to retrieve the target instance.
-            _update_non_m2m_fields() to apply updates.
-            django.db.models.base.Model.full_clean()
-            django.db.models.base.Model.save()
-
-        Raises:
-            ResourceNotFoundError:
-                If the CompanyEmail does not exist.
-
-            AccessDeniedError:
-                If the user does not own the resource.
-
-            DomainInvariantViolationError:
-                If the email does not belong to the specified company or workspace.
-
-            ValidationError:
-                If model validation fails.
-
-        Returns:
-            CompanyEmail:
-                The updated company email instance.
-        """
-
-        instance = CompanyEmailService._resolve_company_email(
-            user=user,
-            context=context,
-        )
-
-        CompanyEmailService._update_non_m2m_fields(
-            instance=instance,
-            validated_data=validated_data,
-            fields_to_update=CompanyEmailService.UPDATABLE_FIELDS,
-        )
-
-        instance.full_clean()
-        instance.save()
-
-        return instance
-
-    @staticmethod
-    @transaction.atomic
-    def remove(
-        *,
-        user: User,
-        context: CompanyChildContext,
+        instance: CompanyEmail,
+        context: CompanyChildContext
     ) -> None:
-        """
-        Delete a CompanyEmail instance.
 
-        Calls:
-            - _resolve_company_email() to retrieve the target instance.
-            - django.db.models.base.Model.delete()
-
-        Raises:
-            ResourceNotFoundError:
-                If the CompanyEmail does not exist.
-
-            AccessDeniedError:
-                If the user does not own the resource.
-
-            DomainInvariantViolationError:
-                If the email does not belong to the specified company or workspace.
-
-        Returns:
-            None
-        """
-
-        instance = CompanyEmailService._resolve_company_email(
-            user=user,
-            context=context,
-        )
-
-        instance.delete()
-
-    @staticmethod
-    def _resolve_company_email(
-        *,
-        user: User,
-        context: CompanyChildContext,
-    ) -> CompanyEmail:
-        """
-        Resolve a CompanyEmail and validate workspace/company ownership.
-
-        Calls:
-            CompanyEmailSelector.get()
-
-        Raises:
-            ResourceNotFoundError:
-                If the CompanyEmail does not exist.
-
-            AccessDeniedError:
-                If the user does not own the resource.
-
-            DomainInvariantViolationError:
-                If the email does not belong to the company or workspace.
-
-        Returns:
-            CompanyEmail:
-                The resolved company email instance.
-        """
-
-        company_email = CompanyEmailSelector.get(
-            user=user,
-            company_email_id=context.id,
-        )
-
-        if company_email.company_id != context.company_id:
+        if instance.company_id != context.company_id:
             raise DomainInvariantViolationError(
                 f"CompanyEmail {context.id} does not belong to "
                 f"Company {context.company_id}"
             )
 
-        if company_email.company.workspace.workspace_id != context.workspace_id:
+        if instance.company.workspace.workspace_id != context.workspace_id:
             raise DomainInvariantViolationError(
                 f"CompanyEmail {context.id}'s company {context.company_id} does not"
                 f" belong to Workspace {context.workspace_id}"
             )
-
-        return company_email
