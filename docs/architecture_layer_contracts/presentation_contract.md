@@ -495,6 +495,9 @@ instead of constructing ORM queries directly.
 The Presentation Layer MUST construct Context objects but MUST NOT define
 business behavior inside them.
 
+Views should construct Context objects immediately before Service invocation. 
+Context objects should not be cached on the View instance or mutated after creation.
+
 Presentation components may:
 
 - Collect resource identifiers from the request.
@@ -1575,7 +1578,41 @@ The View must not:
 
 ---
 
-# 7.5 Write Operation Contract
+## 7.5 Presentation Data Retrieval Contract
+
+Views may retrieve additional application data required exclusively for
+presentation purposes.
+
+Examples:
+
+- Building navigation context.
+- Generating related resource URLs.
+- Displaying breadcrumbs.
+- Preparing template metadata.
+
+Such retrieval MUST:
+
+- Use Selectors.
+- Respect access rules.
+- Avoid implementing business decisions.
+- Avoid modifying application state.
+
+Example:
+
+```python
+company = CompanySelector.get(
+    user=request.user,
+    obj_id=company_id,
+)
+
+return AppContext(
+    workspace_id=company.workspace.workspace_id,
+)
+```
+
+---
+
+# 7.6 Write Operation Contract
 
 Write operations MUST use Services.
 
@@ -1612,7 +1649,7 @@ The View must not perform the write itself.
 
 ---
 
-# 7.6 `form_valid()` Contract
+# 7.7 `form_valid()` Contract
 
 `form_valid()` should be used as an orchestration point.
 
@@ -1649,7 +1686,7 @@ because persistence belongs to Services.
 
 ---
 
-# 7.7 `get_form()` Contract
+# 7.8 `get_form()` Contract
 
 `get_form()` may customize Forms for presentation requirements.
 
@@ -1701,7 +1738,7 @@ def get_form(self, form_class=None):
 
 ---
 
-# 7.8 `dispatch()` Contract
+# 7.9 `dispatch()` Contract
 
 `dispatch()` may handle request-level concerns.
 
@@ -1735,7 +1772,7 @@ def dispatch(self, request, *args, **kwargs):
 
 ---
 
-# 7.9 `get_queryset()` Contract
+# 7.10 `get_queryset()` Contract
 
 `get_queryset()` should delegate data retrieval to Selectors.
 
@@ -1765,7 +1802,7 @@ data is managed.
 
 ---
 
-# 7.10 Object Retrieval Contract
+# 7.11 Object Retrieval Contract
 
 Views should avoid direct object retrieval when access rules exist.
 
@@ -1796,7 +1833,7 @@ Selectors should provide controlled data access.
 
 ---
 
-# 7.11 Context Construction Contract
+# 7.12 Context Construction Contract
 
 Views are responsible for constructing Application Context objects.
 
@@ -1820,7 +1857,7 @@ Views must not:
 
 ---
 
-# 7.12 Success and Redirect Handling
+# 7.13 Success and Redirect Handling
 
 Views are responsible for deciding the HTTP response after successful
 operations.
@@ -1848,7 +1885,7 @@ The second decision belongs to the Service Layer.
 
 ---
 
-# 7.13 Failure Handling
+# 7.14 Failure Handling
 
 Views should translate application failures into user-facing responses.
 
@@ -1869,7 +1906,7 @@ Views should not:
 
 ---
 
-# 7.14 Class-Based View Guidelines
+# 7.15 Class-Based View Guidelines
 
 Class-Based Views should keep overridden methods focused.
 
@@ -1901,7 +1938,7 @@ A CBV should not become a replacement Application Layer.
 
 ---
 
-# 7.15 View Composition Rule
+# 7.16 View Composition Rule
 
 When multiple Views share the same behavior, that behavior should be extracted
 into the appropriate layer.
@@ -1918,7 +1955,69 @@ Duplicating behavior between Views is discouraged.
 
 ---
 
-# 7.16 Django View Review Checklist
+# 7.17 Presentation Helper Contract
+
+Presentation helper functions belong to the Presentation Layer and exist to
+support HTTP representation and user interface composition.
+
+Examples include:
+
+- URL builders.
+- Navigation helpers.
+- Template context builders.
+- Display formatting utilities.
+- Presentation-specific data transformation helpers.
+
+These helpers exist to simplify Views and templates.
+
+They must not implement Application Layer behavior.
+
+---
+
+## Presentation Helper Responsibilities
+
+Presentation helpers MAY:
+
+- Build URLs.
+- Construct navigation links.
+- Prepare template-specific context.
+- Format values for display.
+- Transform application results into presentation structures.
+
+Examples:
+
+```python
+def company_list_url(workspace_id):
+    return reverse(
+        "company-list-web",
+        kwargs={"workspace_id": workspace_id}
+    )
+
+
+def build_company_navigation(company):
+    return {
+        "back_url": company_list_url(
+            company.workspace_id
+        )
+    }
+```
+
+Incorrect Use:
+
+```python
+
+def can_delete_company(company):
+    return not company.job_applications.exists()
+```
+
+Correct:
+```python
+CompanyService.remove(...)
+```
+
+---
+
+# 7.18 Django View Review Checklist
 
 During code review, verify:
 
@@ -2652,33 +2751,6 @@ Missing required field.
 Incorrect date format.
 ```
 
-These failures occur before application execution.
-
----
-
-### Business Validation
-
-Owned by:
-
-- Services.
-
-Examples:
-
-```text
-Company does not belong to this workspace.
-
-User cannot modify this document.
-
-Job application cannot transition to this state.
-```
-
-These failures occur during application execution.
-
----
-
-The Presentation Layer must not move business validation into Forms or
-Serializers merely to simplify error handling.
-
 ---
 
 ## 9.5 Django View Exception Handling
@@ -2715,6 +2787,41 @@ cannot be provided through the shared translation mechanism, such as attaching
 an error to a submitted Form.
 
 Exception translation should remain consistent across all Views.
+
+### 9.5.1 Form-Based Service Validation Translation
+
+HTML form-based write operations must translate recoverable application
+validation failures back into form errors.
+
+Recoverable validation failures include:
+
+- `django.core.exceptions.ValidationError`
+- `BusinessRuleViolationError`
+
+These exceptions indicate that the submitted data cannot be accepted but that
+the user may correct the input and try again.
+
+Views should attach the validation messages to the appropriate form fields and
+redisplay the form.
+
+Example:
+
+```python
+try:
+    service.update(
+        user=self.request.user,
+        context=context,
+        validated_data=form.cleaned_data,
+    )
+
+except (ValidationError, BusinessRuleViolationError) as exc:
+    self.add_service_errors_to_form(
+        form=form,
+        exception=exc,
+    )
+
+    return self.form_invalid(form)
+```
 
 ---
 
