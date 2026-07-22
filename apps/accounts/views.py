@@ -28,6 +28,10 @@ from apps.companies.selectors.job_task_selector import JobTaskSelector
 from apps.companies.services.job_benefit_service import JobBenefitService
 from apps.companies.services.job_requirement_service import JobRequirementService
 from apps.companies.services.job_task_service import JobTaskService
+from apps.core.common.contexts.contexts import EmptyContext, JobBenefitContext, \
+    JobTaskContext, JobRequirementContext
+from apps.core.mixins.service_validation_error_mixin import ServiceFormErrorMixin
+from apps.core.mixins.view_exception_handler import ViewExceptionHandlerMixin
 
 User = get_user_model()
 
@@ -147,7 +151,12 @@ class JobBenefitListView(LoginRequiredMixin, ListView):
         return JobBenefitSelector.list(user=self.request.user)
 
 
-class JobBenefitCreateView(LoginRequiredMixin, CreateView):
+class JobBenefitCreateView(
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    ServiceFormErrorMixin,
+    CreateView
+):
 
     model = JobBenefit
     template_name = "create_page.html"
@@ -155,16 +164,20 @@ class JobBenefitCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy("job-benefit-list-web")
 
     def form_valid(self, form):
-        JobBenefitService.create(
-            user=self.request.user,
-            validated_data=form.cleaned_data
+
+        response = self.execute_service(
+            form=form,
+            operation=lambda: JobBenefitService.create(
+                user=self.request.user,
+                context=EmptyContext(),
+                validated_data=form.cleaned_data
+            )
         )
 
+        if response:
+            return response
+
         return redirect(self.success_url)
-
-    def form_invalid(self, form):
-
-        return super().form_invalid(form)
 
 
 class JobBenefitDetailView(LoginRequiredMixin,  DetailView):
@@ -178,7 +191,12 @@ class JobBenefitDetailView(LoginRequiredMixin,  DetailView):
         return JobBenefitSelector.list(user=self.request.user)
 
 
-class JobBenefitUpdateView(LoginRequiredMixin, UpdateView):
+class JobBenefitUpdateView(
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    ServiceFormErrorMixin,
+    UpdateView
+):
 
     model = JobBenefit
     template_name = "edit_page.html"
@@ -191,17 +209,26 @@ class JobBenefitUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
 
-        JobBenefitService.update(
-            user=self.request.user,
-            job_benefit_id=self.kwargs["pk"],
-            validated_data=form.cleaned_data
+        response = self.execute_service(
+            form=form,
+            operation=lambda: JobBenefitService.update(
+                user=self.request.user,
+                context=JobBenefitContext(id=self.kwargs["pk"]),
+                validated_data=form.cleaned_data
+            )
         )
 
-        return redirect("job-benefit-detail-web", pk=self.kwargs["pk"])
+        if response:
+            return response
 
-    def form_invalid(self, form):
+        return redirect(self.get_success_url())
 
-        return super().form_invalid(form)
+    def get_success_url(self):
+
+        return reverse_lazy(
+            "job-benefit-detail-web",
+            kwargs={"pk": self.kwargs["pk"]}
+        )
 
 
 class JobBenefitDeleteView(LoginRequiredMixin, DeleteView):
@@ -234,7 +261,12 @@ class JobTaskListView(LoginRequiredMixin, ListView):
         return JobTaskSelector.list(user=self.request.user)
 
 
-class JobTaskCreateView(LoginRequiredMixin, CreateView):
+class JobTaskCreateView(
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    ServiceFormErrorMixin,
+    CreateView
+):
 
     model = JobTask
     template_name = "create_page.html"
@@ -242,16 +274,20 @@ class JobTaskCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy("job-task-list-web")
 
     def form_valid(self, form):
-        JobTaskService.create(
-            user=self.request.user,
-            validated_data=form.cleaned_data
+
+        response = self.execute_service(
+            form=form,
+            operation=lambda: JobTaskService.create(
+                user=self.request.user,
+                context=EmptyContext(),
+                validated_data=form.cleaned_data
+            )
         )
 
+        if response:
+            return response
+
         return redirect(self.success_url)
-
-    def form_invalid(self, form):
-
-        return super().form_invalid(form)
 
 
 class JobTaskDetailView(LoginRequiredMixin,  DetailView):
@@ -265,7 +301,12 @@ class JobTaskDetailView(LoginRequiredMixin,  DetailView):
         return JobTaskSelector.list(user=self.request.user)
 
 
-class JobTaskUpdateView(LoginRequiredMixin, UpdateView):
+class JobTaskUpdateView(
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    ServiceFormErrorMixin,
+    UpdateView
+):
 
     model = JobTask
     template_name = "edit_page.html"
@@ -278,17 +319,26 @@ class JobTaskUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
 
-        JobTaskService.update(
-            user=self.request.user,
-            job_task_id=self.kwargs["pk"],
-            validated_data=form.cleaned_data
+        response = self.execute_service(
+            form=form,
+            operation=lambda: JobTaskService.update(
+                user=self.request.user,
+                context=JobTaskContext(id=self.kwargs["pk"]),
+                validated_data=form.cleaned_data
+            )
         )
 
-        return redirect("job-task-detail-web", pk=self.kwargs["pk"])
+        if response:
+            return response
 
-    def form_invalid(self, form):
+        return redirect(self.get_success_url())
 
-        return super().form_invalid(form)
+    def get_success_url(self):
+
+        return reverse_lazy(
+            "job-task-detail-web",
+            kwargs={"pk": self.kwargs["pk"]}
+        )
 
 
 class JobTaskDeleteView(LoginRequiredMixin, DeleteView):
@@ -321,7 +371,12 @@ class JobRequirementListView(LoginRequiredMixin, ListView):
         return JobRequirementSelector.list(user=self.request.user)
 
 
-class JobRequirementCreateView(LoginRequiredMixin, CreateView):
+class JobRequirementCreateView(
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    ServiceFormErrorMixin,
+    CreateView
+):
 
     model = JobRequirement
     template_name = "create_page.html"
@@ -329,16 +384,20 @@ class JobRequirementCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy("job-requirement-list-web")
 
     def form_valid(self, form):
-        JobRequirementService.create(
-            user=self.request.user,
-            validated_data=form.cleaned_data
+
+        response = self.execute_service(
+            form=form,
+            operation=lambda: JobRequirementService.create(
+                user=self.request.user,
+                context=EmptyContext(),
+                validated_data=form.cleaned_data
+            )
         )
 
+        if response:
+            return response
+
         return redirect(self.success_url)
-
-    def form_invalid(self, form):
-
-        return super().form_invalid(form)
 
 
 class JobRequirementDetailView(LoginRequiredMixin,  DetailView):
@@ -352,7 +411,12 @@ class JobRequirementDetailView(LoginRequiredMixin,  DetailView):
         return JobRequirementSelector.list(user=self.request.user)
 
 
-class JobRequirementUpdateView(LoginRequiredMixin, UpdateView):
+class JobRequirementUpdateView(
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    ServiceFormErrorMixin,
+    UpdateView
+):
 
     model = JobRequirement
     template_name = "edit_page.html"
@@ -365,17 +429,26 @@ class JobRequirementUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
 
-        JobRequirementService.update(
-            user=self.request.user,
-            job_requirement_id=self.kwargs["pk"],
-            validated_data=form.cleaned_data
+        response = self.execute_service(
+            form=form,
+            operation=lambda: JobRequirementService.update(
+                user=self.request.user,
+                context=JobRequirementContext(id=self.kwargs["pk"]),
+                validated_data=form.cleaned_data
+            )
         )
 
-        return redirect("job-requirement-detail-web", pk=self.kwargs["pk"])
+        if response:
+            return response
 
-    def form_invalid(self, form):
+        return redirect(self.get_success_url())
 
-        return super().form_invalid(form)
+    def get_success_url(self):
+
+        return reverse_lazy(
+            "job-requirement-detail-web",
+            kwargs={"pk": self.kwargs["pk"]}
+        )
 
 
 class JobRequirementDeleteView(LoginRequiredMixin, DeleteView):

@@ -42,6 +42,7 @@ from apps.core.contexts.app_context import AppContext
 from apps.core.contexts.extra_context import ExtraContext
 from apps.core.mixins.app_context_mixin import AppContextMixin
 from apps.core.mixins.job_application_form_mixin import JobApplicationFormMixin
+from apps.core.mixins.service_validation_error_mixin import ServiceFormErrorMixin
 from apps.core.mixins.view_exception_handler import ViewExceptionHandlerMixin
 
 
@@ -110,6 +111,7 @@ class JobApplicationCreateView(
     LoginRequiredMixin,
     AppContextMixin,
     JobApplicationFormMixin,
+    ServiceFormErrorMixin,
     CreateView
 ):
 
@@ -124,22 +126,23 @@ class JobApplicationCreateView(
 
     def form_valid(self, form):
 
-        JobApplicationService.create(
-            user=self.request.user,
-            context=JobApplicationContext(
-                workspace_id=self.kwargs["workspace_id"],
-                company_id=self.kwargs["company_id"],
-                job_position_id=self.kwargs["job_position_id"],
-                id=None
-            ),
-            validated_data=form.cleaned_data
+        response = self.execute_service(
+            form=form,
+            operation=lambda: JobApplicationService.create(
+                user=self.request.user,
+                context=JobApplicationContext(
+                    workspace_id=self.kwargs["workspace_id"],
+                    company_id=self.kwargs["company_id"],
+                    job_position_id=self.kwargs["job_position_id"],
+                ),
+                validated_data=form.cleaned_data
+            )
         )
 
+        if response:
+            return response
+
         return redirect(self.get_success_url())
-
-    def form_invalid(self, form):
-
-        return super().form_invalid(form)
 
     def get_success_url(self):
 
@@ -178,10 +181,6 @@ class JobApplicationDetailView(
 
         return self.object
 
-    def get_queryset(self):
-
-        return JobApplicationSelector.list(user=self.request.user)
-
     def get_object(self, queryset=None):
 
         return JobApplicationSelector.get(
@@ -206,6 +205,7 @@ class JobApplicationUpdateView(
     LoginRequiredMixin,
     AppContextMixin,
     JobApplicationFormMixin,
+    ServiceFormErrorMixin,
     UpdateView
 ):
 
@@ -231,16 +231,22 @@ class JobApplicationUpdateView(
 
     def form_valid(self, form):
 
-        JobApplicationService.update(
-            user=self.request.user,
-            context=JobApplicationContext(
-                workspace_id=self.application.workspace.workspace_id,
-                company_id=self.application.job_position.company.pk,
-                job_position_id=self.application.job_position.pk,
-                id=self.application.pk,
-            ),
-            validated_data=form.cleaned_data
+        response = self.execute_service(
+            form=form,
+            operation=lambda: JobApplicationService.update(
+                user=self.request.user,
+                context=JobApplicationContext(
+                    workspace_id=self.application.workspace.workspace_id,
+                    company_id=self.application.job_position.company.pk,
+                    job_position_id=self.application.job_position.pk,
+                    id=self.application.pk,
+                ),
+                validated_data=form.cleaned_data
+            )
         )
+
+        if response:
+            return response
 
         return redirect(self.get_success_url())
 
@@ -250,10 +256,6 @@ class JobApplicationUpdateView(
             "job-application-detail-web",
             kwargs={"pk": self.kwargs["pk"]}
         )
-
-    def form_invalid(self, form):
-
-        return super().form_invalid(form)
 
     def build_app_context(self):
 
@@ -359,30 +361,42 @@ class JobApplicationNoteListView(
 
 
 class JobApplicationNoteCreateView(
-    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, CreateView
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    AppContextMixin,
+    ServiceFormErrorMixin,
+    CreateView
 ):
 
     model = JobApplicationNote
     template_name = "create_page.html"
     fields = ["title", "content"]
 
-    def form_valid(self, form):
+    @property
+    def job_application(self):
 
-        job_application = JobApplicationSelector.get(
+        return JobApplicationSelector.get(
             user=self.request.user, obj_id=self.kwargs["job_application_id"]
         )
 
-        JobApplicationNoteService.create(
-            user=self.request.user,
-            context=JobApplicationChildContext(
-                workspace_id=job_application.workspace.workspace_id,
-                company_id=job_application.job_position.company.pk,
-                job_position_id=job_application.job_position.pk,
-                job_application_id=job_application.pk,
-                id=None
-            ),
-            validated_data=form.cleaned_data
+    def form_valid(self, form):
+
+        response = self.execute_service(
+            form=form,
+            operation=lambda: JobApplicationNoteService.create(
+                user=self.request.user,
+                context=JobApplicationChildContext(
+                    workspace_id=self.job_application.workspace.workspace_id,
+                    company_id=self.job_application.job_position.company.pk,
+                    job_position_id=self.job_application.job_position.pk,
+                    job_application_id=self.job_application.pk,
+                ),
+                validated_data=form.cleaned_data
+            )
         )
+
+        if response:
+            return response
 
         return redirect(self.get_success_url())
 
@@ -447,7 +461,11 @@ class JobApplicationNoteDetailView(
 
 
 class JobApplicationNoteUpdateView(
-    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, UpdateView
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    AppContextMixin,
+    ServiceFormErrorMixin,
+    UpdateView
 ):
 
     model = JobApplicationNote
@@ -467,17 +485,23 @@ class JobApplicationNoteUpdateView(
 
     def form_valid(self, form):
 
-        JobApplicationNoteService.update(
-            user=self.request.user,
-            context=JobApplicationChildContext(
-                workspace_id=self.app_note.job_application.workspace.workspace_id,
-                company_id=self.app_note.job_application.job_position.company.pk,
-                job_position_id=self.app_note.job_application.job_position.pk,
-                job_application_id=self.app_note.job_application.pk,
-                id=self.app_note.pk,
-            ),
-            validated_data=form.cleaned_data
+        response = self.execute_service(
+            form=form,
+            operation=lambda: JobApplicationNoteService.update(
+                user=self.request.user,
+                context=JobApplicationChildContext(
+                    workspace_id=self.app_note.job_application.workspace.workspace_id,
+                    company_id=self.app_note.job_application.job_position.company.pk,
+                    job_position_id=self.app_note.job_application.job_position.pk,
+                    job_application_id=self.app_note.job_application.pk,
+                    id=self.app_note.pk,
+                ),
+                validated_data=form.cleaned_data
+            )
         )
+
+        if response:
+            return response
 
         return redirect(self.get_success_url())
 
@@ -489,10 +513,6 @@ class JobApplicationNoteUpdateView(
                 "pk": self.app_note.job_application.pk,
             }
         )
-
-    def form_invalid(self, form):
-
-        return super().form_invalid(form)
 
     def build_app_context(self):
 
