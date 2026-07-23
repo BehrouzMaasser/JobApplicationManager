@@ -9,7 +9,7 @@ from apps.core.mixins.documents_form_mixin import DocumentFormMixin
 
 # Django
 from django.shortcuts import redirect
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse
 
 # Generic Views
 from django.views import View
@@ -79,7 +79,7 @@ class DocumentTypeCreateView(
 
     def get_success_url(self):
 
-        return reverse_lazy("document-type-list-web")
+        return reverse("document-type-list-web")
 
     def build_extra_context(self):
 
@@ -173,7 +173,7 @@ class DocumentTypeDeleteView(
             document_type_id=self.kwargs["pk"],
         )
 
-        return redirect(reverse_lazy("document-type-list-web"))
+        return redirect(self.get_success_url())
 
     def build_extra_context(self):
 
@@ -181,6 +181,10 @@ class DocumentTypeDeleteView(
             app_kind="document type",
             page_title="Delete Document Type",
         )
+
+    def get_success_url(self):
+
+        return reverse("document-type-list-web")
 
 
 class DocumentListView(ViewExceptionHandlerMixin, LoginRequiredMixin, ListView):
@@ -225,7 +229,7 @@ class DocumentCreateView(
 
     def get_success_url(self):
 
-        return reverse_lazy("document-list-web")
+        return reverse("document-list-web")
 
     def build_extra_context(self):
 
@@ -318,7 +322,7 @@ class DocumentDeleteView(
             document_id=self.kwargs["pk"],
         )
 
-        return redirect(reverse_lazy("document-list-web"))
+        return redirect(self.get_success_url())
 
     def build_extra_context(self):
 
@@ -326,6 +330,10 @@ class DocumentDeleteView(
             app_kind="document",
             page_title="Delete Document",
         )
+
+    def get_success_url(self):
+
+        return reverse("document-list-web")
 
 
 class BaseDocumentFileView(

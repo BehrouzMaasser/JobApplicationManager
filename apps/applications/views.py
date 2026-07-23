@@ -2,7 +2,7 @@ from urllib.parse import urlencode
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse
 from django.views.generic import (
     ListView,
     CreateView,
@@ -406,7 +406,7 @@ class JobApplicationNoteCreateView(
 
     def get_success_url(self):
 
-        return reverse_lazy(
+        return reverse(
             "job-application-detail-web",
             kwargs={
                 "pk": self.kwargs["job_application_id"]

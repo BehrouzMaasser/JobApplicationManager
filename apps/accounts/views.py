@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import PasswordChangeView
 from django.shortcuts import render, redirect
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.views import View
 from django.contrib import messages
 
@@ -225,7 +225,7 @@ class JobBenefitUpdateView(
 
     def get_success_url(self):
 
-        return reverse_lazy(
+        return reverse(
             "job-benefit-detail-web",
             kwargs={"pk": self.kwargs["pk"]}
         )
@@ -335,7 +335,7 @@ class JobTaskUpdateView(
 
     def get_success_url(self):
 
-        return reverse_lazy(
+        return reverse(
             "job-task-detail-web",
             kwargs={"pk": self.kwargs["pk"]}
         )
@@ -445,7 +445,7 @@ class JobRequirementUpdateView(
 
     def get_success_url(self):
 
-        return reverse_lazy(
+        return reverse(
             "job-requirement-detail-web",
             kwargs={"pk": self.kwargs["pk"]}
         )

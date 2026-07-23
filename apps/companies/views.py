@@ -10,7 +10,7 @@ from django.views.generic import (
     DeleteView
 )
 
-from django.urls import reverse_lazy, reverse
+from django.urls import reverse
 
 # Models
 from .models import Company, CompanyEmail, CompanyNote, JobPosition
@@ -399,7 +399,7 @@ class CompanyEmailCreateView(
 
     def get_success_url(self):
 
-        return reverse_lazy(
+        return reverse(
             "company-detail-web",
             kwargs={"pk": self.kwargs["company_id"]}
         )
@@ -544,7 +544,13 @@ class CompanyEmailDeleteView(
             )
         )
 
-        return redirect("company-detail-web", pk=self.email.company.pk)
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse(
+            "company-detail-web",
+            kwargs={"pk": self.email.company.pk}
+        )
 
     def build_app_context(self):
 
@@ -636,7 +642,7 @@ class CompanyNoteCreateView(
 
     def get_success_url(self):
 
-        return reverse_lazy(
+        return reverse(
             "company-detail-web",
             kwargs={"pk": self.kwargs["company_id"]}
         )
@@ -781,7 +787,14 @@ class CompanyNoteDeleteView(
             )
         )
 
-        return redirect("company-detail-web", pk=self.company_note.company.pk)
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+
+        return reverse(
+            "company-detail-web",
+            kwargs={"pk": self.company_note.company.pk}
+        )
 
     def build_app_context(self):
 
@@ -889,7 +902,7 @@ class JobPositionCreateView(
 
     def get_success_url(self):
 
-        return reverse_lazy(
+        return reverse(
             "company-detail-web",
             kwargs={"pk": self.kwargs["company_id"]}
         )
@@ -986,7 +999,7 @@ class JobPositionUpdateView(
 
         response = self.execute_service(
             form=form,
-            operation=lambda: CompanyService.update(
+            operation=lambda: JobPositionService.update(
                 user=self.request.user,
                 context=CompanyChildContext(
                     workspace_id=self.job_position.company.workspace.workspace_id,
@@ -1059,7 +1072,14 @@ class JobPositionDeleteView(
             )
         )
 
-        return redirect("company-detail-web", pk=self.job_position.company.pk)
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+
+        return reverse(
+            "job-position-detail-web",
+            kwargs={"pk": self.job_position.company.pk}
+        )
 
     def build_app_context(self):
 
