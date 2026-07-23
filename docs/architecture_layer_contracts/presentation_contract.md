@@ -8,326 +8,263 @@
 6. Forms Contract
 7. Django View Contract
 8. DRF ViewSet Contract
-9. Exception Handling Contract
-10. Testing Contract
-11. Checklist
-
-
-
-## 1. Purpose
-
-### Objective
-
-The Presentation Layer is responsible for translating external HTTP requests into
-application operations and translating application results into HTTP responses.
-
-It acts as the boundary between clients (web browsers, REST clients, automated
-consumers, etc.) and the application's business logic.
-
-The Presentation Layer coordinates interactions with the application but does
-not implement business behavior itself.
+9. Template Contract
+10. Exception Handling Contract
+11. Testing Contract
+12. Checklist
 
 ---
 
-### Responsibilities
+# 1. Purpose
 
-The Presentation Layer is responsible for:
+The Presentation Layer is responsible for handling incoming requests,
+coordinating application use-cases, and generating responses.
 
-- Receiving and interpreting HTTP requests.
-- Authenticating and authorizing incoming requests.
-- Parsing request data through Django Forms or DRF Serializers.
-- Constructing the appropriate service context objects.
-- Invoking Selectors for read operations.
-- Invoking Services for write operations.
-- Translating application results into HTML or JSON responses.
-- Managing presentation concerns such as redirects, templates, pagination,
-  success messages, and HTTP status codes.
-- Translating application exceptions into appropriate user-facing responses.
+It acts as the boundary between external clients (such as web browsers or API
+consumers) and the Application Layer. Its primary role is to translate
+transport-specific data into application-specific inputs, delegate business
+operations to the appropriate layer, and return an appropriate response.
 
----
+The Presentation Layer must remain orchestration-focused. It coordinates the
+flow of a request but does not implement business rules or perform data access.
 
-### Non-Responsibilities
+This contract applies to all presentation components within the project,
+including:
 
-The Presentation Layer is **not** responsible for:
+- Django Class-Based Views
+- Django REST Framework ViewSets
+- HTML Forms
+- DRF Serializers (when used for request validation)
+- Presentation Mixins
+- Response generation
 
-- Implementing business rules.
-- Persisting domain objects.
-- Executing ORM write operations.
-- Enforcing domain invariants.
-- Performing ownership or workspace validation.
-- Performing cross-model business validation.
-- Reimplementing logic already provided by Selectors or Services.
+The goals of this contract are to:
 
-Business behavior belongs exclusively to the Application Layer.
-
----
-
-### Design Philosophy
-
-The Presentation Layer follows an orchestration model.
-
-Presentation components coordinate interactions between HTTP clients and the
-Application Layer while delegating all business decisions to Services and all
-read operations to Selectors.
-
-Presentation components should remain thin, deterministic, and easily testable.
-
-Whenever business behavior is required, the Presentation Layer delegates that
-behavior instead of implementing it.
+- Clearly separate presentation concerns from business and persistence logic.
+- Ensure a consistent request lifecycle across all presentation components.
+- Prevent business rules from leaking into the Presentation Layer.
+- Keep presentation components thin, predictable, and easy to maintain.
+- Establish a common architecture for both HTML and REST interfaces.
 
 ---
 
-## 2. Architectural Principles
+# 2. Architectural Principles
 
-The Presentation Layer follows the principles below. Every presentation
-component (Django Views, Forms, DRF ViewSets, and Serializers) should be
-designed in accordance with these rules.
+The Presentation Layer shall adhere to the following architectural principles.
 
----
+## 2.1 Separation of Concerns
 
-### Principle 1 — Separation of Concerns
+The Presentation Layer is responsible solely for request orchestration and
+response generation.
 
-The Presentation Layer owns HTTP concerns only.
+It translates transport-specific data into application-specific inputs,
+delegates all business operations to the Application Layer, and prepares
+responses for the client.
 
-Business logic belongs to Services.
-
-Data retrieval belongs to Selectors.
-
-Persistence belongs to the ORM.
-
-Presentation components should coordinate these layers without replacing them.
+Business rules, domain invariants, and persistence logic must never be
+implemented within the Presentation Layer.
 
 ---
 
-### Principle 2 — Orchestration over Implementation
+## 2.2 Thin Presentation Components
 
-Presentation components orchestrate application operations but do not implement
-them.
+Presentation components shall remain lightweight.
 
-Their responsibility is to:
+They should coordinate the request lifecycle rather than implement business
+logic.
 
-- receive a request,
-- validate transport-level input,
-- invoke the appropriate application component,
-- produce an HTTP response.
+Their responsibilities include:
 
-Business decisions must always be delegated.
-
----
-
-### Principle 3 — Read and Write Separation
-
-Read and write operations have different responsibilities.
-
-Read operations should obtain data through Selectors.
-
-Write operations should delegate mutations to Services.
-
-Presentation components must not bypass these abstractions.
+- Receiving and validating client input.
+- Constructing Context and QueryFilter objects.
+- Delegating read operations to Selectors.
+- Delegating write operations to Services.
+- Preparing the appropriate response.
 
 ---
 
-### Principle 4 — Transport Independence
+## 2.3 Read / Write Separation
 
-Business behavior must not depend on how a request reaches the application.
+The Presentation Layer shall preserve the architectural separation between
+read and write operations.
 
-Whether an operation originates from:
+- Read operations shall be delegated exclusively to Selectors.
+- Create, Update, and Delete operations shall be delegated exclusively to
+  Services.
 
-- a Django View,
-- a DRF endpoint,
-- a management command,
-- a Celery task,
-- or another entry point,
-
-the same business rules should be enforced by the Service Layer.
+Presentation components must never perform ORM operations directly.
 
 ---
 
-### Principle 5 — Thin Presentation Components
+## 2.4 Transport Independence
 
-Presentation components should remain small and deterministic.
+Business operations shall remain independent of the transport mechanism.
 
-They should primarily perform:
+The Presentation Layer is responsible for translating HTTP-specific concerns
+(such as URL parameters, query parameters, request bodies, uploaded files, and
+authentication information) into application-specific objects before invoking
+Selectors or Services.
 
-- request parsing,
-- authentication,
-- authorization,
-- context construction,
-- application orchestration,
-- response generation.
-
-Complex business behavior should never accumulate inside Views,
-Forms, ViewSets, or Serializers.
+Neither Services nor Selectors shall depend on HTTP-specific concepts.
 
 ---
 
-### Principle 6 — Explicit Dependencies
+## 2.5 Explicit Request Lifecycle
 
-Presentation components should interact with the application through explicit,
-well-defined abstractions.
+Every request shall follow a predictable lifecycle.
 
-Whenever possible:
+Although the concrete implementation may differ between Django Views and DRF
+ViewSets, each request should consistently follow the same architectural flow:
 
-- read operations should depend on Selectors,
-- write operations should depend on Services,
-- shared context should be represented by Context objects.
-
-Direct interaction with ORM models should be limited to presentation-specific
-framework requirements.
-
-Whenever presentation components need application data, they should obtain it
-through Selectors rather than direct ORM queries.
-
-Whenever presentation components need to modify application state, they should
-delegate the operation to Services.
+- Receive the request.
+- Authenticate and authorize the user.
+- Translate request data into application-specific inputs.
+- Delegate the requested operation.
+- Produce an appropriate response.
 
 ---
 
-## 3. Layer Responsibilities
+## 2.6 Framework Independence
 
-The Presentation Layer is responsible for coordinating interactions between HTTP
-clients and the Application Layer.
+Architectural responsibilities shall not depend on a specific presentation
+framework.
 
-Its responsibilities are intentionally limited to presentation concerns.
-
----
-
-### 3.1 Request Processing
-
-The Presentation Layer is responsible for:
-
-- Receiving HTTP requests.
-- Parsing request parameters.
-- Parsing submitted form or JSON data.
-- Validating transport-level input through Forms or Serializers.
-- Determining which application operation has been requested.
+Whether implemented using Django Class-Based Views, Django REST Framework
+ViewSets, or another presentation technology, the same architectural
+responsibilities and boundaries shall apply.
 
 ---
 
-### 3.2 Authentication and Authorization
+# 3. Layer Responsibilities
 
-The Presentation Layer is responsible for enforcing access to application
-operations.
+The Presentation Layer coordinates application use-cases by translating client
+requests into application-specific inputs and generating responses.
 
-This includes:
+It does not implement business rules or access the persistence layer directly.
 
-- Authentication (identifying the current user).
-- Authorization (ensuring the user has permission to perform the requested
-  operation).
+Its responsibilities are divided into the following areas.
 
-Authorization should determine **whether** an operation may be attempted.
+## 3.1 Request Handling
 
-Business rules determining **whether an operation is valid** remain the
-responsibility of the Service Layer.
+The Presentation Layer is responsible for receiving client requests and
+extracting all transport-specific information required to execute the requested
+operation.
 
----
+This includes, but is not limited to:
 
-### 3.3 Context Construction
-
-The Presentation Layer is responsible for constructing the Context objects
-required by the Application Layer.
-
-Context objects should be constructed from request routing information and other
-resource identifiers required by the requested application operation.
-
-Context objects describe the execution scope using identifiers (for example,
-workspace IDs, company IDs, or resource IDs). They should not contain ORM model
-instances or authenticated user objects.
-
-The authenticated user is supplied separately to the Application Layer.
-
-The Presentation Layer should not construct business entities directly.
+- URL parameters.
+- Query parameters.
+- Request bodies.
+- Uploaded files.
+- Authenticated user information.
 
 ---
 
-### 3.4 Read Operations
+## 3.2 Input Translation
 
-All application read operations should be delegated to Selectors.
-
-Presentation components may:
-
-- invoke Selectors,
-- apply presentation-specific filtering,
-- paginate results,
-- prepare data for rendering.
-
-Business filtering and reusable query logic should remain inside Selectors.
-
----
-
-### 3.5 Write Operations
-
-All application write operations should be delegated to Services.
-
-The Presentation Layer is responsible for:
-
-- obtaining validated input,
-- constructing the appropriate Context,
-- invoking the correct Service method,
-- handling the Service result.
-
-The Presentation Layer must not perform write operations directly.
-
----
-
-### 3.6 Response Generation
-
-The Presentation Layer is responsible for generating appropriate HTTP responses.
+The Presentation Layer shall translate transport-specific data into
+application-specific inputs before invoking the Application Layer.
 
 Examples include:
 
-- rendering templates,
-- returning JSON responses,
-- redirecting users,
-- selecting HTTP status codes,
-- displaying success and error messages,
-- supporting pagination where appropriate.
+- Constructing Context objects.
+- Constructing QueryFilter objects.
+- Producing validated input through Forms or Serializers.
+
+The Application Layer shall never be responsible for interpreting HTTP
+requests.
 
 ---
 
-### 3.7 Exception Translation
+## 3.3 Input Validation
 
-The Presentation Layer is responsible for translating application exceptions
-into appropriate HTTP responses.
+The Presentation Layer is responsible for validating the structure and format
+of client input.
 
 Examples include:
 
-- rendering validation errors,
-- returning HTTP 400 responses,
-- returning HTTP 403 responses,
-- returning HTTP 404 responses,
-- displaying user-friendly error messages.
+- Required fields.
+- Field types.
+- Length constraints.
+- File validation.
+- Presentation-specific validation.
 
-Application exceptions should not leak directly to end users.
+Business validation and domain invariants shall be delegated to Services.
 
 ---
 
-### 3.8 Presentation State
+## 3.4 Request Orchestration
 
-The Presentation Layer may manage temporary presentation-specific state.
+The Presentation Layer coordinates the request lifecycle.
+
+It determines which application component should perform the requested
+operation and delegates accordingly.
+
+Specifically:
+
+- Read operations shall be delegated to Selectors.
+- Create operations shall be delegated to Services.
+- Update operations shall be delegated to Services.
+- Delete operations shall be delegated to Services.
+
+Presentation components shall not implement business logic themselves.
+
+---
+
+## 3.5 Response Generation
+
+The Presentation Layer is responsible for generating an appropriate response
+for the client.
+
+Depending on the interface, this may include:
+
+- Rendering HTML templates.
+- Returning JSON responses.
+- Returning redirects.
+- Returning file responses.
+- Returning appropriate HTTP status codes.
+
+---
+
+## 3.6 Error Translation
+
+The Presentation Layer is responsible for converting application exceptions
+into appropriate client-facing responses.
 
 Examples include:
 
-- pagination state,
-- sorting preferences,
-- search queries,
-- success messages,
-- redirect destinations.
+- Displaying validation errors.
+- Returning HTTP error responses.
+- Rendering error pages.
+- Redirecting with user-visible feedback.
 
-Presentation state must not become business state.
+Application exceptions shall not leak directly to the client.
 
 ---
 
-## 4. Layer Boundaries
+## 3.7 Non-Responsibilities
 
-The Presentation Layer has strict boundaries that define what responsibilities
-belong outside this layer.
+The Presentation Layer shall not:
 
-These boundaries exist to prevent business logic from leaking into HTTP-facing
-components and to preserve separation between presentation concerns and
-application behavior.
+- Implement business rules.
+- Enforce domain invariants.
+- Perform ownership validation.
+- Execute ORM queries directly.
+- Persist model instances.
+- Coordinate database transactions.
+- Duplicate logic already implemented by Selectors or Services.
 
-Presentation components include:
+---
+
+# 4. Layer Boundaries
+
+The Presentation Layer has strict boundaries that define which responsibilities
+belong inside and outside this layer.
+
+These boundaries prevent business behavior, persistence logic, and application
+rules from leaking into HTTP-facing components.
+
+The rules below apply to all Presentation Layer components, including:
 
 - Django Views.
 - Django Class-Based Views.
@@ -335,9 +272,8 @@ Presentation components include:
 - DRF ViewSets.
 - Forms.
 - Serializers.
-- Related presentation helpers.
-
-The rules below apply to all Presentation Layer components.
+- Presentation mixins.
+- Presentation helpers.
 
 ---
 
@@ -347,15 +283,13 @@ The Presentation Layer MUST NOT implement business logic.
 
 Presentation components must not:
 
-- Calculate domain-specific values.
-- Decide whether a business operation is allowed.
 - Apply business rules.
 - Enforce domain invariants.
-- Determine relationships between domain entities.
-- Implement workflows spanning multiple models.
-- Duplicate logic already contained inside Services.
+- Decide whether operations are allowed.
+- Implement workflows involving domain entities.
+- Duplicate logic already implemented by Services.
 
-Business decisions belong exclusively to the Application Layer.
+Business decisions belong to the Application Layer.
 
 Example of prohibited behavior:
 
@@ -364,34 +298,25 @@ if company.owner == request.user:
     company.status = "approved"
 ```
 
-The View should delegate this decision to the appropriate Service instead.
+The View should delegate this decision to the appropriate Service.
 
 ---
 
 ## 4.2 Persistence Boundary
 
-The Presentation Layer MUST NOT perform persistence operations directly.
+The Presentation Layer MUST NOT modify persistent state directly.
 
 Presentation components must not:
 
-- Call `Model.objects.create()`.
-- Call `Model.objects.update()`.
-- Call `Model.objects.delete()`.
-- Call `save()` on domain models.
-- Call `delete()` on domain models.
-- Modify database state directly.
+- Create model instances directly.
+- Update model instances directly.
+- Delete model instances directly.
+- Call model persistence methods such as `save()` or `delete()`.
+- Perform database writes directly.
 
-All write operations must flow through Services.
+All write operations must be delegated to Services.
 
-Example of prohibited behavior:
-
-```python
-company = Company.objects.create(
-    name=form.cleaned_data["name"]
-)
-```
-
-The correct flow is:
+Correct flow:
 
 ```text
 View
@@ -405,19 +330,31 @@ Service
 ORM
 ```
 
-The View coordinates the operation but does not own persistence.
+The Presentation Layer coordinates the operation but does not own persistence.
 
 ---
 
-## 4.3 ORM Query Boundary
+## 4.3 Data Retrieval Boundary
 
-Presentation components should obtain application data through Selectors.
+Application data retrieval must be delegated to Selectors.
 
-Direct ORM queries should be avoided whenever they would duplicate application
-retrieval logic or ownership enforcement.
+Presentation components must not:
 
-Presentation-specific data access, such as configuring form field querysets,
-should also use Selectors whenever application data is involved.
+- Execute ORM queries directly.
+- Duplicate ownership filtering.
+- Duplicate reusable retrieval logic.
+- Reimplement Selector behavior.
+
+Selectors are responsible for application-level retrieval rules.
+
+Presentation components may use already retrieved objects for response
+generation or presentation purposes.
+
+Examples where Selectors should be used:
+
+- Loading objects for detail, update, and delete operations.
+- Populating form field querysets.
+- Providing API lookup data.
 
 Example:
 
@@ -427,34 +364,28 @@ form.fields["documents"].queryset = DocumentSelector.list(
 )
 ```
 
-
-when the filtering represents application behavior.
-
-Reusable retrieval logic belongs to Selectors.
-
 ---
 
 ## 4.4 Service Boundary
 
-The Presentation Layer MUST interact with Services through their public
-contract only.
+The Presentation Layer MUST interact with Services only through their public
+contract.
+
+Presentation components are responsible for:
+
+1. Preparing validated input.
+2. Constructing required Context objects.
+3. Calling the appropriate Service operation.
+4. Translating the result into a response.
 
 Presentation components must not:
 
 - Access Service internal implementation details.
-- Bypass Service methods.
 - Reproduce Service validation.
-- Modify Service behavior from the presentation layer.
-- Call lower-level persistence mechanisms instead of Services.
+- Bypass Services for write operations.
+- Modify application behavior from the presentation layer.
 
-The Presentation Layer responsibilities are limited to:
-
-1. Preparing validated input.
-2. Constructing required Context objects.
-3. Invoking the appropriate Service operation.
-4. Translating the result into an HTTP response.
-
-The Service Layer owns application behavior.
+Services own application behavior and write workflows.
 
 ---
 
@@ -465,9 +396,9 @@ The Presentation Layer MUST use Selectors for application read operations.
 Presentation components must not:
 
 - Replace Selector logic with direct ORM queries.
-- Duplicate filtering rules.
-- Implement reusable data retrieval logic.
-- Encode application-level query decisions.
+- Encode ownership enforcement rules.
+- Implement reusable filtering behavior.
+- Implement application-level retrieval decisions.
 
 Selectors answer:
 
@@ -475,50 +406,35 @@ Selectors answer:
 
 Presentation components answer:
 
-> "How should the retrieved data be presented?"
-
-Selectors may also be used to restrict the set of resources presented to users.
-
-Examples include:
-
-- ModelChoiceField querysets.
-- Form selection lists.
-- API lookup data.
-
-Presentation components should delegate these retrieval operations to Selectors
-instead of constructing ORM queries directly.
+> "How should retrieved data be presented?"
 
 ---
 
 ## 4.6 Context Boundary
 
-The Presentation Layer MUST construct Context objects but MUST NOT define
-business behavior inside them.
-
-Views should construct Context objects immediately before Service invocation. 
-Context objects should not be cached on the View instance or mutated after creation.
+The Presentation Layer is responsible for constructing Context objects
+required by the Application Layer.
 
 Presentation components may:
 
-- Collect resource identifiers from the request.
-- Collect route parameters.
+- Extract identifiers from URLs.
+- Extract request-related information.
 - Collect request metadata.
-- Create Context instances.
+- Construct Context instances before Service invocation.
+
+Context objects represent execution scope only.
 
 Presentation components must not:
 
-- Add business decisions into Context creation.
+- Add business rules into Context creation.
 - Modify Context behavior.
 - Use Context objects as a replacement for Services.
-
-Context objects represent execution scope, not business rules.
 
 ---
 
 ## 4.7 Validation Boundary
 
-The Presentation Layer MUST NOT replace Service validation with Forms or
-Serializers.
+Validation responsibilities must remain separated.
 
 Forms and Serializers are responsible for:
 
@@ -538,13 +454,13 @@ Services are responsible for:
 
 Example:
 
-A Serializer may validate:
+A Form or Serializer may validate:
 
 ```python
 email = serializers.EmailField()
 ```
 
-A Service must validate:
+A Service validates:
 
 ```text
 This email belongs to the current workspace.
@@ -556,28 +472,36 @@ Transport validation and business validation are separate responsibilities.
 
 ## 4.8 Exception Boundary
 
-The Presentation Layer MUST NOT hide or reinterpret application failures.
+The Presentation Layer is responsible for translating application exceptions
+into client-facing responses.
 
-Presentation components must not:
+Expected application validation failures may be converted into presentation
+feedback.
 
-- Catch exceptions only to bypass application rules.
-- Convert business failures into successful responses.
-- Duplicate exception handling logic from Services.
-- Silently ignore application errors.
+Examples:
 
-The Presentation Layer may translate application exceptions into transport
-responses.
-
-Example:
+```text
+ValidationError
+        |
+        v
+Form validation error
+```
 
 ```text
 BusinessRuleViolationError
         |
         v
-HTTP 400 Response
+User-visible validation message
 ```
 
-The meaning of the exception remains owned by the Application Layer.
+The Presentation Layer must not:
+
+- Hide unexpected application failures.
+- Convert failures into successful responses.
+- Silently ignore exceptions.
+
+Unexpected application and infrastructure failures should propagate to the
+appropriate exception handler.
 
 ---
 
@@ -607,13 +531,13 @@ The Presentation Layer may depend on:
 
 The Application Layer must not depend on:
 
-- Django Views.
+- Views.
 - Templates.
 - HTTP requests.
 - DRF responses.
 - Presentation-specific concepts.
 
-The Application Layer must remain usable independently of HTTP delivery.
+The Application Layer must remain independent from HTTP delivery.
 
 ---
 
@@ -622,52 +546,51 @@ The Application Layer must remain usable independently of HTTP delivery.
 The Presentation Layer MUST NOT become a second location for application
 behavior.
 
-If the same logic appears in multiple:
+Repeated logic across:
 
 - Views.
 - Forms.
 - Serializers.
 - ViewSets.
 
-that logic should be evaluated for extraction into:
+should be evaluated for extraction into:
 
-- A Service.
-- A Selector.
-- A Context object.
-- Another application-level abstraction.
+- Services.
+- Selectors.
+- Context objects.
+- Other application-level abstractions.
 
-Repeated presentation logic usually indicates misplaced responsibility.
+Repeated presentation logic often indicates misplaced responsibility.
 
 ---
 
 ## 4.11 Review Rule
 
-During code review, any Presentation Layer code that appears to make a business
-decision should be considered a boundary violation until proven otherwise.
+During code review, Presentation Layer code that makes business decisions
+should be considered a boundary violation until proven otherwise.
 
 The default assumptions are:
 
 - Views coordinate.
 - Forms and Serializers validate transport input.
 - Selectors retrieve data.
-- Services implement behavior.
+- Services implement application behavior.
 - ORM persists data.
 
 A Presentation Layer component should explain:
 
-"How does this HTTP request become an application operation?"
+> "How does this request become an application operation?"
 
 It should not explain:
 
-"How does the business operation work?"
+> "How does the business operation work?"
 
 ---
 
-## 5. Request Lifecycle
+# 5. Request Lifecycle
 
-The Presentation Layer follows a defined request lifecycle for transforming an
-incoming HTTP request into an application operation and returning an HTTP
-response.
+The Presentation Layer follows a defined lifecycle for transforming an incoming
+request into an application operation and returning an appropriate response.
 
 The lifecycle applies to all presentation entry points, including:
 
@@ -676,14 +599,14 @@ The lifecycle applies to all presentation entry points, including:
 - DRF Views.
 - DRF ViewSets.
 
-The exact implementation may differ between HTML and API endpoints, but the
+The concrete implementation may differ between HTML and API interfaces, but the
 responsibility boundaries remain the same.
 
 ---
 
 ## 5.1 Request Lifecycle Overview
 
-A request should flow through the following stages:
+A request should follow this lifecycle:
 
 ```text
 HTTP Request
@@ -692,7 +615,7 @@ HTTP Request
 Authentication
       |
       v
-Authorization
+Endpoint Authorization
       |
       v
 Input Parsing
@@ -701,7 +624,7 @@ Input Parsing
 Transport Validation
       |
       v
-Context Construction
+Context / Filter Construction
       |
       v
 Application Layer Invocation
@@ -716,89 +639,88 @@ Exception Translation
 HTTP Response
 ```
 
-Each stage has a defined responsibility and should not replace responsibilities
+Each stage has a specific responsibility and must not replace responsibilities
 belonging to another layer.
 
 ---
 
 ## 5.2 Stage 1 — Request Reception
 
-The Presentation Layer receives the incoming HTTP request.
+The Presentation Layer receives the incoming request and extracts the
+transport-specific information required for the requested operation.
 
-Responsibilities include:
+This includes:
 
-- Identifying the requested operation.
-- Reading route parameters.
-- Reading query parameters.
-- Reading submitted form data.
-- Reading request body data.
-- Accessing authenticated user information.
+- URL parameters.
+- Query parameters.
+- Form data.
+- Request body data.
+- Uploaded files.
+- Authenticated user information.
 
-The Presentation Layer should only interpret request data required to execute
-the requested operation.
+The Presentation Layer should only interpret information required to execute the
+requested application operation.
 
-It should not make business decisions at this stage.
+It must not make business decisions during request processing.
 
 ---
 
 ## 5.3 Stage 2 — Authentication
 
-The Presentation Layer is responsible for identifying the requester.
+Authentication is responsible for identifying the requester.
 
-Authentication determines:
-
-> "Who is making this request?"
+The Presentation Layer consumes authentication information provided by the
+framework.
 
 Examples include:
 
 - Session authentication.
 - Token authentication.
 - JWT authentication.
-- Other configured authentication mechanisms.
 
-The authenticated user should be supplied directly to Selectors and Services as
-a separate argument.
+The authenticated user should be passed explicitly to Selectors and Services.
 
 Authentication information should not be embedded inside Context objects.
 
-Authentication does not determine whether the requested operation is valid.
+Authentication determines:
+
+> "Who is making this request?"
+
+It does not determine whether the requested operation is valid.
 
 ---
 
-## 5.4 Stage 3 — Authorization
+## 5.4 Stage 3 — Endpoint Authorization
 
-The Presentation Layer is responsible for determining whether the requester is
-allowed to attempt the operation.
+The Presentation Layer may enforce endpoint-level authorization.
 
-Authorization determines:
+Examples include:
 
-> "Is this user allowed to access this endpoint or action?"
+- Requiring authentication.
+- Checking framework permissions.
+- Restricting access to specific endpoints.
 
-Examples:
+Endpoint authorization determines:
 
-- Is the user authenticated?
-- Does the user have the required permission?
-- Is the endpoint available to this user type?
+> "Can this user access this endpoint?"
 
-Authorization should happen before invoking application operations.
+It does not replace application-level authorization.
 
-Authorization must not replace Service-level business validation.
+Application authorization belongs to the Application Layer.
 
 Example:
 
-Authorization:
+Presentation authorization:
 
 ```text
-User may edit companies.
+User may access company editing endpoints.
 ```
 
-Service validation:
+Application authorization:
 
 ```text
-This user owns this specific company.
+User owns this specific company.
 ```
-
-These are separate responsibilities.
 
 ---
 
@@ -808,138 +730,135 @@ The Presentation Layer parses incoming request data.
 
 Examples:
 
-HTML requests:
+HTML interfaces:
 
 - Form data.
 - URL parameters.
 - Query parameters.
 
-API requests:
+API interfaces:
 
 - JSON payloads.
 - Query parameters.
 - Path parameters.
 
-The output of this stage should be structured input suitable for validation.
+Parsing converts transport-specific input into structured data suitable for
+validation.
 
-Parsing concerns belong to the Presentation Layer.
-
-Business interpretation does not.
+Parsing must not contain business interpretation.
 
 ---
 
 ## 5.6 Stage 5 — Transport Validation
 
-The Presentation Layer validates whether the incoming data is structurally
-acceptable.
+Forms and Serializers validate transport-level requirements.
 
-Validation responsibilities include:
+Responsibilities include:
 
 - Required fields.
 - Data types.
 - Formatting.
-- Field-level constraints.
-- Serialization requirements.
+- Field constraints.
+- Serialization rules.
 
-Examples:
+Example:
 
 Valid:
 
 ```text
-Email field must contain a valid email format.
+Email must have a valid email format.
 ```
 
 Not valid in this layer:
 
 ```text
-Email must belong to the same company as the job application.
+Email must belong to the same company as the application.
 ```
 
-The second rule is a business rule and belongs to the Service Layer.
+Business validation belongs to Services.
 
 ---
 
-## 5.7 Stage 6 — Context Construction
+## 5.7 Stage 6 — Context and Filter Construction
 
 Before invoking the Application Layer, the Presentation Layer constructs the
-required Context object.
+required application inputs.
 
-Context objects should contain only the identifiers required to describe the
-execution scope of the application operation.
+For write operations this includes:
 
-Examples include:
+- Context objects.
+- Validated input data.
 
-- workspace_id
-- company_id
-- job_position_id
-- application_id
+For read operations this includes:
 
-Context objects should not contain ORM model instances or authenticated users.
+- QueryFilter objects.
+- Resource identifiers.
 
-The Presentation Layer is responsible for assembling the Context.
+Context objects describe execution scope.
 
-The Application Layer is responsible for interpreting the Context.
+Examples:
+
+- workspace_id.
+- company_id.
+- job_position_id.
+- application_id.
+
+The Presentation Layer constructs these objects but does not place business
+logic inside them.
 
 ---
 
 ## 5.8 Stage 7 — Application Layer Invocation
 
-After authentication, authorization, validation, and context construction, the
-Presentation Layer invokes the Application Layer.
+After input preparation, the Presentation Layer delegates the operation to the
+appropriate Application Layer component.
 
-The invocation rules are:
-
-Read operation:
+Read operations:
 
 ```text
 View
-    |
-    | validated_data
-    | context
-    | user
-    v
-Service
-    |
-    |
-    |
-    v
+ |
+ | user
+ | QueryFilter
+ v
+Selector
+ |
+ v
 Result
 ```
 
-Write operation:
+Write operations:
 
 ```text
 View
-    |
-    | validated_data
-    | context
-    | user
-    v
+ |
+ | user
+ | Context
+ | validated_data
+ v
 Service
-    |
-    |
-    |
-    v
+ |
+ v
 Result
 ```
 
-The Presentation Layer should not perform additional business processing after
-the operation has been delegated.
+The Presentation Layer must not perform additional business processing after
+delegation.
 
 ---
 
 ## 5.9 Stage 8 — Result Handling
 
-The Presentation Layer transforms application results into HTTP responses.
+The Presentation Layer converts application results into external responses.
 
-For HTML interfaces, this may include:
+For HTML interfaces this may include:
 
 - Selecting templates.
 - Preparing template context.
 - Redirecting after successful operations.
-- Displaying messages.
+- Displaying user feedback.
 
-For APIs, this may include:
+For APIs this may include:
 
 - Serializing response data.
 - Selecting HTTP status codes.
@@ -948,13 +867,14 @@ For APIs, this may include:
 
 The Presentation Layer decides how results are represented externally.
 
-It does not decide what the results mean.
+It does not determine their business meaning.
 
 ---
 
 ## 5.10 Stage 9 — Exception Translation
 
-Application exceptions should be translated into appropriate HTTP responses.
+Application exceptions must be translated into appropriate delivery-specific
+responses.
 
 The general flow is:
 
@@ -974,42 +894,46 @@ Examples:
 ValidationError
         |
         v
-HTTP 400 Bad Request
-
-
-PermissionError
-        |
-        v
-HTTP 403 Forbidden
-
-
-ObjectNotFoundError
-        |
-        v
-HTTP 404 Not Found
+Form validation feedback
 ```
 
-The Presentation Layer should preserve the meaning of application exceptions while
-adapting them to the delivery mechanism.
+```text
+ResourceNotFoundError
+        |
+        v
+HTTP 404
+```
 
-Exception translation should preferably be centralized through reusable
-presentation components such as:
+```text
+AccessDeniedError
+        |
+        v
+HTTP 403
+```
+
+```text
+DomainInvariantViolationError
+        |
+        v
+HTTP 400
+```
+
+Exception translation should be centralized through reusable presentation
+components such as:
 
 - View exception handler mixins.
 - DRF exception handlers.
 - Middleware.
 
-Concrete Views and ViewSets should avoid duplicating identical translation
-logic.
+Views and ViewSets should avoid duplicating exception translation logic.
 
 ---
 
 ## 5.11 Stage 10 — Response Delivery
 
-The final responsibility of the Presentation Layer is returning the HTTP
-response.
+The Presentation Layer returns the final response.
 
-The response may contain:
+Responses may include:
 
 - HTML.
 - JSON.
@@ -1018,73 +942,75 @@ The response may contain:
 - Headers.
 - Cookies.
 
-After response generation, the Presentation Layer lifecycle is complete.
+After response delivery, the Presentation Layer lifecycle is complete.
 
 ---
 
 ## 5.12 Lifecycle Invariants
 
-The following invariants must always hold:
-
-### Invariant 1 — Business Logic Is Never Executed During Request Handling
-
-Request processing may prepare and delegate operations, but business behavior
-must execute inside the Application Layer.
+The following invariants must always hold.
 
 ---
 
-### Invariant 2 — All Writes Pass Through Services
+### Invariant 1 — Business Behavior Executes Outside the Presentation Layer
 
-No request lifecycle may directly modify persistent application state.
-
----
-
-### Invariant 3 — All Reads Pass Through Selectors
-
-No request lifecycle should contain reusable data retrieval logic.
+Presentation components coordinate operations but never implement business
+behavior.
 
 ---
 
-### Invariant 4 — HTTP Concerns End at the Presentation Layer
+### Invariant 2 — Writes Are Delegated to Services
+
+Persistent state changes must always flow through Services.
+
+---
+
+### Invariant 3 — Reads Are Delegated to Selectors
+
+Reusable retrieval logic and ownership-aware querying must remain inside
+Selectors.
+
+---
+
+### Invariant 4 — Application Code Remains Independent From HTTP
 
 The Application Layer must not know:
 
-- Which HTTP framework is being used.
+- Which HTTP framework is used.
 - Which endpoint triggered the operation.
 - Whether the caller is a browser or API client.
 
 ---
 
-### Invariant 5 — The Same Operation Has the Same Business Behavior
+### Invariant 5 — Presentation Components Share Application Behavior
 
-Whether an operation is triggered through:
+The same operation must have identical business behavior regardless of whether
+it is triggered through:
 
 - Django Views.
 - DRF ViewSets.
-- Management commands.
 - Background workers.
-
-the Application Layer remains the source of truth for business behavior.
+- Other application entry points.
 
 ---
 
-## 6. Forms Contract
+# 6. Forms Contract
 
 Django Forms belong to the Presentation Layer and are responsible for
-processing and validating user input before invoking the Application Layer.
+processing external input before invoking the Application Layer.
 
-Forms provide a structured boundary between external input and application
-operations.
+Forms create a boundary between transport data and application operations.
 
-Forms are responsible for answering:
+Forms answer:
 
-> "Is this input correctly formatted and suitable for submission?"
+> "Is this input structurally valid and suitable for submission?"
 
-Forms are not responsible for answering:
+Forms do not answer:
 
 > "Is this operation allowed according to business rules?"
 
-Business behavior remains the responsibility of Services.
+Business validation and application behavior remain the responsibility of
+Services.
 
 ---
 
@@ -1098,9 +1024,9 @@ Forms are responsible for:
 - Validating input structure.
 - Validating field formats.
 - Providing user-facing validation errors.
-- Preparing validated data for the Application Layer.
+- Producing cleaned input data for the Application Layer.
 
-Examples of form responsibilities:
+Examples of Form responsibilities:
 
 - Required fields.
 - Maximum length validation.
@@ -1117,22 +1043,23 @@ Examples of form responsibilities:
 Forms MUST NOT:
 
 - Implement business rules.
-- Perform domain operations.
+- Execute application workflows.
 - Modify persistent state directly.
-- Call model `save()` for application entities.
+- Call `save()` to perform domain operations.
 - Replace Service validation.
 - Enforce ownership rules.
 - Enforce workspace boundaries.
-- Perform cross-model business validation.
+- Perform business-level cross-model validation.
 
-Forms should prepare data for the Application Layer, not execute application
-behavior.
+Forms prepare input.
+
+Services execute application behavior.
 
 ---
 
 ## 6.3 Form Validation Boundary
 
-Form validation should only validate presentation-level requirements.
+Form validation must remain limited to presentation-level concerns.
 
 Allowed validation:
 
@@ -1153,20 +1080,22 @@ Not allowed:
 
 ```python
 def clean_name(self):
-    if Company.objects.filter(name=self.cleaned_data["name"]).exists():
+    if Company.objects.filter(
+        name=self.cleaned_data["name"]
+    ).exists():
         raise ValidationError(
             "Company already exists."
         )
 ```
 
-when uniqueness represents an application rule.
+when the rule represents application behavior.
 
-The correct responsibility is:
+The correct flow is:
 
 ```text
 Form
  |
- | validated input
+ | cleaned_data
  v
 Service
  |
@@ -1179,10 +1108,10 @@ Application result
 
 ## 6.4 Form `clean()` Contract
 
-The `clean()` method may be used for validation involving multiple submitted
-fields when the validation is purely related to input structure.
+The `clean()` method may validate relationships between submitted fields when
+the validation only concerns the submitted data itself.
 
-Examples of acceptable usage:
+Example:
 
 ```python
 def clean(self):
@@ -1199,50 +1128,48 @@ def clean(self):
     return cleaned_data
 ```
 
-This is acceptable because it validates the submitted data itself.
+This is acceptable because it validates input consistency.
 
 The `clean()` method must not:
 
 - Query application state.
-- Check permissions.
-- Verify ownership.
-- Decide whether an operation is allowed.
-- Execute workflows.
+- Check ownership.
+- Verify permissions.
+- Determine whether an operation is allowed.
+- Execute application workflows.
+- Replace Service validation.
 
 ---
 
 ## 6.5 Form Data Retrieval Boundary
 
-Forms should obtain application data through Selectors whenever application
-retrieval logic is required.
+Forms may require application data for presentation purposes.
 
-Forms should avoid direct ORM queries that duplicate Selector behavior or
-application access rules.
+When application retrieval logic is required, Forms should obtain that data
+through Selectors.
 
 Forms must not:
 
-- Query models to enforce business rules.
-- Retrieve application data through direct ORM queries when a Selector is
-  responsible for that retrieval.
-- Duplicate Selector logic.
-- Determine application state.
+- Duplicate Selector filtering logic.
+- Perform ownership-aware queries directly.
+- Query application state to enforce business rules.
+- Reimplement application retrieval behavior.
 
-Forms may populate dynamic field choices using Selectors.
+Valid examples include:
 
-Examples include:
-
-- ModelChoiceField querysets.
-- Available document selections.
-- Available company emails.
-- Available employment types.
+- Populating `ModelChoiceField` querysets.
+- Limiting available user selections.
+- Loading selectable related resources.
 
 Example:
 
 ```python
 form.fields["documents"].queryset = DocumentSelector.list(
-    user=request.user,
+    user=request.user
 )
 ```
+
+The Selector remains responsible for application-level retrieval rules.
 
 ---
 
@@ -1250,19 +1177,17 @@ form.fields["documents"].queryset = DocumentSelector.list(
 
 Forms MUST NOT directly persist application entities.
 
-The following patterns are prohibited:
+The following patterns are prohibited for domain operations:
 
 ```python
 form.save()
 ```
 
-when it creates or updates domain objects directly.
-
 ```python
 instance.save()
 ```
 
-inside form logic.
+inside Form logic.
 
 Application state changes must follow:
 
@@ -1305,11 +1230,11 @@ HTTP Response
 
 The Form should not know:
 
-- Which Service method will be called.
+- Which Service implementation performs the operation.
 - How persistence works.
-- Which business rules are applied.
+- Which business rules are executed.
 
-The View coordinates the interaction.
+The View coordinates the interaction between the Form and Service.
 
 ---
 
@@ -1319,17 +1244,16 @@ Forms may receive presentation-related initialization data.
 
 Examples:
 
-- Presentation-specific initialization data.
+- Initial values.
 - Available choices.
 - UI configuration.
-- Initial values.
-- Field visibility settings.
+- Field visibility configuration.
+- Presentation-specific options.
 
-Forms must not receive application objects in order to perform business logic.
+Forms may receive model instances or application objects when required for
+presentation purposes.
 
 Example:
-
-Allowed:
 
 ```python
 CompanyForm(
@@ -1339,6 +1263,8 @@ CompanyForm(
 )
 ```
 
+However, Forms must not use provided objects to implement business logic.
+
 Not allowed:
 
 ```python
@@ -1347,7 +1273,7 @@ CompanyForm(
 )
 ```
 
-if the purpose is to make business decisions inside the form.
+if the purpose is to decide whether the operation is allowed.
 
 ---
 
@@ -1355,14 +1281,15 @@ if the purpose is to make business decisions inside the form.
 
 Forms may dynamically modify fields when the behavior is presentation-related.
 
-Dynamic field querysets should preferably be populated through Selectors.
-
 Examples:
 
-- Hiding fields.
-- Showing fields conditionally.
-- Limiting choices for user experience.
-- Adjusting labels or help text.
+- Removing fields from the UI.
+- Adjusting labels.
+- Adjusting help text.
+- Configuring available choices.
+- Limiting selectable options.
+
+Dynamic field behavior may improve user experience.
 
 Example:
 
@@ -1371,9 +1298,7 @@ if not user.is_admin:
     self.fields.pop("internal_notes")
 ```
 
-However, dynamic fields must not be used as a replacement for authorization.
-
-Example:
+However, dynamic fields must not replace authorization.
 
 Incorrect:
 
@@ -1382,44 +1307,61 @@ if user.is_admin:
     allow_company_deletion = True
 ```
 
-Authorization must still be enforced by the appropriate application layer.
+Authorization and business permissions remain the responsibility of the
+appropriate application layer.
 
 ---
 
 ## 6.10 Form Error Handling Contract
 
-Forms should provide user-friendly validation errors.
+Forms are responsible for presenting input validation errors.
 
 Forms should:
 
-- Explain invalid input.
-- Associate errors with fields where appropriate.
+- Provide clear validation messages.
+- Associate errors with fields when possible.
 - Return normalized validation failures.
 
-Forms should not:
+Forms must not:
 
-- Hide business exceptions.
-- Convert Service failures into fake validation results.
+- Hide Service failures.
+- Convert business failures into fake input errors.
 - Duplicate application exception handling.
 
-Application errors should be translated by the Presentation Layer after the
-Service invocation.
+Service exceptions should be translated by the Presentation Layer.
+
+Example:
+
+```text
+Service
+ |
+ | BusinessRuleViolationError
+ v
+Presentation Error Handling
+ |
+ v
+Form Error
+```
+
+Reusable mechanisms such as `ServiceFormErrorMixin` should handle this
+translation consistently.
 
 ---
 
 ## 6.11 ModelForm Contract
 
-`ModelForm` may be used when the form represents a simple mapping between
+`ModelForm` may be used when a form represents a simple mapping between
 presentation input and model fields.
 
-However, using `ModelForm` does not move business responsibility into the Form.
+Using `ModelForm` does not move application responsibility into the Form.
 
-`ModelForm` must not be used to:
+`ModelForm` must not:
 
 - Bypass Services.
-- Call `save()` for domain entities.
+- Persist domain entities directly.
 - Implement business workflows.
-- Replace Service-layer validation.
+- Replace Service validation.
+- Enforce application invariants.
 
 The preferred pattern remains:
 
@@ -1438,18 +1380,19 @@ ORM
 
 ## 6.12 Form Review Checklist
 
-During code review, a Form should be checked against the following questions:
+During code review, Forms should be checked against the following questions:
 
-- Does the Form only validate input?
+- Does the Form only validate presentation input?
 - Does the Form avoid business decisions?
 - Does the Form avoid direct persistence?
 - Does the Form avoid duplicating Service validation?
-- Does the Form avoid reusable database queries?
+- Does the Form avoid duplicating Selector behavior?
 - Are application operations delegated to Services?
+- Are dynamic fields used only for presentation purposes?
 
 If a Form answers "yes" to any of the following:
 
-- "Should this rule apply outside this form?"
+- "Should this rule apply outside this Form?"
 - "Does this require domain knowledge?"
 - "Does this determine whether an operation is allowed?"
 
@@ -1457,23 +1400,23 @@ then the responsibility likely belongs outside the Form.
 
 ---
 
-## 7. Django View Contract
+# 7. Django View Contract
 
 Django Views belong to the Presentation Layer and are responsible for
 translating HTTP requests into Application Layer operations.
 
 A Django View coordinates:
 
-- Request handling.
+- HTTP request handling.
 - Authentication.
 - Authorization.
 - Form processing.
 - Context construction.
-- Service invocation.
 - Selector invocation.
+- Service invocation.
 - HTTP response generation.
 
-A Django View must remain an orchestration component.
+A Django View is an orchestration component.
 
 A View should answer:
 
@@ -1483,6 +1426,8 @@ A View should not answer:
 
 > "How does the business operation work?"
 
+Business behavior belongs to the Application Layer.
+
 ---
 
 # 7.1 View Responsibilities
@@ -1491,15 +1436,16 @@ Django Views are responsible for:
 
 - Receiving HTTP requests.
 - Handling HTTP methods.
-- Performing authentication checks.
-- Performing authorization checks.
-- Loading presentation-specific data.
-- Creating Forms.
-- Validating Forms.
-- Constructing Context objects.
-- Calling Selectors for reads.
-- Calling Services for writes.
+- Performing request-level authentication checks.
+- Performing request-level authorization checks.
+- Creating and processing Forms.
+- Constructing Application Context objects.
+- Invoking Selectors for application reads.
+- Invoking Services for application writes.
+- Preparing presentation data.
 - Returning HTTP responses.
+
+Views coordinate application operations but do not implement them.
 
 ---
 
@@ -1508,43 +1454,63 @@ Django Views are responsible for:
 Django Views MUST NOT:
 
 - Implement business rules.
-- Modify database state directly.
-- Call ORM write methods.
-- Perform domain validation.
-- Enforce workspace ownership rules.
-- Implement workflows.
-- Duplicate Service logic.
-- Duplicate Selector logic.
+- Modify persistent application state directly.
+- Call ORM write operations.
+- Replace Service validation.
+- Replace Selector access rules.
+- Implement domain workflows.
+- Enforce domain invariants.
+- Duplicate Application Layer behavior.
 
-The View is not the application layer.
+A View is not an alternative location for application logic.
 
 ---
 
 # 7.3 HTTP Responsibility Boundary
 
-Views own HTTP concerns.
+Views own HTTP-specific concerns.
 
 Examples of View responsibilities:
 
-- Choosing response type.
-- Returning redirects.
-- Selecting templates.
-- Setting HTTP status codes.
-- Handling request methods.
+- Reading request data.
 - Reading URL parameters.
 - Reading query parameters.
+- Handling HTTP methods.
+- Selecting templates.
+- Returning redirects.
+- Returning JSON responses.
+- Selecting HTTP status codes.
+- Setting response headers.
 
 Examples of non-View responsibilities:
 
-- Deciding whether a company can be deleted.
-- Determining whether a document belongs to a user.
-- Calculating application state transitions.
+```text
+Determining whether a company can be deleted.
+        |
+        v
+Service
+```
+
+```text
+Determining whether a document belongs to a workspace.
+        |
+        v
+Selector / Service
+```
+
+```text
+Determining application state transitions.
+        |
+        v
+Service
+```
 
 ---
 
 # 7.4 Read Operation Contract
 
-Read operations MUST use Selectors.
+Read operations MUST use Selectors when application retrieval logic is
+required.
 
 The expected flow is:
 
@@ -1558,7 +1524,7 @@ View
 Selector
       |
       v
-Template Context
+Presentation Context
       |
       v
 HTTP Response
@@ -1566,36 +1532,40 @@ HTTP Response
 
 The View may:
 
-- Pass request information.
+- Provide request information.
+- Provide filtering parameters.
 - Apply pagination.
 - Prepare template context.
 
 The View must not:
 
-- Build reusable QuerySets.
-- Apply business filtering.
-- Encode access rules.
+- Duplicate Selector filtering logic.
+- Implement ownership checks.
+- Encode reusable retrieval rules.
+- Construct application QuerySets directly.
+
+Selectors define application data retrieval.
 
 ---
 
-## 7.5 Presentation Data Retrieval Contract
+# 7.5 Presentation Data Retrieval Contract
 
-Views may retrieve additional application data required exclusively for
-presentation purposes.
+Views may retrieve additional data required only for presentation purposes.
 
 Examples:
 
-- Building navigation context.
-- Generating related resource URLs.
-- Displaying breadcrumbs.
-- Preparing template metadata.
+- Navigation data.
+- Breadcrumb information.
+- Template metadata.
+- Related display information.
+- UI-specific selection options.
 
-Such retrieval MUST:
+Presentation retrieval MUST:
 
-- Use Selectors.
-- Respect access rules.
-- Avoid implementing business decisions.
+- Use Selectors when application data is involved.
+- Respect access restrictions.
 - Avoid modifying application state.
+- Avoid implementing business decisions.
 
 Example:
 
@@ -1605,10 +1575,15 @@ company = CompanySelector.get(
     obj_id=company_id,
 )
 
-return AppContext(
-    workspace_id=company.workspace.workspace_id,
-)
+context = {
+    "company": company,
+    "workspace_id": company.workspace.workspace_id,
+}
 ```
+
+The View prepares presentation data.
+
+It does not determine application behavior.
 
 ---
 
@@ -1639,31 +1614,32 @@ HTTP Response
 
 The View responsibilities are:
 
-1. Receive submitted data.
-2. Validate the Form.
-3. Construct the Context.
-4. Call the Service.
-5. Handle the result.
+1. Receive submitted input.
+2. Validate transport data.
+3. Construct Context objects.
+4. Invoke the Service.
+5. Translate the result into an HTTP response.
 
-The View must not perform the write itself.
+The View must not perform persistence directly.
 
 ---
 
 # 7.7 `form_valid()` Contract
 
-`form_valid()` should be used as an orchestration point.
+`form_valid()` is an orchestration point for successful Form validation.
 
 Allowed:
 
 ```python
 def form_valid(self, form):
-  
-    context = CompanyContext(
+
+    context = CompanyChildContext(
         workspace_id=self.object.workspace.workspace_id,
+        company_id=self.object.pk,
     )
 
     CompanyService.create(
-        user=user,
+        user=self.request.user,
         context=context,
         validated_data=form.cleaned_data,
     )
@@ -1677,6 +1653,7 @@ The View must not:
 
 ```python
 def form_valid(self, form):
+
     Company.objects.create(
         name=form.cleaned_data["name"]
     )
@@ -1692,11 +1669,11 @@ because persistence belongs to Services.
 
 Allowed responsibilities:
 
-- Passing initial values.
-- Removing fields.
+- Providing initial values.
 - Adjusting field visibility.
-- Adjusting choices for presentation.
-- Populating available choices through Selectors.
+- Removing presentation-only fields.
+- Adjusting labels or help text.
+- Populating choices through Selectors.
 
 Example:
 
@@ -1704,23 +1681,6 @@ Example:
 def get_form(self, form_class=None):
 
     form = super().get_form(form_class)
-
-    application = getattr(self, "object", None)
-    
-    if application:
-        form.fields["emails"].queryset = CompanyEmailSelector.list(
-            user=self.request.user,
-            filters=CompanyEmailQueryFilter(
-                company_id=application.job_position.company.pk,
-            )
-        )
-    else:
-        form.fields["emails"].queryset = CompanyEmailSelector.list(
-            user=self.request.user,
-            filters=CompanyEmailQueryFilter(
-                company_id=self.kwargs["company_id"],
-            )
-        )
 
     form.fields["documents"].queryset = DocumentSelector.list(
         user=self.request.user
@@ -1732,57 +1692,61 @@ def get_form(self, form_class=None):
 `get_form()` must not:
 
 - Perform business validation.
-- Enforce authorization.
-- Decide whether an operation is allowed.
+- Determine whether an operation is allowed.
 - Replace Service validation.
+- Enforce domain rules.
 
 ---
 
 # 7.9 `dispatch()` Contract
 
-`dispatch()` may handle request-level concerns.
+`dispatch()` handles request-level concerns before view execution.
 
-Allowed:
+Allowed responsibilities:
 
 - Authentication checks.
 - Permission checks.
 - HTTP method restrictions.
 - Request initialization.
-- Exception translation through reusable presentation mixins.
+- Shared exception translation.
 
 Example:
 
 ```python
 def dispatch(self, request, *args, **kwargs):
+
     if not request.user.is_authenticated:
         return redirect("login")
 
     return super().dispatch(
         request,
         *args,
-        **kwargs
+        **kwargs,
     )
 ```
 
 `dispatch()` must not:
 
-- Execute business operations.
-- Query application data unnecessarily.
+- Execute application workflows.
+- Perform business operations.
 - Replace Service authorization.
+- Load unnecessary application data.
 
 ---
 
 # 7.10 `get_queryset()` Contract
 
-`get_queryset()` should delegate data retrieval to Selectors.
+`get_queryset()` should delegate application retrieval to Selectors when
+retrieval rules exist.
 
 Preferred:
 
 ```python
 def get_queryset(self):
+
     return JobPositionSelector.list(
         user=self.request.user,
-        filters= ...
+        filters=filters,
     )
 ```
 
@@ -1790,21 +1754,24 @@ Avoid:
 
 ```python
 def get_queryset(self):
+
     return JobPosition.objects.filter(
-        company=self.company
+        company_id=self.kwargs["company_id"]
     )
 ```
 
 when the query represents reusable application behavior.
 
-`get_queryset()` should describe what data is displayed, not how application
-data is managed.
+`get_queryset()` defines what data is displayed.
+
+It does not define how application access rules work.
 
 ---
 
 # 7.11 Object Retrieval Contract
 
-Views should avoid direct object retrieval when access rules exist.
+Views should not directly retrieve application objects when access rules are
+required.
 
 Avoid:
 
@@ -1814,22 +1781,23 @@ company = Company.objects.get(
 )
 ```
 
-when retrieving the object requires:
+when retrieval requires:
 
-- Workspace validation.
 - Ownership checks.
-- Permission checks.
+- Workspace restrictions.
+- Permission rules.
+- Application filtering.
 
 Instead:
 
 ```python
 company = CompanySelector.get(
     user=request.user,
-    filters=...
+    obj_id=self.kwargs["pk"],
 )
 ```
 
-Selectors should provide controlled data access.
+Selectors provide controlled application data access.
 
 ---
 
@@ -1851,28 +1819,31 @@ context = CompanyChildContext(
 
 Views must not:
 
-- Add business rules during context construction.
-- Modify context semantics.
-- Use context objects to hide business logic.
+- Add business decisions during construction.
+- Modify Context behavior.
+- Use Context objects as a replacement for Services.
+
+Context objects represent execution scope only.
 
 ---
 
 # 7.13 Success and Redirect Handling
 
-Views are responsible for deciding the HTTP response after successful
+Views are responsible for choosing the HTTP response after successful
 operations.
 
 Examples:
 
 - Redirecting after creation.
-- Rendering a success page.
-- Returning confirmation messages.
+- Rendering success pages.
+- Returning serialized responses.
+- Displaying messages.
 
 The View may decide:
 
 ```text
 After creating a company:
-redirect to company detail page.
+redirect to company details.
 ```
 
 The View must not decide:
@@ -1887,20 +1858,25 @@ The second decision belongs to the Service Layer.
 
 # 7.14 Failure Handling
 
-Views should translate application failures into user-facing responses.
+Views translate application failures into presentation responses.
 
-Examples:
+Example:
 
 ```text
 BusinessRuleViolationError
         |
         v
-Form error / HTTP response
+HTTP 400 Response
 ```
 
-Views should not:
+Views should:
 
-- Ignore failures.
+- Preserve application error meaning.
+- Convert failures into appropriate HTTP responses.
+
+Views must not:
+
+- Ignore application failures.
 - Return success after failed operations.
 - Duplicate Service validation.
 
@@ -1917,31 +1893,35 @@ dispatch()
     |
 authentication / authorization
 
+
 get_queryset()
     |
-selector call
+selector invocation
+
 
 get_form()
     |
 form customization
 
+
 form_valid()
     |
 service invocation
 
+
 get_context_data()
     |
-presentation data
+presentation preparation
 ```
 
-A CBV should not become a replacement Application Layer.
+A Class-Based View should remain an orchestration layer.
 
 ---
 
 # 7.16 View Composition Rule
 
-When multiple Views share the same behavior, that behavior should be extracted
-into the appropriate layer.
+When multiple Views share behavior, the behavior should be extracted into the
+appropriate layer.
 
 Possible destinations:
 
@@ -1950,70 +1930,61 @@ Possible destinations:
 - Form helper.
 - Context object.
 - Permission component.
+- Presentation utility.
 
-Duplicating behavior between Views is discouraged.
+Duplicating application behavior between Views is prohibited.
 
 ---
 
 # 7.17 Presentation Helper Contract
 
-Presentation helper functions belong to the Presentation Layer and exist to
-support HTTP representation and user interface composition.
+Presentation helper functions belong to the Presentation Layer.
 
-Examples include:
+They exist to support HTTP representation and user interface composition.
+
+Examples:
 
 - URL builders.
-- Navigation helpers.
+- Navigation builders.
 - Template context builders.
-- Display formatting utilities.
-- Presentation-specific data transformation helpers.
-
-These helpers exist to simplify Views and templates.
-
-They must not implement Application Layer behavior.
-
----
-
-## Presentation Helper Responsibilities
+- Display formatting helpers.
+- Presentation-only transformations.
 
 Presentation helpers MAY:
 
 - Build URLs.
-- Construct navigation links.
-- Prepare template-specific context.
-- Format values for display.
-- Transform application results into presentation structures.
+- Format values.
+- Prepare template structures.
+- Transform application results into display structures.
 
-Examples:
+Example:
 
 ```python
 def company_list_url(workspace_id):
+
     return reverse(
         "company-list-web",
-        kwargs={"workspace_id": workspace_id}
+        kwargs={
+            "workspace_id": workspace_id,
+        },
     )
-
-
-def build_company_navigation(company):
-    return {
-        "back_url": company_list_url(
-            company.workspace_id
-        )
-    }
 ```
 
-Incorrect Use:
+Incorrect:
 
 ```python
-
 def can_delete_company(company):
+
     return not company.job_applications.exists()
 ```
 
 Correct:
+
 ```python
 CompanyService.remove(...)
 ```
+
+Presentation helpers must not contain application behavior.
 
 ---
 
@@ -2021,18 +1992,26 @@ CompanyService.remove(...)
 
 During code review, verify:
 
-- Does the View only coordinate application operations?
+- Does the View only coordinate operations?
 - Are reads delegated to Selectors?
 - Are writes delegated to Services?
 - Are Context objects constructed correctly?
-- Is business logic absent from the View?
-- Is ORM usage limited to presentation concerns?
-- Are Forms used only for input validation?
+- Is business logic absent?
+- Are Forms limited to transport validation?
 - Are exceptions translated correctly?
-- Are HTTP concerns kept inside the View?
+- Are HTTP concerns contained inside the View?
+- Are reusable behaviors extracted into appropriate layers?
 
-A compliant Django View should be understandable by reading its orchestration
-flow without needing to understand business rules.
+A compliant Django View should reveal the application flow without requiring
+knowledge of business rules.
+
+The View should explain:
+
+> "How does this HTTP request become an application operation?"
+
+It should not explain:
+
+> "How does the business operation work?"
 
 ---
 
@@ -2619,7 +2598,13 @@ place where application behavior is implemented.
 
 ---
 
-## 9. Exception Handling Contract
+## 9. Template Contract
+
+
+
+---
+
+## 10. Exception Handling Contract
 
 The Presentation Layer is responsible for translating Application Layer
 exceptions into appropriate user-facing responses.
@@ -2636,7 +2621,7 @@ The Presentation Layer must not redefine the meaning of application errors.
 
 ---
 
-## 9.1 Exception Ownership
+## 10.1 Exception Ownership
 
 Each layer owns different aspects of exception handling.
 
@@ -2681,7 +2666,7 @@ The Presentation Layer answers:
 
 ---
 
-## 9.2 Exception Translation Boundary
+## 10.2 Exception Translation Boundary
 
 Application exceptions MUST NOT leak directly to clients.
 
@@ -2712,7 +2697,7 @@ The client should not need to understand internal application exceptions.
 
 ---
 
-## 9.3 Business Exception Contract
+## 10.3 Business Exception Contract
 
 Business failures should be represented using application-level exceptions.
 
@@ -2730,7 +2715,7 @@ The View or ViewSet owns how this exception is exposed.
 
 ---
 
-## 9.4 Validation Exception Contract
+## 10.4 Validation Exception Contract
 
 Validation failures must be separated by responsibility.
 
@@ -2753,7 +2738,7 @@ Incorrect date format.
 
 ---
 
-## 9.5 Django View Exception Handling
+## 10.5 Django View Exception Handling
 
 Exception translation should preferably be centralized through reusable
 presentation components.
@@ -2788,7 +2773,7 @@ an error to a submitted Form.
 
 Exception translation should remain consistent across all Views.
 
-### 9.5.1 Form-Based Service Validation Translation
+### 10.5.1 Form-Based Service Validation Translation
 
 HTML form-based write operations must translate recoverable application
 validation failures back into form errors.
@@ -2825,7 +2810,7 @@ except (ValidationError, BusinessRuleViolationError) as exc:
 
 ---
 
-## 9.6 DRF ViewSet Exception Handling
+## 10.6 DRF ViewSet Exception Handling
 
 API exception translation should preferably be centralized through reusable DRF
 exception handling mechanisms.
@@ -2844,7 +2829,7 @@ responses across all endpoints.
 
 ---
 
-## 9.7 Global Exception Handling
+## 10.7 Global Exception Handling
 
 When possible, exception translation SHOULD be centralized.
 
@@ -2873,7 +2858,7 @@ Both responses represent the same application failure.
 
 ---
 
-## 9.8 Exception Mapping Contract
+## 10.8 Exception Mapping Contract
 
 The Presentation Layer should maintain predictable mappings.
 
@@ -2894,7 +2879,7 @@ across all Presentation Layer entry points.
 
 ---
 
-## 9.9 Exception Messages Contract
+## 10.9 Exception Messages Contract
 
 User-facing messages should be:
 
@@ -2925,7 +2910,7 @@ Foreign key constraint failed on table company_job_application.
 
 ---
 
-## 9.10 Exception Logging Contract
+## 10.10 Exception Logging Contract
 
 The Presentation Layer should not silently consume unexpected exceptions.
 
@@ -2951,7 +2936,7 @@ Only unexpected failures should produce error-level logs.
 
 ---
 
-## 9.11 Exception Flow Invariants
+## 10.11 Exception Flow Invariants
 
 The following rules must always hold:
 
@@ -2992,7 +2977,7 @@ They should not replace normal application decisions.
 
 ---
 
-## 9.12 Exception Handling Review Checklist
+## 10.12 Exception Handling Review Checklist
 
 During code review, verify:
 
@@ -3011,7 +2996,7 @@ A compliant exception handling design preserves the separation between:
 
 ---
 
-## 10. Testing Contract
+## 11. Testing Contract
 
 The Presentation Layer must be tested according to its responsibilities.
 
@@ -3031,7 +3016,7 @@ The purpose of Service tests is:
 
 ---
 
-# 10.1 Testing Responsibilities by Layer
+# 11.1 Testing Responsibilities by Layer
 
 Each layer should test its own responsibilities.
 
@@ -3048,7 +3033,7 @@ Tests should remain aligned with these boundaries.
 
 ---
 
-# 10.2 View Testing Contract
+# 11.2 View Testing Contract
 
 Django View tests should verify:
 
@@ -3087,7 +3072,7 @@ The test should verify the orchestration flow.
 
 ---
 
-# 10.3 View Tests MUST NOT Test Business Logic
+# 11.3 View Tests MUST NOT Test Business Logic
 
 View tests should not verify:
 
@@ -3122,7 +3107,7 @@ View Test:
 
 ---
 
-# 10.4 View Mocking Contract
+# 11.4 View Mocking Contract
 
 Presentation unit tests should isolate the Application Layer where appropriate.
 
@@ -3154,7 +3139,7 @@ The purpose is to verify:
 
 ---
 
-# 10.5 Form Testing Contract
+# 11.5 Form Testing Contract
 
 Form tests should verify:
 
@@ -3175,7 +3160,7 @@ Those belong to Services.
 
 ---
 
-# 10.6 Serializer Testing Contract
+# 11.6 Serializer Testing Contract
 
 Serializer tests should verify:
 
@@ -3194,7 +3179,7 @@ Serializer tests should not verify:
 
 ---
 
-# 10.7 ViewSet Testing Contract
+# 11.7 ViewSet Testing Contract
 
 DRF ViewSet tests should verify:
 
@@ -3233,7 +3218,7 @@ The test verifies the API boundary.
 
 ---
 
-# 10.8 API Response Testing Contract
+# 11.8 API Response Testing Contract
 
 API tests should verify:
 
@@ -3251,7 +3236,7 @@ API tests should not verify:
 
 ---
 
-# 10.9 Integration Testing Contract
+# 11.9 Integration Testing Contract
 
 Integration tests may verify complete flows across layers.
 
@@ -3287,7 +3272,7 @@ However, integration tests should complement, not replace, isolated tests.
 
 ---
 
-# 10.10 Database Usage Contract
+# 11.10 Database Usage Contract
 
 Presentation tests should avoid unnecessary database interaction.
 
@@ -3301,7 +3286,7 @@ Service was called correctly.
 
 ---
 
-# 10.11 Request Factory and Client Usage
+# 11.11 Request Factory and Client Usage
 
 Use Django testing tools according to the test purpose.
 
@@ -3333,7 +3318,7 @@ Useful for:
 
 ---
 
-# 10.12 Test Isolation Contract
+# 11.12 Test Isolation Contract
 
 Presentation tests should isolate external dependencies where appropriate.
 
@@ -3354,7 +3339,7 @@ tests.
 
 ---
 
-# 10.13 Error Handling Tests
+# 11.13 Error Handling Tests
 
 Presentation tests should verify that application failures are translated
 correctly.
@@ -3383,7 +3368,7 @@ The test verifies translation, not the reason for the failure.
 
 ---
 
-# 10.14 Testing Invariants
+# 11.14 Testing Invariants
 
 The following invariants should always hold:
 
@@ -3417,7 +3402,7 @@ Tests should make it difficult to accidentally introduce:
 
 ---
 
-# 10.15 Presentation Test Review Checklist
+# 11.15 Presentation Test Review Checklist
 
 During code review, verify:
 
@@ -3434,7 +3419,7 @@ without becoming responsible for proving the entire application.
 
 ---
 
-## 11. Checklist
+## 12. Checklist
 
 This checklist provides a practical review guide for ensuring that Presentation
 Layer components follow the architectural contract.
@@ -3454,7 +3439,7 @@ being considered complete.
 
 ---
 
-# 11.1 General Presentation Layer Checklist
+# 12.1 General Presentation Layer Checklist
 
 ## Responsibilities
 
@@ -3477,7 +3462,7 @@ being considered complete.
 
 ---
 
-# 11.2 Django View Checklist
+# 12.2 Django View Checklist
 
 ## Request Handling
 
@@ -3516,7 +3501,7 @@ being considered complete.
 
 ---
 
-# 11.3 DRF ViewSet Checklist
+# 12.3 DRF ViewSet Checklist
 
 ## API Handling
 
@@ -3551,7 +3536,7 @@ being considered complete.
 
 ---
 
-# 11.4 Forms Checklist
+# 12.4 Forms Checklist
 
 ## Validation
 
@@ -3583,7 +3568,7 @@ being considered complete.
 
 ---
 
-# 11.5 Serializer Checklist
+# 12.5 Serializer Checklist
 
 ## Input Handling
 
@@ -3602,7 +3587,7 @@ being considered complete.
 
 ---
 
-# 11.6 Exception Handling Checklist
+# 12.6 Exception Handling Checklist
 
 - [ ] Application exceptions are translated into appropriate responses.
 - [ ] HTTP responses are not created inside Services.
@@ -3613,7 +3598,7 @@ being considered complete.
 
 ---
 
-# 11.7 Testing Checklist
+# 12.7 Testing Checklist
 
 ## Presentation Tests
 
@@ -3633,7 +3618,7 @@ being considered complete.
 
 ---
 
-# 11.8 Code Review Questions
+# 12.8 Code Review Questions
 
 Before approving Presentation Layer code, ask:
 
@@ -3679,7 +3664,7 @@ Business correctness belongs to Services.
 
 ---
 
-# 11.9 Final Presentation Layer Standard
+# 12.9 Final Presentation Layer Standard
 
 A compliant Presentation Layer should satisfy the following statement:
 
