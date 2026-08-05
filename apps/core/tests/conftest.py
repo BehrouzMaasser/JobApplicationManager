@@ -804,6 +804,15 @@ def job_application1_valid_data(status1, email1_co1_ws1_user1):
 
 
 @pytest.fixture
+def job_application1_valid_view_data(status1, email1_co1_ws1_user1):
+
+    return {
+        "status": status1.pk,
+        "emails": [email1_co1_ws1_user1.pk],
+    }
+
+
+@pytest.fixture
 def job_application1_api_valid_data(status1, email1_co1_ws1_user1):
 
     return {
@@ -821,6 +830,19 @@ def job_application1_valid_data_updated(
     return {
         "status": status2,
         "emails": [email1_co1_ws1_user1, email2_co1_ws1_user1],
+    }
+
+
+@pytest.fixture
+def job_application1_valid_view_data_updated(
+        status2,
+        email1_co1_ws1_user1,
+        email2_co1_ws1_user1,
+):
+
+    return {
+        "status": status2.pk,
+        "emails": [email1_co1_ws1_user1.pk, email2_co1_ws1_user1.pk],
     }
 
 
