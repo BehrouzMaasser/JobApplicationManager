@@ -1860,4 +1860,3 @@ being considered complete.
 - [ ] Business behavior is verified by Service tests.
 - [ ] View tests verify Selector and Service orchestration.
 - [ ] Form tests verify transport validation only.
-- 

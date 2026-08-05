@@ -1,5 +1,5 @@
-from apps.core.contexts.app_context import AppContext
-from apps.core.contexts.extra_context import ExtraContext
+from apps.core.view_contexts.app_context import AppContext
+from apps.core.view_contexts.extra_context import ExtraContext
 
 
 class AppContextMixin:

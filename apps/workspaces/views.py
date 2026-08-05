@@ -27,8 +27,8 @@ from .selectors.workspace_selector import WorkspaceSelector
 from .services.workspace_service import WorkspaceService
 
 # Contexts
-from ..core.contexts.app_context import AppContext
-from ..core.contexts.extra_context import ExtraContext
+from ..core.view_contexts.app_context import AppContext
+from ..core.view_contexts.extra_context import ExtraContext
 
 # View Helpers
 from ..companies.views import company_list_url

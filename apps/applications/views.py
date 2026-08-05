@@ -34,15 +34,23 @@ from apps.core.common.contexts.contexts import (
     JobApplicationContext,
     JobApplicationChildContext
 )
-from apps.core.common.types.filters import JobApplicationQueryFilter, \
+from apps.core.common.types.filters import (
+    JobApplicationQueryFilter,
     JobApplicationNoteQueryFilter
+)
 
 # View Contexts and Mixins
-from apps.core.contexts.app_context import AppContext
-from apps.core.contexts.extra_context import ExtraContext
+from apps.core.view_contexts.app_context import AppContext
+from apps.core.view_contexts.extra_context import ExtraContext
 from apps.core.mixins.app_context_mixin import AppContextMixin
-from apps.core.mixins.job_application_form_mixin import JobApplicationFormMixin
+from apps.applications.mixins.job_application_form_mixin import (
+    JobApplicationFormMixin
+)
 from apps.core.mixins.service_validation_error_mixin import ServiceFormErrorMixin
+from apps.applications.mixins.create_view_context_validation_mixins import (
+    JobPositionChildCreateViewContextValidationMixin,
+    JobApplicationChildCreateViewContextValidationMixin
+)
 from apps.core.mixins.view_exception_handler import ViewExceptionHandlerMixin
 
 
@@ -109,6 +117,7 @@ class JobApplicationListView(
 class JobApplicationCreateView(
     ViewExceptionHandlerMixin,
     LoginRequiredMixin,
+    JobPositionChildCreateViewContextValidationMixin,
     AppContextMixin,
     JobApplicationFormMixin,
     ServiceFormErrorMixin,
@@ -169,7 +178,10 @@ class JobApplicationCreateView(
 
 
 class JobApplicationDetailView(
-    ViewExceptionHandlerMixin, LoginRequiredMixin, AppContextMixin, DetailView
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    AppContextMixin,
+    DetailView
 ):
 
     model = JobApplication
@@ -363,6 +375,7 @@ class JobApplicationNoteListView(
 class JobApplicationNoteCreateView(
     ViewExceptionHandlerMixin,
     LoginRequiredMixin,
+    JobApplicationChildCreateViewContextValidationMixin,
     AppContextMixin,
     ServiceFormErrorMixin,
     CreateView
@@ -372,24 +385,21 @@ class JobApplicationNoteCreateView(
     template_name = "create_page.html"
     fields = ["title", "content"]
 
-    @property
-    def job_application(self):
+    def form_valid(self, form):
 
-        return JobApplicationSelector.get(
+        job_application = JobApplicationSelector.get(
             user=self.request.user, obj_id=self.kwargs["job_application_id"]
         )
-
-    def form_valid(self, form):
 
         response = self.execute_service(
             form=form,
             operation=lambda: JobApplicationNoteService.create(
                 user=self.request.user,
                 context=JobApplicationChildContext(
-                    workspace_id=self.job_application.workspace.workspace_id,
-                    company_id=self.job_application.job_position.company.pk,
-                    job_position_id=self.job_application.job_position.pk,
-                    job_application_id=self.job_application.pk,
+                    workspace_id=job_application.workspace.workspace_id,
+                    company_id=job_application.job_position.company.pk,
+                    job_position_id=job_application.job_position.pk,
+                    job_application_id=job_application.pk,
                 ),
                 validated_data=form.cleaned_data
             )

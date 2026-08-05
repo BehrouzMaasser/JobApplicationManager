@@ -1,4 +1,5 @@
 from apps.companies.selectors.company_email_selector import CompanyEmailSelector
+from apps.core.common.types.filters import CompanyEmailQueryFilter
 from apps.core.mixins.base_form_mixin import BaseFormMixin
 from apps.documents.selectors.document_selector import DocumentSelector
 
@@ -14,14 +15,14 @@ class JobApplicationFormMixin(BaseFormMixin):
         if application:
             form.fields["emails"].queryset = CompanyEmailSelector.list(
                 user=self.request.user,
-                filters=CompanyEmailSelector.QueryFilter(
+                filters=CompanyEmailQueryFilter(
                     company_id=application.job_position.company.pk,
                 )
             )
         else:
             form.fields["emails"].queryset = CompanyEmailSelector.list(
                 user=self.request.user,
-                filters=CompanyEmailSelector.QueryFilter(
+                filters=CompanyEmailQueryFilter(
                     company_id=self.kwargs["company_id"],
                 )
             )

@@ -17,7 +17,9 @@ class ServiceFormErrorMixin:
                 exception=err,
             )
 
-        return self.form_invalid(form=form)
+            return self.form_invalid(form=form)
+
+        return None
 
     @staticmethod
     def add_service_errors_to_form(*, form, exception):

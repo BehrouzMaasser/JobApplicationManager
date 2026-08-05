@@ -32,15 +32,23 @@ from apps.core.common.contexts.contexts import (
 )
 from .services.job_position_service import JobPositionService
 from ..applications.views import application_list_url
-from ..core.common.types.filters import CompanyQueryFilter, CompanyEmailQueryFilter, \
-    CompanyNoteQueryFilter, JobPositionQueryFilter
+from ..core.common.types.filters import (
+    CompanyQueryFilter,
+    CompanyEmailQueryFilter,
+    CompanyNoteQueryFilter,
+    JobPositionQueryFilter
+)
 
 # View Contexts and Mixins
-from ..core.contexts.app_context import AppContext
-from ..core.contexts.extra_context import ExtraContext
+from ..core.view_contexts.app_context import AppContext
+from ..core.view_contexts.extra_context import ExtraContext
 from ..core.mixins.app_context_mixin import AppContextMixin
-from ..core.mixins.jop_position_form_mixin import JobPositionFormMixin
+from apps.companies.mixins.jop_position_form_mixin import JobPositionFormMixin
 from ..core.mixins.service_validation_error_mixin import ServiceFormErrorMixin
+from apps.companies.mixins.create_view_context_validation_mixins import (
+    CompanyChildCreateViewContextValidationMixin,
+    WorkspaceChildCreateViewContextValidationMixin
+)
 from ..core.mixins.view_exception_handler import ViewExceptionHandlerMixin
 
 
@@ -119,6 +127,7 @@ class CompanyListView(
 class CompanyCreateView(
     ViewExceptionHandlerMixin,
     LoginRequiredMixin,
+    WorkspaceChildCreateViewContextValidationMixin,
     AppContextMixin,
     ServiceFormErrorMixin,
     CreateView
@@ -369,6 +378,7 @@ class CompanyEmailListView(
 class CompanyEmailCreateView(
     ViewExceptionHandlerMixin,
     LoginRequiredMixin,
+    CompanyChildCreateViewContextValidationMixin,
     AppContextMixin,
     ServiceFormErrorMixin,
     CreateView
@@ -611,6 +621,7 @@ class CompanyNoteListView(
 class CompanyNoteCreateView(
     ViewExceptionHandlerMixin,
     LoginRequiredMixin,
+    CompanyChildCreateViewContextValidationMixin,
     AppContextMixin,
     ServiceFormErrorMixin,
     CreateView
@@ -855,6 +866,7 @@ class JobPositionListView(
 class JobPositionCreateView(
     ViewExceptionHandlerMixin,
     LoginRequiredMixin,
+    CompanyChildCreateViewContextValidationMixin,
     AppContextMixin,
     JobPositionFormMixin,
     ServiceFormErrorMixin,

@@ -1,11 +1,16 @@
 # Mixins
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from apps.core.common.contexts.contexts import EmptyContext, DocumentTypeContext, \
+from apps.core.common.contexts.contexts import (
+    EmptyContext,
+    DocumentTypeContext,
     DocumentContext
+)
 from apps.core.mixins.app_context_mixin import AppContextMixin
-from apps.core.mixins.document_file_response_mixin import DocumentFileResponseMixin
-from apps.core.mixins.documents_form_mixin import DocumentFormMixin
+from apps.documents.mixins.document_file_response_mixin import (
+    DocumentFileResponseMixin
+)
+from apps.documents.mixins.documents_form_mixin import DocumentFormMixin
 
 # Django
 from django.shortcuts import redirect
@@ -22,7 +27,7 @@ from django.views.generic import (
 )
 
 # Contexts
-from apps.core.contexts.extra_context import ExtraContext
+from apps.core.view_contexts.extra_context import ExtraContext
 from apps.core.mixins.service_validation_error_mixin import ServiceFormErrorMixin
 from apps.core.mixins.view_exception_handler import ViewExceptionHandlerMixin
 

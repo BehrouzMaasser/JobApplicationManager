@@ -15,7 +15,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 
 from apps.core.common.types.filters import DocumentQueryFilter
 # Mixins
-from apps.core.mixins.document_file_response_mixin import (
+from apps.documents.mixins.document_file_response_mixin import (
     DocumentFileResponseMixin,
 )
 
