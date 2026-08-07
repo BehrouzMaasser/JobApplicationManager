@@ -175,7 +175,7 @@ class DocumentTypeDeleteView(
 
         DocumentTypeService.remove(
             user=self.request.user,
-            document_type_id=self.kwargs["pk"],
+            context=DocumentTypeContext(id=self.kwargs["pk"]),
         )
 
         return redirect(self.get_success_url())
@@ -324,7 +324,7 @@ class DocumentDeleteView(
 
         DocumentService.remove(
             user=self.request.user,
-            document_id=self.kwargs["pk"],
+            context=DocumentContext(id=self.kwargs["pk"]),
         )
 
         return redirect(self.get_success_url())
