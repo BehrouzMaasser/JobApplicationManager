@@ -2,7 +2,7 @@ import pytest
 
 from unittest.mock import Mock, patch
 
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.test import RequestFactory
 
 from apps.companies.views import (
@@ -12,6 +12,10 @@ from apps.companies.views import (
 )
 
 from apps.core.common.contexts.contexts import CompanyChildContext
+from apps.core.exceptions.exceptions import (
+    ResourceNotFoundError,
+    BusinessRuleViolationError,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -55,6 +59,28 @@ class TestJobPositionListView:
         )
 
         assert result is queryset
+
+    @patch("apps.companies.views.JobPositionSelector.list")
+    def test_dispatch_translates_selector_exceptions_to_404(
+        self,
+        mock_list,
+        user1,
+    ):
+        mock_list.side_effect = ResourceNotFoundError("not found")
+
+        request = RequestFactory().get(
+            "/",
+            {
+                "company_id": "123",
+            },
+        )
+        request.user = user1
+
+        view = JobPositionListView()
+        view.request = request
+
+        with pytest.raises(Http404):
+            view.dispatch(request)
 
     # ------------------------
     # App Context
@@ -182,6 +208,33 @@ class TestJobPositionCreateView:
         mock_redirect.assert_called_once()
 
         assert result is response
+
+    @patch("apps.companies.views.JobPositionService.create")
+    def test_form_valid_service_raises_business_rule_adds_form_errors(
+        self,
+        mock_create,
+        user1,
+    ):
+        err = BusinessRuleViolationError()
+        err.fields = ["title"]
+        err.messages = ["invalid title"]
+        mock_create.side_effect = err
+
+        form = Mock()
+        form.cleaned_data = {"title": "Bad", "description": ""}
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = JobPositionCreateView()
+        view.request = request
+        view.kwargs = {"workspace_id": "workspace-id", "company_id": "1"}
+
+        result = view.form_valid(form)
+
+        form.add_error.assert_called_with("title", "invalid title")
+        assert hasattr(result, "status_code")
+        assert result.status_code == 200
 
     @patch.object(JobPositionCreateView, "execute_service")
     def test_form_valid_returns_execute_service_response(
@@ -421,6 +474,34 @@ class TestJobPositionUpdateView:
         mock_redirect.assert_called_once()
 
         assert result is response
+
+    @patch("apps.companies.views.JobPositionService.update")
+    def test_form_valid_service_raises_business_rule_adds_form_errors(
+        self,
+        mock_update,
+        user1,
+    ):
+        err = BusinessRuleViolationError()
+        err.fields = ["title"]
+        err.messages = ["cannot use this title"]
+        mock_update.side_effect = err
+
+        form = Mock()
+        form.cleaned_data = {"title": "Bad Update", "description": ""}
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = JobPositionUpdateView()
+        view.request = request
+        view.object = None
+        view.kwargs = {"pk": "123"}
+
+        result = view.form_valid(form)
+
+        form.add_error.assert_called_with("title", "cannot use this title")
+        assert hasattr(result, "status_code")
+        assert result.status_code == 200
 
     @patch.object(JobPositionUpdateView, "execute_service")
     def test_form_valid_returns_execute_service_response(

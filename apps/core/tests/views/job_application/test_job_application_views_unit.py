@@ -2,7 +2,7 @@ import pytest
 
 from unittest.mock import Mock, patch
 
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.test import RequestFactory
 
 from apps.applications.views import (
@@ -15,6 +15,10 @@ from apps.applications.views import (
 
 from apps.applications.views import (
     JobApplicationContext,
+)
+from apps.core.exceptions.exceptions import (
+    ResourceNotFoundError,
+    BusinessRuleViolationError,
 )
 
 pytestmark = pytest.mark.django_db
@@ -72,6 +76,31 @@ class TestJobApplicationListView:
         )
 
         assert result is queryset
+
+    @patch("apps.applications.views.JobApplicationSelector.list")
+    def test_dispatch_translates_selector_exceptions_to_404(
+        self,
+        mock_list,
+        user1,
+    ):
+        mock_list.side_effect = ResourceNotFoundError("not found")
+
+        request = RequestFactory().get(
+            "/",
+            {
+                "workspace_id": "workspace-id",
+                "company_id": "1",
+                "job_position_id": "2",
+            },
+        )
+
+        request.user = user1
+
+        view = JobApplicationListView()
+        view.request = request
+
+        with pytest.raises(Http404):
+            view.dispatch(request)
 
     def test_build_app_context(
         self,
@@ -174,6 +203,37 @@ class TestJobApplicationCreateView:
 
         assert result is response
 
+    @patch("apps.applications.views.JobApplicationService.create")
+    def test_form_valid_service_raises_business_rule_adds_form_errors(
+        self,
+        mock_create,
+        user1,
+    ):
+        err = BusinessRuleViolationError()
+        err.fields = ["status"]
+        err.messages = ["invalid status"]
+        mock_create.side_effect = err
+
+        form = Mock()
+        form.cleaned_data = {"status": "BAD"}
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = JobApplicationCreateView()
+        view.request = request
+        view.kwargs = {
+            "workspace_id": "workspace-id",
+            "company_id": 1,
+            "job_position_id": 2,
+        }
+
+        result = view.form_valid(form)
+
+        form.add_error.assert_called_with("status", "invalid status")
+        assert hasattr(result, "status_code")
+        assert result.status_code == 200
+
     def test_get_success_url(self):
 
         view = JobApplicationCreateView()
@@ -264,6 +324,26 @@ class TestJobApplicationDetailView:
         )
 
         assert result is job_application1
+
+    @patch("apps.applications.views.JobApplicationSelector.get")
+    def test_dispatch_translates_selector_get_exceptions_to_404(
+        self,
+        mock_get,
+        user1,
+    ):
+        mock_get.side_effect = ResourceNotFoundError("missing")
+
+        request = RequestFactory().get("/")
+        request.user = user1
+
+        view = JobApplicationDetailView()
+        view.request = request
+        view.kwargs = {
+            "pk": "123",
+        }
+
+        with pytest.raises(Http404):
+            view.dispatch(request)
 
     def test_build_app_context(
         self,

@@ -32,6 +32,9 @@ class TestJobPositionListView:
         assert "job_positions" in response.context
         assert job_position1_user1 in response.context["job_positions"]
 
+        template_names = [t.name for t in response.templates if t.name]
+        assert "companies/job_position/list.html" in template_names
+
     def test_list_returns_only_users_job_positions(
         self,
         client,
@@ -85,6 +88,9 @@ class TestJobPositionCreateView:
         )
 
         assert response.status_code == 200
+
+        template_names = [t.name for t in response.templates if t.name]
+        assert "create_page.html" in template_names
 
     def test_valid_post_creates_job_position_and_redirects(
         self,
@@ -193,6 +199,9 @@ class TestJobPositionDetailView:
         assert response.status_code == 200
         assert response.context["job_position"] == job_position1_user1
 
+        template_names = [t.name for t in response.templates if t.name]
+        assert "companies/job_position/detail.html" in template_names
+
     def test_foreign_user_receives_404(
         self,
         client,
@@ -232,6 +241,9 @@ class TestJobPositionUpdateView:
         )
 
         assert response.status_code == 200
+
+        template_names = [t.name for t in response.templates if t.name]
+        assert "edit_page.html" in template_names
 
     def test_valid_post_updates_job_position_and_redirects(
         self,
@@ -330,6 +342,9 @@ class TestJobPositionDeleteView:
         )
 
         assert response.status_code == 200
+
+        template_names = [t.name for t in response.templates if t.name]
+        assert "delete_confirm.html" in template_names
 
     def test_post_deletes_job_position_and_redirects(
         self,
