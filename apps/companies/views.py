@@ -43,7 +43,7 @@ from ..core.common.types.filters import (
 from ..core.view_contexts.app_context import AppContext
 from ..core.view_contexts.extra_context import ExtraContext
 from ..core.mixins.app_context_mixin import AppContextMixin
-from apps.companies.mixins.jop_position_form_mixin import JobPositionFormMixin
+from apps.companies.mixins.job_position_form_mixin import JobPositionFormMixin
 from ..core.mixins.service_validation_error_mixin import ServiceFormErrorMixin
 from apps.companies.mixins.create_view_context_validation_mixins import (
     CompanyChildCreateViewContextValidationMixin,
@@ -1089,7 +1089,7 @@ class JobPositionDeleteView(
     def get_success_url(self):
 
         return reverse(
-            "job-position-detail-web",
+            "company-detail-web",
             kwargs={"pk": self.job_position.company.pk}
         )
 
