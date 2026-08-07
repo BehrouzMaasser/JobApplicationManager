@@ -13,6 +13,7 @@ from django.db.models import QuerySet
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 
+from apps.core.common.contexts.contexts import EmptyContext, DocumentTypeContext
 from apps.core.common.types.filters import DocumentQueryFilter
 # Mixins
 from apps.documents.mixins.document_file_response_mixin import (
@@ -48,7 +49,7 @@ from apps.documents.services.document_type_service import (
 
 # Base ViewSets
 from apps.core.common.api.viewsets import (
-    BaseIdServiceViewSet,
+    BaseContextServiceViewSet,
 )
 
 
@@ -56,7 +57,7 @@ from apps.core.common.api.viewsets import (
 # Document Type
 # =========================================================
 
-class DocumentTypeViewSet(BaseIdServiceViewSet):
+class DocumentTypeViewSet(BaseContextServiceViewSet):
     """
     CRUD API for Document Types.
     """
@@ -68,8 +69,22 @@ class DocumentTypeViewSet(BaseIdServiceViewSet):
     write_serializer_class = DocumentTypeSerializer
 
     lookup_url_kwarg = "id"
-    selector_lookup_field = "document_type_id"
-    service_lookup_id = "document_type_id"
+
+    def get_create_context(self) -> EmptyContext:
+        """
+        Context used when creating a document type.
+        """
+
+        return EmptyContext()
+
+    def get_update_context(self) -> DocumentTypeContext:
+        """
+        Context used when updating/deleting a document type.
+        """
+
+        return DocumentTypeContext(
+            id=self.kwargs["id"]
+        )
 
     def get_queryset(self) -> QuerySet[DocumentType]:
         """
@@ -84,7 +99,7 @@ class DocumentTypeViewSet(BaseIdServiceViewSet):
 # =========================================================
 
 class DocumentViewSet(
-    BaseIdServiceViewSet,
+    BaseContextServiceViewSet,
     DocumentFileResponseMixin,
 ):
     """
@@ -102,8 +117,16 @@ class DocumentViewSet(
     write_serializer_class = DocumentWriteSerializer
 
     lookup_url_kwarg = "id"
-    selector_lookup_field = "document_id"
-    service_lookup_id = "document_id"
+
+    def get_create_context(self) -> EmptyContext:
+
+        return EmptyContext()
+
+    def get_update_context(self) -> DocumentTypeContext:
+
+        return DocumentTypeContext(
+            id=self.kwargs["id"]
+        )
 
     @action(
         detail=True,
