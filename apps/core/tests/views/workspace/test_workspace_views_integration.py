@@ -36,6 +36,10 @@ class TestWorkspaceListView:
         assert response.status_code == 200
         assert "workspaces" in response.context
 
+        # Ensure the expected template is used by the presentation layer
+        template_names = [t.name for t in response.templates if t.name]
+        assert "workspaces/list.html" in template_names
+
     def test_user_only_sees_owned_workspaces(
         self,
         client,
@@ -80,6 +84,10 @@ class TestWorkspaceCreateView:
         )
 
         assert response.status_code == 200
+
+        # ensure the expected template is rendered for create
+        template_names = [t.name for t in response.templates if t.name]
+        assert "create_page.html" in template_names
 
     def test_valid_submission_creates_workspace_and_redirects(
         self,
@@ -126,6 +134,10 @@ class TestWorkspaceCreateView:
 
         assert response.context["form"].errors
 
+        # verify the create template is used when rendering form errors
+        template_names = [t.name for t in response.templates if t.name]
+        assert "create_page.html" in template_names
+
 
 class TestWorkspaceDetailView:
 
@@ -166,6 +178,10 @@ class TestWorkspaceDetailView:
         assert response.status_code == 200
 
         assert response.context["workspace"] == workspace1_user1
+
+        # ensure correct template is used for detail view
+        template_names = [t.name for t in response.templates if t.name]
+        assert "workspaces/detail.html" in template_names
 
     def test_user_cannot_view_foreign_workspace(
         self,
@@ -208,6 +224,9 @@ class TestWorkspaceUpdateView:
         )
 
         assert response.status_code == 200
+
+        template_names = [t.name for t in response.templates if t.name]
+        assert "edit_page.html" in template_names
 
     def test_valid_submission_updates_workspace_and_redirects(
         self,
@@ -307,6 +326,9 @@ class TestWorkspaceDeleteView:
         )
 
         assert response.status_code == 200
+
+        template_names = [t.name for t in response.templates if t.name]
+        assert "delete_confirm.html" in template_names
 
     def test_valid_submission_deletes_workspace_and_redirects(
         self,

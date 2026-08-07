@@ -1,7 +1,9 @@
 import uuid
 from unittest.mock import ANY, Mock, patch
 
-from django.http import HttpResponse
+import pytest
+from django.http import HttpResponse, Http404
+from django.core.exceptions import ValidationError
 from django.test import RequestFactory
 from django.urls import reverse
 
@@ -11,6 +13,10 @@ from apps.core.common.contexts.contexts import (
 )
 from apps.core.view_contexts.app_context import AppContext
 from apps.core.view_contexts.extra_context import ExtraContext
+from apps.core.exceptions.exceptions import (
+    ResourceNotFoundError,
+    BusinessRuleViolationError,
+)
 from apps.workspaces.views import (
     WorkspaceCreateView,
     WorkspaceDeleteView,
@@ -44,6 +50,25 @@ class TestWorkspaceListView:
         )
 
         assert result is queryset
+
+    @patch("apps.workspaces.views.WorkspaceSelector.list")
+    def test_dispatch_translates_selector_exceptions_to_404(
+        self,
+        mock_list,
+        user1,
+    ):
+        # When the selector raises a ResourceNotFoundError during dispatch,
+        # the ViewExceptionHandlerMixin should translate it to Http404.
+        mock_list.side_effect = ResourceNotFoundError("not found")
+
+        request = RequestFactory().get("/")
+        request.user = user1
+
+        view = WorkspaceListView()
+        view.request = request
+
+        with pytest.raises(Http404):
+            view.dispatch(request)
 
 
 class TestWorkspaceCreateView:
@@ -132,6 +157,39 @@ class TestWorkspaceCreateView:
         assert context.app_kind == "workspace"
         assert context.page_title == "Create Workspace"
 
+    @patch("apps.workspaces.views.WorkspaceService.create")
+    def test_form_valid_service_raises_business_rule_adds_form_errors(
+        self,
+        mock_create,
+        user1,
+    ):
+        # Simulate the service raising a business rule error and ensure the
+        # ServiceFormErrorMixin adds errors to the form and form_valid returns
+        # the form_invalid response (status 200).
+        err = BusinessRuleViolationError()
+        # add expected attributes used by ServiceFormErrorMixin.add_service_errors_to_form
+        err.fields = ["name"]
+        err.messages = ["invalid workspace name"]
+        mock_create.side_effect = err
+
+        form = Mock()
+        form.cleaned_data = {"name": "Bad Name"}
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = WorkspaceCreateView()
+        view.request = request
+
+        result = view.form_valid(form)
+
+        # The mixin should add the service errors to the form
+        form.add_error.assert_called_with("name", "invalid workspace name")
+
+        # form_valid should return a form_invalid response (status 200)
+        assert hasattr(result, "status_code")
+        assert result.status_code == 200
+
 
 class TestWorkspaceDetailView:
 
@@ -161,6 +219,26 @@ class TestWorkspaceDetailView:
         )
 
         assert result is workspace
+
+    @patch("apps.workspaces.views.WorkspaceSelector.get")
+    def test_dispatch_translates_selector_get_exceptions_to_404(
+        self,
+        mock_get,
+        user1,
+    ):
+        mock_get.side_effect = ResourceNotFoundError("missing")
+
+        request = RequestFactory().get("/")
+        request.user = user1
+
+        view = WorkspaceDetailView()
+        view.request = request
+        view.kwargs = {
+            "workspace_id": "workspace-id",
+        }
+
+        with pytest.raises(Http404):
+            view.dispatch(request)
 
     @patch("apps.workspaces.views.company_list_url")
     def test_build_app_context(
@@ -325,6 +403,33 @@ class TestWorkspaceUpdateView:
         assert context.app_kind == "workspace"
         assert context.page_title == "Update Workspace"
 
+    @patch("apps.workspaces.views.WorkspaceService.update")
+    def test_form_valid_service_raises_business_rule_adds_form_errors(
+        self,
+        mock_update,
+        user1,
+    ):
+        err = BusinessRuleViolationError()
+        err.fields = ["name"]
+        err.messages = ["cannot use this name"]
+        mock_update.side_effect = err
+
+        form = Mock()
+        form.cleaned_data = {"name": "Bad Update"}
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = WorkspaceUpdateView()
+        view.request = request
+        view.kwargs = {"workspace_id": "workspace-id"}
+
+        result = view.form_valid(form)
+
+        form.add_error.assert_called_with("name", "cannot use this name")
+        assert hasattr(result, "status_code")
+        assert result.status_code == 200
+
 
 class TestWorkspaceDeleteView:
 
@@ -388,6 +493,25 @@ class TestWorkspaceDeleteView:
         mock_redirect.assert_called_once_with("/success/")
 
         assert result is response
+
+    @patch("apps.workspaces.views.WorkspaceService.remove")
+    def test_post_service_raises_resource_not_found_translates_to_404(
+        self,
+        mock_remove,
+        user1,
+    ):
+        mock_remove.side_effect = ResourceNotFoundError("not found")
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = WorkspaceDeleteView()
+        view.request = request
+        view.kwargs = {"workspace_id": "workspace-id"}
+        view.success_url = "/success/"
+
+        with pytest.raises(Http404):
+            view.dispatch(request)
 
     def test_build_extra_context(self):
 
