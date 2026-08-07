@@ -576,8 +576,10 @@ class JobApplicationNoteDeleteView(
         )
 
         return redirect(
-            "job-application-detail-web",
-            pk=self.app_note.job_application.pk,
+            reverse(
+                "job-application-detail-web",
+                kwargs={"pk": self.app_note.job_application.pk}
+            )
         )
 
     def build_app_context(self):
