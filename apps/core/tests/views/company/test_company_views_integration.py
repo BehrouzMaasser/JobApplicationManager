@@ -40,6 +40,10 @@ class TestCompanyListView:
         assert response.status_code == 200
         assert "companies" in response.context
 
+        # ensure the expected template is used by the presentation layer
+        template_names = [t.name for t in response.templates if t.name]
+        assert "companies/company/list.html" in template_names
+
     def test_list_only_returns_users_companies(
         self,
         client,
@@ -109,6 +113,9 @@ class TestCompanyCreateView:
         )
 
         assert response.status_code == 200
+
+        template_names = [t.name for t in response.templates if t.name]
+        assert "create_page.html" in template_names
 
     def test_valid_post_creates_company_and_redirects(
         self,
@@ -213,6 +220,9 @@ class TestCompanyDetailView:
             == co1_ws1_user1
         )
 
+        template_names = [t.name for t in response.templates if t.name]
+        assert "companies/company/detail.html" in template_names
+
     def test_user_cannot_view_other_users_company(
         self,
         client,
@@ -254,6 +264,9 @@ class TestCompanyUpdateView:
         )
 
         assert response.status_code == 200
+
+        template_names = [t.name for t in response.templates if t.name]
+        assert "edit_page.html" in template_names
 
     def test_valid_post_updates_company_and_redirects(
         self,
@@ -338,6 +351,9 @@ class TestCompanyDeleteView:
         )
 
         assert response.status_code == 200
+
+        template_names = [t.name for t in response.templates if t.name]
+        assert "delete_confirm.html" in template_names
 
     def test_post_deletes_company_and_redirects(
         self,

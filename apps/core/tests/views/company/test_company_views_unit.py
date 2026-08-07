@@ -2,7 +2,7 @@ import pytest
 
 from unittest.mock import Mock, patch
 
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.test import RequestFactory
 
 from apps.companies.views import (
@@ -14,6 +14,10 @@ from apps.companies.views import (
 )
 
 from apps.core.common.contexts.contexts import CompanyContext
+from apps.core.exceptions.exceptions import (
+    ResourceNotFoundError,
+    BusinessRuleViolationError,
+)
 
 
 pytestmark = pytest.mark.django_db
@@ -60,6 +64,28 @@ class TestCompanyListView:
         )
 
         assert result is queryset
+
+    @patch("apps.companies.views.CompanySelector.list")
+    def test_dispatch_translates_selector_exceptions_to_404(
+        self,
+        mock_list,
+        user1,
+    ):
+        mock_list.side_effect = ResourceNotFoundError("not found")
+
+        request = RequestFactory().get(
+            "/",
+            {
+                "workspace_id": "workspace-id",
+            },
+        )
+        request.user = user1
+
+        view = CompanyListView()
+        view.request = request
+
+        with pytest.raises(Http404):
+            view.dispatch(request)
 
     # ------------------------
     # App Context
@@ -157,6 +183,36 @@ class TestCompanyCreateView:
         assert result.status_code == 302
         assert result.url == "/success/"
 
+    @patch("apps.companies.views.CompanyService.create")
+    def test_form_valid_service_raises_business_rule_adds_form_errors(
+        self,
+        mock_create,
+        user1,
+    ):
+        # Simulate the service raising a business rule error and ensure the
+        # ServiceFormErrorMixin adds errors to the form and form_valid returns
+        # the form_invalid response (status 200).
+        err = BusinessRuleViolationError()
+        err.fields = ["name"]
+        err.messages = ["invalid name"]
+        mock_create.side_effect = err
+
+        form = Mock()
+        form.cleaned_data = {"name": "Bad Company", "website": ""}
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = CompanyCreateView()
+        view.request = request
+        view.kwargs = {"workspace_id": "workspace-id"}
+
+        result = view.form_valid(form)
+
+        form.add_error.assert_called_with("name", "invalid name")
+        assert hasattr(result, "status_code")
+        assert result.status_code == 200
+
     # ------------------------
     # Success URL
     # ------------------------
@@ -247,6 +303,26 @@ class TestCompanyDetailView:
         )
 
         assert result is co1_ws1_user1
+
+    @patch("apps.companies.views.CompanySelector.get")
+    def test_dispatch_translates_selector_get_exceptions_to_404(
+        self,
+        mock_get,
+        user1,
+    ):
+        mock_get.side_effect = ResourceNotFoundError("missing")
+
+        request = RequestFactory().get("/")
+        request.user = user1
+
+        view = CompanyDetailView()
+        view.request = request
+        view.kwargs = {
+            "pk": "123",
+        }
+
+        with pytest.raises(Http404):
+            view.dispatch(request)
 
     # ------------------------
     # App Context
@@ -390,6 +466,34 @@ class TestCompanyUpdateView:
         assert result.status_code == 302
         assert result.url == "/success/"
 
+    @patch("apps.companies.views.CompanyService.update")
+    def test_form_valid_service_raises_business_rule_adds_form_errors(
+        self,
+        mock_update,
+        user1,
+    ):
+        err = BusinessRuleViolationError()
+        err.fields = ["name"]
+        err.messages = ["cannot use this name"]
+        mock_update.side_effect = err
+
+        form = Mock()
+        form.cleaned_data = {"name": "Bad Update", "website": ""}
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = CompanyUpdateView()
+        view.request = request
+        view.object = None
+        view.kwargs = {"pk": "123"}
+
+        result = view.form_valid(form)
+
+        form.add_error.assert_called_with("name", "cannot use this name")
+        assert hasattr(result, "status_code")
+        assert result.status_code == 200
+
     # ------------------------
     # Success URL
     # ------------------------
@@ -529,6 +633,24 @@ class TestCompanyDeleteView:
         mock_redirect.assert_called_once()
 
         assert result is response
+
+    @patch("apps.companies.views.CompanyService.remove")
+    def test_post_service_raises_resource_not_found_translates_to_404(
+        self,
+        mock_remove,
+        user1,
+    ):
+        mock_remove.side_effect = ResourceNotFoundError("not found")
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = CompanyDeleteView()
+        view.request = request
+        view.kwargs = {"pk": "123"}
+
+        with pytest.raises(Http404):
+            view.dispatch(request)
 
     # ------------------------
     # App Context
