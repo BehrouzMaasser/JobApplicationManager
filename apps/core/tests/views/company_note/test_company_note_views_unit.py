@@ -177,6 +177,7 @@ class TestCompanyNoteCreateView:
         view = CompanyNoteCreateView()
         view.request = request
         view.kwargs = {"workspace_id": "workspace-id", "company_id": "1"}
+        view.object = Mock()
 
         result = view.form_valid(form)
 

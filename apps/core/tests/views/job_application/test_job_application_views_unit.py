@@ -227,6 +227,7 @@ class TestJobApplicationCreateView:
             "company_id": 1,
             "job_position_id": 2,
         }
+        view.object = Mock()
 
         result = view.form_valid(form)
 

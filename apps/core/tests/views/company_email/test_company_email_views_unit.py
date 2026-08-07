@@ -200,6 +200,7 @@ class TestCompanyEmailCreateView:
         view = CompanyEmailCreateView()
         view.request = request
         view.kwargs = {"workspace_id": "workspace-id", "company_id": "1"}
+        view.object = Mock()
 
         result = view.form_valid(form)
 
@@ -464,6 +465,7 @@ class TestCompanyEmailUpdateView:
         self,
         mock_update,
         user1,
+        co_email1_co1_ws1_user1
     ):
         err = BusinessRuleViolationError()
         err.fields = ["title"]
@@ -478,7 +480,7 @@ class TestCompanyEmailUpdateView:
 
         view = CompanyEmailUpdateView()
         view.request = request
-        view.object = None
+        view.object = co_email1_co1_ws1_user1
         view.kwargs = {"pk": "123"}
 
         result = view.form_valid(form)

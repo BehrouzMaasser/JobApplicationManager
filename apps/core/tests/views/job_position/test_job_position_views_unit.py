@@ -229,6 +229,7 @@ class TestJobPositionCreateView:
         view = JobPositionCreateView()
         view.request = request
         view.kwargs = {"workspace_id": "workspace-id", "company_id": "1"}
+        view.object = Mock()
 
         result = view.form_valid(form)
 
@@ -480,6 +481,7 @@ class TestJobPositionUpdateView:
         self,
         mock_update,
         user1,
+        job_position1_co1_ws1_user1
     ):
         err = BusinessRuleViolationError()
         err.fields = ["title"]
@@ -494,7 +496,7 @@ class TestJobPositionUpdateView:
 
         view = JobPositionUpdateView()
         view.request = request
-        view.object = None
+        view.object = job_position1_co1_ws1_user1
         view.kwargs = {"pk": "123"}
 
         result = view.form_valid(form)

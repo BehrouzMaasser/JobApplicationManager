@@ -180,6 +180,7 @@ class TestWorkspaceCreateView:
 
         view = WorkspaceCreateView()
         view.request = request
+        view.object = Mock()
 
         result = view.form_valid(form)
 
@@ -423,6 +424,7 @@ class TestWorkspaceUpdateView:
         view = WorkspaceUpdateView()
         view.request = request
         view.kwargs = {"workspace_id": "workspace-id"}
+        view.object = Mock()
 
         result = view.form_valid(form)
 
