@@ -2,13 +2,17 @@ import pytest
 
 from unittest.mock import Mock, patch
 
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.test import RequestFactory
 
 from apps.companies.views import (
     CompanyNoteListView,
     CompanyNoteCreateView,
     CompanyNoteDetailView, CompanyNoteDeleteView, CompanyNoteUpdateView,
+)
+from apps.core.exceptions.exceptions import (
+    ResourceNotFoundError,
+    BusinessRuleViolationError,
 )
 
 pytestmark = pytest.mark.django_db
@@ -54,6 +58,28 @@ class TestCompanyNoteListView:
         )
 
         assert result is queryset
+
+    @patch("apps.companies.views.CompanyNoteSelector.list")
+    def test_dispatch_translates_selector_exceptions_to_404(
+        self,
+        mock_list,
+        user1,
+    ):
+        mock_list.side_effect = ResourceNotFoundError("not found")
+
+        request = RequestFactory().get(
+            "/",
+            {
+                "company_id": "123",
+            },
+        )
+        request.user = user1
+
+        view = CompanyNoteListView()
+        view.request = request
+
+        with pytest.raises(Http404):
+            view.dispatch(request)
 
     # ------------------------
     # App Context
@@ -130,6 +156,33 @@ class TestCompanyNoteCreateView:
         mock_redirect.assert_called_once_with(view.get_success_url())
 
         assert result is response
+
+    @patch("apps.companies.views.CompanyNoteService.create")
+    def test_form_valid_service_raises_business_rule_adds_form_errors(
+        self,
+        mock_create,
+        user1,
+    ):
+        err = BusinessRuleViolationError()
+        err.fields = ["title"]
+        err.messages = ["invalid title"]
+        mock_create.side_effect = err
+
+        form = Mock()
+        form.cleaned_data = {"title": "Bad", "content": ""}
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = CompanyNoteCreateView()
+        view.request = request
+        view.kwargs = {"workspace_id": "workspace-id", "company_id": "1"}
+
+        result = view.form_valid(form)
+
+        form.add_error.assert_called_with("title", "invalid title")
+        assert hasattr(result, "status_code")
+        assert result.status_code == 200
 
     # ------------------------
     # Success URL
@@ -214,6 +267,26 @@ class TestCompanyNoteDetailView:
         )
 
         assert result is co_note1_co1_ws1_user1
+
+    @patch("apps.companies.views.CompanyNoteSelector.get")
+    def test_dispatch_translates_selector_get_exceptions_to_404(
+        self,
+        mock_get,
+        user1,
+    ):
+        mock_get.side_effect = ResourceNotFoundError("missing")
+
+        request = RequestFactory().get("/")
+        request.user = user1
+
+        view = CompanyNoteDetailView()
+        view.request = request
+        view.kwargs = {
+            "pk": "123",
+        }
+
+        with pytest.raises(Http404):
+            view.dispatch(request)
 
     # ------------------------
     # App Context

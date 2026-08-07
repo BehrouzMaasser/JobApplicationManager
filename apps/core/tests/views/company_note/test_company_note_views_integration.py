@@ -37,6 +37,9 @@ class TestCompanyNoteListView:
         assert response.status_code == 200
         assert "notes" in response.context
 
+        template_names = [t.name for t in response.templates if t.name]
+        assert "companies/note/list.html" in template_names
+
     def test_list_contains_company_notes(
         self,
         client,
@@ -124,6 +127,9 @@ class TestCompanyNoteCreateView:
         )
 
         assert response.status_code == 200
+
+        template_names = [t.name for t in response.templates if t.name]
+        assert "create_page.html" in template_names
 
     def test_valid_post_creates_company_note(
         self,
@@ -255,6 +261,9 @@ class TestCompanyNoteDetailView:
             == co_note1_co1_ws1_user1
         )
 
+        template_names = [t.name for t in response.templates if t.name]
+        assert "companies/note/detail.html" in template_names
+
     def test_user_cannot_view_other_users_note(
         self,
         client,
@@ -312,6 +321,9 @@ class TestCompanyNoteUpdateView:
         )
 
         assert response.status_code == 200
+
+        template_names = [t.name for t in response.templates if t.name]
+        assert "edit_page.html" in template_names
 
     def test_valid_post_updates_note(
         self,

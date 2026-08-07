@@ -41,6 +41,10 @@ class TestCompanyEmailListView:
         assert response.status_code == 200
         assert "emails" in response.context
 
+        # ensure the expected template is used by the presentation layer
+        template_names = [t.name for t in response.templates if t.name]
+        assert "companies/email/list.html" in template_names
+
     def test_user_can_see_company_emails(
         self,
         client,
@@ -132,6 +136,9 @@ class TestCompanyEmailCreateView:
         )
 
         assert response.status_code == 200
+
+        template_names = [t.name for t in response.templates if t.name]
+        assert "create_page.html" in template_names
 
     def test_valid_post_creates_company_email(
         self,
@@ -268,6 +275,9 @@ class TestCompanyEmailDetailView:
             response.context["email"]
             == co_email1_co1_ws1_user1
         )
+
+        template_names = [t.name for t in response.templates if t.name]
+        assert "companies/email/detail.html" in template_names
 
     def test_user_cannot_view_foreign_company_email(
         self,
