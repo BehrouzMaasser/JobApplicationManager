@@ -57,7 +57,7 @@ class BaseReadOnlyViewSet(
     selector_class: type | None = None
 
     lookup_url_kwarg: str | None = None
-    selector_lookup_field: str | None = None
+    selector_lookup_field: str = "obj_id"
 
     @property
     def selector(self):
@@ -417,83 +417,4 @@ class BaseContextServiceViewSet(BaseServiceViewSet, ABC):
         self.service.remove(
             user=self.request.user,
             context=self.get_update_context(),
-        )
-
-
-class BaseIdServiceViewSet(BaseServiceViewSet, ABC):
-    """
-    Base ViewSet for services that identify resources using a single lookup value.
-
-    Provides implementations of create, update and destroy operations for
-    services that accept a resource identifier as a keyword argument.
-
-    Subclasses must configure:
-
-        - ``selector_class``
-        - ``selector_lookup_field``
-        - ``lookup_url_kwarg``
-        - ``service_class``
-        - ``service_lookup_id``
-        - ``read_serializer_class``
-        - ``write_serializer_class``
-
-    and implement:
-
-        - ``get_queryset()``
-    """
-
-    service_lookup_id: str | None = None
-
-    @property
-    def service_lookup(self) -> str | ImproperlyConfigured:
-        """
-        Return the service lookup parameter name.
-
-        Raises:
-            ImproperlyConfigured:
-                If ``service_lookup_id`` has not been defined.
-        """
-
-        return self._require_attr("service_lookup_id")
-
-    @property
-    def _service_kwargs(self) -> dict[str, str]:
-        """
-        Build the keyword arguments required by the configured service.
-
-        Returns:
-            A dictionary mapping the configured service lookup parameter to the
-            identifier extracted from the request URL.
-        """
-
-        return {self.service_lookup: self.kwargs[self.lookup_url]}
-
-    def service_create(self, validated_data):
-        """
-        Delegate resource creation to the configured service.
-        """
-
-        return self.service.create(
-            user=self.request.user,
-            validated_data=validated_data,
-        )
-
-    def service_destroy(self):
-        """
-        Delegate resource deletion to the configured service using the configured
-        lookup identifier.
-        """
-
-        self.service.remove(user=self.request.user, **self._service_kwargs)
-
-    def service_update(self, validated_data: dict[str, Any]):
-        """
-        Delegate resource updates to the configured service using the configured
-        lookup identifier.
-        """
-
-        return self.service.update(
-            user=self.request.user,
-            validated_data=validated_data,
-            **self._service_kwargs,
         )

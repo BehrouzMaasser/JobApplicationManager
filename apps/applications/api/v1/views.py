@@ -69,7 +69,6 @@ class JobApplicationViewSet(BaseReadOnlyViewSet):
     serializer_class = JobApplicationSerializer
 
     selector_class = JobApplicationSelector
-    selector_lookup_field = "application_id"
 
     lookup_url_kwarg = "id"
 
@@ -116,7 +115,6 @@ class NestedJobApplicationViewSet(BaseContextServiceViewSet):
     write_serializer_class = JobApplicationSerializer
 
     lookup_url_kwarg = "id"
-    selector_lookup_field = "application_id"
 
     def get_queryset(self) -> QuerySet[JobApplication]:
         """
@@ -179,7 +177,6 @@ class JobApplicationNoteViewSet(BaseReadOnlyViewSet):
     serializer_class = JobApplicationNoteSerializer
 
     selector_class = JobApplicationNoteSelector
-    selector_lookup_field = "application_note_id"
 
     lookup_url_kwarg = "id"
 
@@ -228,7 +225,6 @@ class NestedJobApplicationNoteViewSet(BaseContextServiceViewSet):
     write_serializer_class = JobApplicationNoteSerializer
 
     lookup_url_kwarg = "id"
-    selector_lookup_field = "application_note_id"
 
     def get_queryset(self) -> QuerySet[JobApplicationNote]:
         """

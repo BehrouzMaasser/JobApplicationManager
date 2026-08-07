@@ -13,7 +13,12 @@ from django.db.models import QuerySet
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 
-from apps.core.common.contexts.contexts import EmptyContext, DocumentTypeContext, DocumentContext
+from apps.core.common.contexts.contexts import (
+    EmptyContext,
+    DocumentTypeContext,
+    DocumentContext
+)
+
 from apps.core.common.types.filters import DocumentQueryFilter
 # Mixins
 from apps.documents.mixins.document_file_response_mixin import (
