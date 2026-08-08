@@ -167,7 +167,7 @@ class TestDocumentDetailView:
             )
         )
 
-        assert response.status_code == 403
+        assert response.status_code == 404
 
 
 class TestDocumentUpdateView:
@@ -233,7 +233,7 @@ class TestDocumentUpdateView:
             },
         )
 
-        assert response.status_code == 403
+        assert response.status_code == 404
 
         doc1_user1.refresh_from_db()
 
@@ -300,7 +300,7 @@ class TestDocumentDeleteView:
             )
         )
 
-        assert response.status_code == 403
+        assert response.status_code == 404
 
         from apps.documents.models import Document
 

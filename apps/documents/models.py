@@ -181,13 +181,6 @@ class Document(models.Model):
         Validate ownership consistency between the document and its type.
         """
 
-        if not self.file_hash:
-            raise ValidationError(
-                {
-                    "file_hash": "Document hash is required."
-                }
-            )
-
         if [self.owner_id, self.document_type_id].count(None):
             return
 
