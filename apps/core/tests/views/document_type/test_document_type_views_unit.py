@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.test import RequestFactory
 from django.urls import reverse
 
-from apps.core.contexts.extra_context import ExtraContext
+from apps.core.view_contexts.extra_context import ExtraContext
 from apps.core.exceptions.exceptions import BusinessRuleViolationError
 
 from apps.documents.views import (
@@ -111,6 +111,7 @@ class TestDocumentTypeCreateView:
 
         view = DocumentTypeCreateView()
         view.request = request
+        view.object = Mock()
 
         # Call form_valid which uses execute_service internally
         view.form_valid(form)
