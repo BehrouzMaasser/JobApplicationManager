@@ -5,6 +5,7 @@ from django.test import RequestFactory
 from django.urls import reverse
 
 from apps.core.contexts.extra_context import ExtraContext
+from apps.core.exceptions.exceptions import BusinessRuleViolationError
 
 from apps.documents.views import (
     DocumentCreateView,
@@ -66,10 +67,12 @@ class TestDocumentCreateView:
 
         result = view.form_valid(form)
 
-        mock_create.assert_called_once_with(
-            user=document_type_user1.owner,
-            validated_data=form.cleaned_data,
-        )
+        # Inspect call args rather than asserting exact kwarg names
+        mock_create.assert_called_once()
+        _, kwargs = mock_create.call_args
+        assert kwargs["user"] == document_type_user1.owner
+        assert kwargs["validated_data"] == form.cleaned_data
+        assert "context" in kwargs
 
         mock_redirect.assert_called_once_with(reverse("document-list-web"))
 
@@ -84,6 +87,35 @@ class TestDocumentCreateView:
         assert isinstance(context, ExtraContext)
         assert context.app_kind == "document"
         assert context.page_title == "Create Document"
+
+    @patch("apps.documents.views.ServiceFormErrorMixin.add_service_errors_to_form")
+    @patch("apps.documents.views.DocumentService.create")
+    def test_form_valid_handles_service_validation_error(
+        self,
+        mock_create,
+        mock_add_errors,
+        document_type_user1,
+    ):
+        """
+        When the service raises a BusinessRuleViolationError the mixin should
+        add errors to the form instead of letting the exception bubble.
+        """
+        mock_create.side_effect = BusinessRuleViolationError(
+            fields=["file"],
+            messages=["Please upload a file for this document."]
+        )
+
+        form = Mock()
+        form.add_error = Mock()
+        request = RequestFactory().post("/")
+        request.user = document_type_user1.owner
+
+        view = DocumentCreateView()
+        view.request = request
+
+        view.form_valid(form)
+
+        mock_add_errors.assert_called_once()
 
 
 class TestDocumentDetailView:
@@ -109,10 +141,10 @@ class TestDocumentDetailView:
 
         result = view.get_object()
 
-        mock_get.assert_called_once_with(
-            user=user1,
-            document_id="Document-id",
-        )
+        mock_get.assert_called_once()
+        _, kwargs = mock_get.call_args
+        assert kwargs["user"] == user1
+        assert kwargs.get("obj_id") == "Document-id"
 
         assert result is queryset
 
@@ -140,10 +172,10 @@ class TestDocumentUpdateView:
 
         result = view.get_object()
 
-        mock_get.assert_called_once_with(
-            user=user1,
-            document_id="Document-id",
-        )
+        mock_get.assert_called_once()
+        _, kwargs = mock_get.call_args
+        assert kwargs["user"] == user1
+        assert kwargs.get("obj_id") == "Document-id"
 
         assert result is queryset
 
@@ -181,11 +213,12 @@ class TestDocumentUpdateView:
 
             result = view.form_valid(form)
 
-        mock_update.assert_called_once_with(
-            user=user1,
-            document_id="Document-id",
-            validated_data=form.cleaned_data,
-        )
+        mock_update.assert_called_once()
+        _, kwargs = mock_update.call_args
+        assert kwargs["user"] == user1
+        assert kwargs["validated_data"] == form.cleaned_data
+        assert "context" in kwargs
+        assert getattr(kwargs["context"], "id", None) == view.kwargs["pk"]
 
         mock_success_url.assert_called_once()
 
@@ -244,10 +277,10 @@ class TestDocumentDeleteView:
 
         result = view.get_object()
 
-        mock_get.assert_called_once_with(
-            user=user1,
-            document_id="Document-id",
-        )
+        mock_get.assert_called_once()
+        _, kwargs = mock_get.call_args
+        assert kwargs["user"] == user1
+        assert kwargs.get("obj_id") == "Document-id"
 
         assert result is queryset
 
@@ -274,10 +307,11 @@ class TestDocumentDeleteView:
 
         result = view.post(request)
 
-        mock_remove.assert_called_once_with(
-            user=user1,
-            document_id="999999",
-        )
+        mock_remove.assert_called_once()
+        _, kwargs = mock_remove.call_args
+        assert kwargs["user"] == user1
+        assert "context" in kwargs
+        assert getattr(kwargs["context"], "id", None) == view.kwargs["pk"]
 
         mock_redirect.assert_called_once_with(
             reverse("document-list-web")

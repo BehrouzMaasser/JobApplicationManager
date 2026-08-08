@@ -5,6 +5,7 @@ from django.test import RequestFactory
 from django.urls import reverse
 
 from apps.core.contexts.extra_context import ExtraContext
+from apps.core.exceptions.exceptions import BusinessRuleViolationError
 
 from apps.documents.views import (
     DocumentTypeCreateView,
@@ -63,10 +64,12 @@ class TestDocumentTypeCreateView:
 
         result = view.form_valid(form)
 
-        mock_create.assert_called_once_with(
-            user=user1,
-            validated_data=form.cleaned_data,
-        )
+        # Don't assert exact kwarg names — verify essential behaviour.
+        mock_create.assert_called_once()
+        _, kwargs = mock_create.call_args
+        assert kwargs["user"] == user1
+        assert kwargs["validated_data"] == form.cleaned_data
+        assert "context" in kwargs
 
         mock_redirect.assert_called_once_with(reverse("document-type-list-web"))
 
@@ -81,6 +84,39 @@ class TestDocumentTypeCreateView:
         assert isinstance(context, ExtraContext)
         assert context.app_kind == "document type"
         assert context.page_title == "Create Document Type"
+
+    @patch("apps.documents.views.ServiceFormErrorMixin.add_service_errors_to_form")
+    @patch("apps.documents.views.DocumentTypeService.create")
+    def test_form_valid_handles_service_validation_error(
+        self,
+        mock_create,
+        mock_add_errors,
+        user1,
+    ):
+        """
+        When the service raises a BusinessRuleViolationError the mixin should
+        add errors to the form instead of letting the exception bubble.
+        """
+        # Simulate service validation failure
+        mock_create.side_effect = BusinessRuleViolationError(
+            fields=["name"],
+            messages=["Invalid name"]
+        )
+
+        form = Mock()
+        # Provide an add_error so that code paths using form.add_error won't break
+        form.add_error = Mock()
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = DocumentTypeCreateView()
+        view.request = request
+
+        # Call form_valid which uses execute_service internally
+        view.form_valid(form)
+
+        # Mixin's add_service_errors_to_form should be invoked
+        mock_add_errors.assert_called_once()
 
 
 class TestDocumentTypeDetailView:
@@ -106,10 +142,11 @@ class TestDocumentTypeDetailView:
 
         result = view.get_object()
 
-        mock_get.assert_called_once_with(
-            user=user1,
-            document_type_id="DocumentType-id",
-        )
+        # Verify selector was called and crucial kwargs are present
+        mock_get.assert_called_once()
+        _, kwargs = mock_get.call_args
+        assert kwargs["user"] == user1
+        assert kwargs.get("obj_id") == "DocumentType-id"
 
         assert result is queryset
 
@@ -137,10 +174,10 @@ class TestDocumentTypeUpdateView:
 
         result = view.get_object()
 
-        mock_get.assert_called_once_with(
-            user=user1,
-            document_type_id="DocumentType-id",
-        )
+        mock_get.assert_called_once()
+        _, kwargs = mock_get.call_args
+        assert kwargs["user"] == user1
+        assert kwargs.get("obj_id") == "DocumentType-id"
 
         assert result is queryset
 
@@ -178,11 +215,13 @@ class TestDocumentTypeUpdateView:
 
             result = view.form_valid(form)
 
-        mock_update.assert_called_once_with(
-            user=user1,
-            document_type_id="DocumentType-id",
-            validated_data=form.cleaned_data,
-        )
+        mock_update.assert_called_once()
+        _, kwargs = mock_update.call_args
+        assert kwargs["user"] == user1
+        assert kwargs["validated_data"] == form.cleaned_data
+        # Service should receive a context object identifying the target
+        assert "context" in kwargs
+        assert getattr(kwargs["context"], "id", None) == view.kwargs["pk"]
 
         mock_success_url.assert_called_once()
 
@@ -241,10 +280,10 @@ class TestDocumentTypeDeleteView:
 
         result = view.get_object()
 
-        mock_get.assert_called_once_with(
-            user=user1,
-            document_type_id="DocumentType-id",
-        )
+        mock_get.assert_called_once()
+        _, kwargs = mock_get.call_args
+        assert kwargs["user"] == user1
+        assert kwargs.get("obj_id") == "DocumentType-id"
 
         assert result is queryset
 
@@ -271,10 +310,11 @@ class TestDocumentTypeDeleteView:
 
         result = view.post(request)
 
-        mock_remove.assert_called_once_with(
-            user=user1,
-            document_type_id="999999",
-        )
+        mock_remove.assert_called_once()
+        _, kwargs = mock_remove.call_args
+        assert kwargs["user"] == user1
+        assert "context" in kwargs
+        assert getattr(kwargs["context"], "id", None) == view.kwargs["pk"]
 
         mock_redirect.assert_called_once_with(
             reverse("document-type-list-web")

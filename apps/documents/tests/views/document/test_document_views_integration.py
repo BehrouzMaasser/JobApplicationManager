@@ -2,6 +2,8 @@ import pytest
 
 from django.urls import reverse
 
+from apps.documents.models import Document
+
 
 pytestmark = pytest.mark.django_db
 
@@ -99,6 +101,16 @@ class TestDocumentCreateView:
         )
 
         assert response.status_code == 302
+
+        # Verify document was actually created and file hash computed
+        created = Document.objects.filter(
+            name="T1",
+            owner=document_type_user1.owner
+        ).first()
+
+        assert created is not None
+        assert created.file_hash  # non-empty hash
+        assert len(created.file_hash) == 64  # sha256 hex length
 
 
 class TestDocumentDetailView:
