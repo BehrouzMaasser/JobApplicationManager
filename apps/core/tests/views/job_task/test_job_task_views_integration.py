@@ -333,11 +333,10 @@ class TestJobTaskDeleteView:
     def test_valid_submission_deletes_job_task_and_redirects(
         self,
         client,
-        user1,
         job_task1_user1,
     ):
 
-        client.force_login(user1)
+        client.force_login(job_task1_user1.user)
 
         pk = job_task1_user1.id
 

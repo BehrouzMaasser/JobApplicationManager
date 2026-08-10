@@ -302,15 +302,13 @@ class TestJobRequirementUpdateView:
 
     def test_get_success_url(self):
 
-        pk = uuid.uuid4()
-
         view = JobRequirementUpdateView()
-        view.kwargs = {"pk": pk}
+        view.kwargs = {"pk": 1}
 
         assert view.get_success_url() == reverse(
             "job-requirement-detail-web",
             kwargs={
-                "pk": pk,
+                "pk": 1,
             },
         )
 
@@ -388,7 +386,7 @@ class TestJobRequirementDeleteView:
 
         mock_remove.assert_called_once_with(
             user=user1,
-            job_requirement_id="req-id",
+            context=JobRequirementContext(id="req-id"),
         )
 
         mock_redirect.assert_called_once_with("/success/")
