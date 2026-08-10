@@ -1,0 +1,415 @@
+import uuid
+from unittest.mock import ANY, Mock, patch
+
+import pytest
+from django.http import HttpResponse, Http404
+from django.core.exceptions import ValidationError
+from django.test import RequestFactory
+from django.urls import reverse
+
+from apps.core.common.contexts.contexts import EmptyContext, JobBenefitContext
+from apps.core.exceptions.exceptions import (
+    ResourceNotFoundError,
+    BusinessRuleViolationError,
+)
+from apps.accounts.views import (
+    JobBenefitListView,
+    JobBenefitCreateView,
+    JobBenefitDetailView,
+    JobBenefitUpdateView,
+    JobBenefitDeleteView,
+)
+
+
+class TestJobBenefitListView:
+
+    @patch("apps.accounts.views.JobBenefitSelector.list")
+    def test_get_queryset_delegates_to_selector(
+        self,
+        mock_list,
+        user1,
+    ):
+        queryset = Mock()
+        mock_list.return_value = queryset
+
+        request = RequestFactory().get("/")
+        request.user = user1
+
+        view = JobBenefitListView()
+        view.request = request
+
+        result = view.get_queryset()
+
+        mock_list.assert_called_once_with(
+            user=user1,
+        )
+
+        assert result is queryset
+
+    @patch("apps.accounts.views.JobBenefitSelector.list")
+    def test_dispatch_translates_selector_exceptions_to_404(
+        self,
+        mock_list,
+        user1,
+    ):
+        mock_list.side_effect = ResourceNotFoundError("not found")
+
+        request = RequestFactory().get("/")
+        request.user = user1
+
+        view = JobBenefitListView()
+        view.request = request
+
+        with pytest.raises(Http404):
+            view.dispatch(request)
+
+
+class TestJobBenefitCreateView:
+
+    @patch.object(JobBenefitCreateView, "execute_service")
+    @patch("apps.accounts.views.redirect")
+    def test_form_valid_executes_service_and_redirects_on_success(
+        self,
+        mock_redirect,
+        mock_execute_service,
+        user1,
+    ):
+        response = HttpResponse()
+        mock_redirect.return_value = response
+
+        form = Mock()
+        form.cleaned_data = {
+            "name": "New Benefit",
+            "description": "Some Description",
+        }
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = JobBenefitCreateView()
+        view.request = request
+        view.success_url = "/success/"
+
+        mock_execute_service.return_value = None
+
+        result = view.form_valid(form)
+
+        mock_execute_service.assert_called_once_with(
+            form=form,
+            operation=ANY,
+        )
+
+        operation = mock_execute_service.call_args.kwargs["operation"]
+
+        with patch(
+            "apps.accounts.views.JobBenefitService.create"
+        ) as mock_create:
+
+            operation()
+
+            mock_create.assert_called_once_with(
+                user=user1,
+                context=EmptyContext(),
+                validated_data=form.cleaned_data,
+            )
+
+        mock_redirect.assert_called_once_with("/success/")
+
+        assert result is response
+
+    @patch.object(JobBenefitCreateView, "execute_service")
+    def test_form_valid_returns_form_invalid_response_when_service_fails(
+        self,
+        mock_execute_service,
+        user1,
+    ):
+        error_response = HttpResponse(status=200)
+        mock_execute_service.return_value = error_response
+
+        form = Mock()
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = JobBenefitCreateView()
+        view.request = request
+
+        result = view.form_valid(form)
+
+        mock_execute_service.assert_called_once_with(
+            form=form,
+            operation=ANY,
+        )
+
+        assert result is error_response
+
+    @patch("apps.accounts.views.JobBenefitService.create")
+    def test_form_valid_service_raises_business_rule_adds_form_errors(
+        self,
+        mock_create,
+        user1,
+    ):
+        err = BusinessRuleViolationError()
+        err.fields = ["name"]
+        err.messages = ["invalid name"]
+        mock_create.side_effect = err
+
+        form = Mock()
+        form.cleaned_data = {"name": "Bad"}
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = JobBenefitCreateView()
+        view.request = request
+        view.object = Mock()
+
+        result = view.form_valid(form)
+
+        form.add_error.assert_called_with("name", "invalid name")
+
+        assert hasattr(result, "status_code")
+        assert result.status_code == 200
+
+
+class TestJobBenefitDetailView:
+
+    @patch("apps.accounts.views.JobBenefitSelector.list")
+    def test_get_queryset_delegates_to_selector(
+        self,
+        mock_list,
+        user1,
+    ):
+        queryset = Mock()
+        mock_list.return_value = queryset
+
+        request = RequestFactory().get("/")
+        request.user = user1
+
+        view = JobBenefitDetailView()
+        view.request = request
+
+        result = view.get_queryset()
+
+        mock_list.assert_called_once_with(user=user1)
+        assert result is queryset
+
+
+class TestJobBenefitUpdateView:
+
+    @patch("apps.accounts.views.JobBenefitSelector.list")
+    def test_get_queryset_delegates_to_selector(
+        self,
+        mock_list,
+        user1,
+    ):
+        queryset = Mock()
+        mock_list.return_value = queryset
+
+        request = RequestFactory().get("/")
+        request.user = user1
+
+        view = JobBenefitUpdateView()
+        view.request = request
+
+        result = view.get_queryset()
+
+        mock_list.assert_called_once_with(user=user1)
+        assert result is queryset
+
+    @patch.object(JobBenefitUpdateView, "execute_service")
+    @patch("apps.accounts.views.redirect")
+    def test_form_valid_executes_service_and_redirects_on_success(
+        self,
+        mock_redirect,
+        mock_execute_service,
+        user1,
+    ):
+        response = HttpResponse()
+        mock_redirect.return_value = response
+
+        form = Mock()
+        form.cleaned_data = {
+            "name": "Updated Benefit",
+            "description": "Updated",
+        }
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = JobBenefitUpdateView()
+        view.request = request
+        view.kwargs = {"pk": "benefit-id"}
+
+        mock_execute_service.return_value = None
+
+        with patch.object(
+            view,
+            "get_success_url",
+            return_value="/success/",
+        ):
+            result = view.form_valid(form)
+
+        mock_execute_service.assert_called_once_with(
+            form=form,
+            operation=ANY,
+        )
+
+        operation = mock_execute_service.call_args.kwargs["operation"]
+
+        with patch(
+            "apps.accounts.views.JobBenefitService.update"
+        ) as mock_update:
+
+            operation()
+
+            mock_update.assert_called_once_with(
+                user=user1,
+                context=JobBenefitContext(id="benefit-id"),
+                validated_data=form.cleaned_data,
+            )
+
+        mock_redirect.assert_called_once_with("/success/")
+
+        assert result is response
+
+    @patch.object(JobBenefitUpdateView, "execute_service")
+    def test_form_valid_returns_form_invalid_response_when_service_fails(
+        self,
+        mock_execute_service,
+        user1,
+    ):
+        error_response = HttpResponse(status=200)
+        mock_execute_service.return_value = error_response
+
+        form = Mock()
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = JobBenefitUpdateView()
+        view.request = request
+        view.kwargs = {"pk": "benefit-id"}
+
+        result = view.form_valid(form)
+
+        mock_execute_service.assert_called_once_with(
+            form=form,
+            operation=ANY,
+        )
+
+        assert result is error_response
+
+    def test_get_success_url(self):
+
+        pk = uuid.uuid4()
+
+        view = JobBenefitUpdateView()
+        view.kwargs = {"pk": pk}
+
+        assert view.get_success_url() == reverse(
+            "job-benefit-detail-web",
+            kwargs={
+                "pk": pk,
+            },
+        )
+
+    @patch("apps.accounts.views.JobBenefitService.update")
+    def test_form_valid_service_raises_business_rule_adds_form_errors(
+        self,
+        mock_update,
+        user1,
+    ):
+        err = BusinessRuleViolationError()
+        err.fields = ["name"]
+        err.messages = ["cannot use this name"]
+        mock_update.side_effect = err
+
+        form = Mock()
+        form.cleaned_data = {"name": "Bad Update"}
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = JobBenefitUpdateView()
+        view.request = request
+        view.kwargs = {"pk": "benefit-id"}
+        view.object = Mock()
+
+        result = view.form_valid(form)
+
+        form.add_error.assert_called_with("name", "cannot use this name")
+        assert hasattr(result, "status_code")
+        assert result.status_code == 200
+
+
+class TestJobBenefitDeleteView:
+
+    @patch("apps.accounts.views.JobBenefitSelector.list")
+    def test_get_queryset_delegates_to_selector(
+        self,
+        mock_list,
+        user1,
+    ):
+        queryset = Mock()
+        mock_list.return_value = queryset
+
+        request = RequestFactory().get("/")
+        request.user = user1
+
+        view = JobBenefitDeleteView()
+        view.request = request
+
+        result = view.get_queryset()
+
+        mock_list.assert_called_once_with(user=user1)
+        assert result is queryset
+
+    @patch("apps.accounts.views.redirect")
+    @patch("apps.accounts.views.JobBenefitService.remove")
+    def test_post_calls_service_and_redirects(
+        self,
+        mock_remove,
+        mock_redirect,
+        user1,
+    ):
+        response = HttpResponse()
+        mock_redirect.return_value = response
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = JobBenefitDeleteView()
+        view.request = request
+        view.kwargs = {"pk": "benefit-id"}
+        view.success_url = "/success/"
+
+        result = view.post(request)
+
+        mock_remove.assert_called_once_with(
+            user=user1,
+            job_benefit_id="benefit-id",
+        )
+
+        mock_redirect.assert_called_once_with("/success/")
+
+        assert result is response
+
+    @patch("apps.accounts.views.JobBenefitService.remove")
+    def test_post_service_raises_resource_not_found_translates_to_404(
+        self,
+        mock_remove,
+        user1,
+    ):
+        mock_remove.side_effect = ResourceNotFoundError("not found")
+
+        request = RequestFactory().post("/")
+        request.user = user1
+
+        view = JobBenefitDeleteView()
+        view.request = request
+        view.kwargs = {"pk": "benefit-id"}
+        view.success_url = "/success/"
+
+        with pytest.raises(Http404):
+            view.dispatch(request)
