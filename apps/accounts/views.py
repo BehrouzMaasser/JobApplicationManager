@@ -140,7 +140,7 @@ def dashboard_view(request):
     return render(request, "accounts/dashboard.html")
 
 
-class JobBenefitListView(LoginRequiredMixin, ListView):
+class JobBenefitListView(ViewExceptionHandlerMixin, LoginRequiredMixin, ListView):
 
     model = JobBenefit
     template_name = "accounts/job_benefit/list.html"
@@ -180,7 +180,11 @@ class JobBenefitCreateView(
         return redirect(self.success_url)
 
 
-class JobBenefitDetailView(LoginRequiredMixin,  DetailView):
+class JobBenefitDetailView(
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    DetailView
+):
 
     model = JobBenefit
     template_name = "accounts/job_benefit/detail.html"
@@ -231,10 +235,15 @@ class JobBenefitUpdateView(
         )
 
 
-class JobBenefitDeleteView(LoginRequiredMixin, DeleteView):
+class JobBenefitDeleteView(
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    DeleteView
+):
 
     model = JobBenefit
     template_name = "delete_confirm.html"
+    success_url = reverse_lazy("job-benefit-list-web")
 
     def get_queryset(self):
 
@@ -244,13 +253,13 @@ class JobBenefitDeleteView(LoginRequiredMixin, DeleteView):
 
         JobBenefitService.remove(
             user=self.request.user,
-            job_benefit_id=self.kwargs["pk"],
+            context=JobBenefitContext(id=self.kwargs["pk"]),
         )
 
-        return redirect("job-benefit-list-web")
+        return redirect(self.success_url)
 
 
-class JobTaskListView(LoginRequiredMixin, ListView):
+class JobTaskListView(ViewExceptionHandlerMixin, LoginRequiredMixin, ListView):
 
     model = JobTask
     template_name = "accounts/job_task/list.html"
@@ -290,7 +299,7 @@ class JobTaskCreateView(
         return redirect(self.success_url)
 
 
-class JobTaskDetailView(LoginRequiredMixin,  DetailView):
+class JobTaskDetailView(ViewExceptionHandlerMixin, LoginRequiredMixin,  DetailView):
 
     model = JobTask
     template_name = "accounts/job_task/detail.html"
@@ -341,10 +350,11 @@ class JobTaskUpdateView(
         )
 
 
-class JobTaskDeleteView(LoginRequiredMixin, DeleteView):
+class JobTaskDeleteView(ViewExceptionHandlerMixin, LoginRequiredMixin, DeleteView):
 
     model = JobTask
     template_name = "delete_confirm.html"
+    success_url = reverse_lazy("job-task-list-web")
 
     def get_queryset(self):
 
@@ -354,13 +364,17 @@ class JobTaskDeleteView(LoginRequiredMixin, DeleteView):
 
         JobTaskService.remove(
             user=self.request.user,
-            job_task_id=self.kwargs["pk"],
+            context=JobTaskContext(id=self.kwargs["pk"]),
         )
 
-        return redirect("job-task-list-web")
+        return redirect(self.success_url)
 
 
-class JobRequirementListView(LoginRequiredMixin, ListView):
+class JobRequirementListView(
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    ListView
+):
 
     model = JobRequirement
     template_name = "accounts/job_requirement/list.html"
@@ -400,7 +414,11 @@ class JobRequirementCreateView(
         return redirect(self.success_url)
 
 
-class JobRequirementDetailView(LoginRequiredMixin,  DetailView):
+class JobRequirementDetailView(
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    DetailView
+):
 
     model = JobRequirement
     template_name = "accounts/job_requirement/detail.html"
@@ -451,10 +469,15 @@ class JobRequirementUpdateView(
         )
 
 
-class JobRequirementDeleteView(LoginRequiredMixin, DeleteView):
+class JobRequirementDeleteView(
+    ViewExceptionHandlerMixin,
+    LoginRequiredMixin,
+    DeleteView
+):
 
     model = JobRequirement
     template_name = "delete_confirm.html"
+    success_url = reverse_lazy("job-requirement-list-web")
 
     def get_queryset(self):
 
@@ -464,7 +487,7 @@ class JobRequirementDeleteView(LoginRequiredMixin, DeleteView):
 
         JobRequirementService.remove(
             user=self.request.user,
-            job_requirement_id=self.kwargs["pk"],
+            context=JobRequirementContext(id=self.kwargs["pk"]),
         )
 
-        return redirect("job-requirement-list-web")
+        return redirect(self.success_url)
