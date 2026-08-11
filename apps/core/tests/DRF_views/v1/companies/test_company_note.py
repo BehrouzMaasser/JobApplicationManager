@@ -81,6 +81,7 @@ class TestCompanyNoteRetrieveAPIView:
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================
@@ -199,6 +200,7 @@ class TestNestedCompanyNoteRetrieveAPIView:
     ):
         response = authenticated_client.get(f"{url}999999/")
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================
@@ -340,6 +342,7 @@ class TestNestedCompanyNoteDeleteAPIView:
         response = authenticated_client.delete(url)
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
     def test_delete_unknown_note(
         self,
@@ -348,3 +351,4 @@ class TestNestedCompanyNoteDeleteAPIView:
     ):
         response = authenticated_client.delete(f"{url}999999/")
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"

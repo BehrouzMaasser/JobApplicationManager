@@ -115,6 +115,7 @@ class TestWorkspaceRetrieveUpdateAPIView:
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
     def test_cannot_access_another_users_workspace(
         self,
@@ -128,6 +129,7 @@ class TestWorkspaceRetrieveUpdateAPIView:
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
     def test_update_workspace(
         self,
@@ -215,3 +217,4 @@ class TestWorkspaceDeleteAPIView:
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"

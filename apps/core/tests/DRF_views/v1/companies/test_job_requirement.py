@@ -81,6 +81,7 @@ class TestJobRequirementRetrieveAPIView:
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================
@@ -206,6 +207,7 @@ class TestJobRequirementUpdateAPIView:
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================
@@ -245,6 +247,7 @@ class TestJobRequirementDeleteAPIView:
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
     def test_delete_idempotency(
         self,

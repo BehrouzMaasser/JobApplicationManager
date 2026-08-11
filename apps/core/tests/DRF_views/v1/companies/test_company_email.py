@@ -80,6 +80,7 @@ class TestCompanyEmailRetrieveAPIView:
         response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================
@@ -202,6 +203,7 @@ class TestNestedCompanyEmailRetrieveAPIView:
     ):
         response = authenticated_client.get(f"{base_url}999999/")
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================
@@ -345,6 +347,7 @@ class TestNestedCompanyEmailDeleteAPIView:
         response = authenticated_client.delete(url)
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
     def test_delete_unknown_email(
         self,
@@ -353,6 +356,7 @@ class TestNestedCompanyEmailDeleteAPIView:
     ):
         response = authenticated_client.delete(f"{base_url}999999/")
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
     def test_delete_idempotency(
         self,

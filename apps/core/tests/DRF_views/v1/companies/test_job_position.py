@@ -158,6 +158,7 @@ class TestNestedJobPositionRetrieveAPIView:
     ):
         response = authenticated_client.get(f"{url}999999/")
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
     def test_forbidden_for_foreign_company(
         self,
@@ -298,6 +299,7 @@ class TestNestedJobPositionDeleteAPIView:
     ):
         response = authenticated_client.delete(f"{url}999999/")
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
     def test_delete_idempotency(
         self,

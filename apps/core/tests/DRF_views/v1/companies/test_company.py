@@ -91,6 +91,7 @@ class TestCompanyRetrieveAPIView:
         response = authenticated_client.get(f"{company_list_url_path}99999999/")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
     def test_cannot_access_foreign_company(
         self,
@@ -103,6 +104,7 @@ class TestCompanyRetrieveAPIView:
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================
@@ -199,6 +201,7 @@ class TestNestedCompanyRetrieveAPIView:
         response = authenticated_client.get(f"{create_company_url_path}9999999/")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
     def test_forbidden_for_foreign_workspace_company(
         self,
@@ -213,6 +216,7 @@ class TestNestedCompanyRetrieveAPIView:
         response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================
@@ -303,6 +307,7 @@ class TestNestedCompanyUpdateAPIView:
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================
@@ -352,3 +357,4 @@ class TestNestedCompanyDeleteAPIView:
         response = authenticated_client.delete(url)
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"

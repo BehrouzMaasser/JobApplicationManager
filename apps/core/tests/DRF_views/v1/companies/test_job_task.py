@@ -80,6 +80,7 @@ class TestJobTaskRetrieveAPIView:
             f"{base_api_url_path}job-tasks/999999/"
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================
@@ -201,6 +202,7 @@ class TestJobTaskUpdateAPIView:
             format="json",
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================
@@ -237,6 +239,7 @@ class TestJobTaskDeleteAPIView:
             f"{base_api_url_path}job-tasks/999999/"
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
     def test_delete_idempotency(
         self,
