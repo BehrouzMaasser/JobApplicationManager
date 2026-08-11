@@ -147,7 +147,7 @@ class TestNestedCompanyNoteCreateAPIView:
             format="json",
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_invalid_payload_rejected(
         self,
@@ -339,7 +339,7 @@ class TestNestedCompanyNoteDeleteAPIView:
 
         response = authenticated_client.delete(url)
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_delete_unknown_note(
         self,

@@ -127,7 +127,7 @@ class TestWorkspaceRetrieveUpdateAPIView:
             f"{workspace_url_path}{workspace1_user2.workspace_id}/"
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_update_workspace(
         self,
@@ -165,7 +165,7 @@ class TestWorkspaceRetrieveUpdateAPIView:
             format="json",
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_rejects_duplicate_workspace_name_update(
         self,
@@ -214,4 +214,4 @@ class TestWorkspaceDeleteAPIView:
             f"{workspace_url_path}{workspace1_user2.workspace_id}/"
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND

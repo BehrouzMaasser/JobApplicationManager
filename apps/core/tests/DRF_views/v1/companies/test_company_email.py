@@ -100,10 +100,10 @@ class TestNestedCompanyEmailCreateAPIView:
         self,
         api_client,
         url,
-        co_email1_co1_ws1_user1_valid_data,
+        co_email1_co1_ws1_user1_api_v1_valid_data,
     ):
         response = api_client.post(
-            url, co_email1_co1_ws1_user1_valid_data, format="json"
+            url, co_email1_co1_ws1_user1_api_v1_valid_data, format="json"
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -111,20 +111,20 @@ class TestNestedCompanyEmailCreateAPIView:
         self,
         authenticated_client,
         url,
-        co_email1_co1_ws1_user1_valid_data,
+        co_email1_co1_ws1_user1_api_v1_valid_data,
         co_email1_co1_ws1_user1,
     ):
         response = authenticated_client.post(
             url,
-            co_email1_co1_ws1_user1_valid_data,
+            co_email1_co1_ws1_user1_api_v1_valid_data,
             format="json",
         )
 
         assert response.status_code == status.HTTP_201_CREATED
 
         obj = CompanyEmail.objects.get(pk=response.data["id"])
-        assert obj.title == co_email1_co1_ws1_user1_valid_data["title"]
-        assert obj.email == co_email1_co1_ws1_user1_valid_data["email"]
+        assert obj.title == co_email1_co1_ws1_user1_api_v1_valid_data["title"]
+        assert obj.email == co_email1_co1_ws1_user1_api_v1_valid_data["email"]
 
         # DB persistence safety check
         assert CompanyEmail.objects.filter(id=response.data["id"]).exists()
@@ -134,7 +134,7 @@ class TestNestedCompanyEmailCreateAPIView:
         authenticated_client,
         base_api_url_path,
         co1_ws1_user2,
-        co_email1_co1_ws1_user1_valid_data,
+        co_email1_co1_ws1_user1_api_v1_valid_data,
     ):
         url = (
             f"{base_api_url_path}workspaces/{co1_ws1_user2.workspace.workspace_id}/"
@@ -143,11 +143,11 @@ class TestNestedCompanyEmailCreateAPIView:
 
         response = authenticated_client.post(
             url,
-            co_email1_co1_ws1_user1_valid_data,
+            co_email1_co1_ws1_user1_api_v1_valid_data,
             format="json",
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_invalid_payload_rejected(
         self,
@@ -235,11 +235,11 @@ class TestNestedCompanyEmailUpdateAPIView:
         authenticated_client,
         base_url,
         co_email1_co1_ws1_user1,
-        co_email1_co1_ws1_user1_updated_valid_data,
+        co_email1_co1_ws1_user1_updated_api_v1_valid_data,
     ):
         response = authenticated_client.put(
             f"{base_url}{co_email1_co1_ws1_user1.id}/",
-            co_email1_co1_ws1_user1_updated_valid_data,
+            co_email1_co1_ws1_user1_updated_api_v1_valid_data,
             format="json",
         )
 
@@ -248,21 +248,21 @@ class TestNestedCompanyEmailUpdateAPIView:
         co_email1_co1_ws1_user1.refresh_from_db()
 
         assert (co_email1_co1_ws1_user1.title ==
-                co_email1_co1_ws1_user1_updated_valid_data["title"])
+                co_email1_co1_ws1_user1_updated_api_v1_valid_data["title"])
 
         assert (co_email1_co1_ws1_user1.email ==
-                co_email1_co1_ws1_user1_updated_valid_data["email"])
+                co_email1_co1_ws1_user1_updated_api_v1_valid_data["email"])
 
     def test_partial_update(
         self,
         authenticated_client,
         base_url,
         co_email1_co1_ws1_user1,
-        co_email1_co1_ws1_user1_updated_valid_data,
+        co_email1_co1_ws1_user1_updated_api_v1_valid_data,
     ):
         old_title = co_email1_co1_ws1_user1.title
 
-        payload = {"email": co_email1_co1_ws1_user1_updated_valid_data["email"]}
+        payload = {"email": co_email1_co1_ws1_user1_updated_api_v1_valid_data["email"]}
 
         response = authenticated_client.patch(
             f"{base_url}{co_email1_co1_ws1_user1.id}/",
@@ -344,7 +344,7 @@ class TestNestedCompanyEmailDeleteAPIView:
 
         response = authenticated_client.delete(url)
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_delete_unknown_email(
         self,

@@ -118,7 +118,7 @@ class TestNestedJobPositionCreateAPIView:
             format="json",
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 # =========================================================
@@ -173,7 +173,7 @@ class TestNestedJobPositionRetrieveAPIView:
         )
 
         response = authenticated_client.get(url)
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 # =========================================================

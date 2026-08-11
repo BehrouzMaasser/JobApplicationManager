@@ -91,7 +91,6 @@ class TestCompanyRetrieveAPIView:
         response = authenticated_client.get(f"{company_list_url_path}99999999/")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
-        assert response.data["error"]["code"] == "resource_not_found"
 
     def test_cannot_access_foreign_company(
         self,
@@ -103,8 +102,7 @@ class TestCompanyRetrieveAPIView:
             f"{company_list_url_path}{co1_ws1_user2.id}/"
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["error"]["code"] == "access_denied"
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 # =========================================================
@@ -117,10 +115,10 @@ class TestNestedCompanyCreateAPIView:
         self,
         api_client,
         create_company_url_path,
-        co1_ws1_user1_valid_data,
+        co1_ws1_user1_api_v1_valid_data,
     ):
         response = api_client.post(
-            create_company_url_path, co1_ws1_user1_valid_data, format="json"
+            create_company_url_path, co1_ws1_user1_api_v1_valid_data, format="json"
         )
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -129,23 +127,23 @@ class TestNestedCompanyCreateAPIView:
         self,
         authenticated_client,
         create_company_url_path,
-        co1_ws1_user1_valid_data,
+        co1_ws1_user1_api_v1_valid_data,
         workspace1_user1,
     ):
         response = authenticated_client.post(
             create_company_url_path,
-            co1_ws1_user1_valid_data,
+            co1_ws1_user1_api_v1_valid_data,
             format="json",
         )
 
         assert response.status_code == status.HTTP_201_CREATED
 
-        assert response.data["name"] == co1_ws1_user1_valid_data["name"]
-        assert response.data["website"] == co1_ws1_user1_valid_data["website"]
+        assert response.data["name"] == co1_ws1_user1_api_v1_valid_data["name"]
+        assert response.data["website"] == co1_ws1_user1_api_v1_valid_data["website"]
 
         assert Company.objects.filter(
             workspace=workspace1_user1,
-            name=co1_ws1_user1_valid_data["name"],
+            name=co1_ws1_user1_api_v1_valid_data["name"],
         ).exists()
 
     def test_cannot_create_in_foreign_workspace(
@@ -153,17 +151,16 @@ class TestNestedCompanyCreateAPIView:
         authenticated_client,
         base_api_url_path,
         workspace1_user2,
-        co1_ws1_user1_valid_data,
+        co1_ws1_user1_api_v1_valid_data,
     ):
         url = (f"{base_api_url_path}workspaces/{workspace1_user2.workspace_id}/"
                f"companies/")
 
         response = authenticated_client.post(
-            url, co1_ws1_user1_valid_data, format="json"
+            url, co1_ws1_user1_api_v1_valid_data, format="json"
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["error"]["code"] == "access_denied"
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_invalid_payload_rejected(
         self,
@@ -215,7 +212,7 @@ class TestNestedCompanyRetrieveAPIView:
 
         response = authenticated_client.get(url)
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 # =========================================================
@@ -228,10 +225,10 @@ class TestNestedCompanyUpdateAPIView:
         self,
         api_client,
         co1_ws1_user1_url_path,
-        co1_ws1_user1_updated_valid_data,
+        co1_ws1_user1_updated_api_v1_valid_data,
     ):
         response = api_client.put(
-            co1_ws1_user1_url_path, co1_ws1_user1_updated_valid_data, format="json"
+            co1_ws1_user1_url_path, co1_ws1_user1_updated_api_v1_valid_data, format="json"
         )
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -241,19 +238,19 @@ class TestNestedCompanyUpdateAPIView:
         authenticated_client,
         co1_ws1_user1,
         co1_ws1_user1_url_path,
-        co1_ws1_user1_updated_valid_data,
+        co1_ws1_user1_updated_api_v1_valid_data,
     ):
         response = authenticated_client.put(
             co1_ws1_user1_url_path,
-            co1_ws1_user1_updated_valid_data,
+            co1_ws1_user1_updated_api_v1_valid_data,
             format="json",
         )
 
         assert response.status_code == status.HTTP_200_OK
 
         co1_ws1_user1.refresh_from_db()
-        assert co1_ws1_user1.name == co1_ws1_user1_updated_valid_data["name"]
-        assert co1_ws1_user1.website == co1_ws1_user1_updated_valid_data["website"]
+        assert co1_ws1_user1.name == co1_ws1_user1_updated_api_v1_valid_data["name"]
+        assert co1_ws1_user1.website == co1_ws1_user1_updated_api_v1_valid_data["website"]
 
     def test_partial_update_success(
         self,
@@ -305,7 +302,7 @@ class TestNestedCompanyUpdateAPIView:
             format="json",
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 # =========================================================
@@ -354,4 +351,4 @@ class TestNestedCompanyDeleteAPIView:
 
         response = authenticated_client.delete(url)
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND

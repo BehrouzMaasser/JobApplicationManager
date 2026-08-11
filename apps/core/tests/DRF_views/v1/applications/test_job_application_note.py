@@ -211,6 +211,7 @@ class TestNestedJobApplicationNoteRetrieveAPIView:
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================

@@ -112,8 +112,8 @@ class TestDocumentRetrieveAPIView:
             f"{document_list_url_path}{doc1_user2.id}/"
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["error"]["code"] == "access_denied"
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================
@@ -263,7 +263,8 @@ class TestDocumentUpdateAPIView:
             format="multipart",
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================
@@ -319,4 +320,5 @@ class TestDocumentDeleteAPIView:
             f"{document_list_url_path}{doc1_user2.id}/"
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"

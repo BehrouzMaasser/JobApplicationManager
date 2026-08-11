@@ -3,7 +3,6 @@ from unittest.mock import ANY, Mock, patch
 
 import pytest
 from django.http import HttpResponse, Http404
-from django.core.exceptions import ValidationError
 from django.test import RequestFactory
 from django.urls import reverse
 

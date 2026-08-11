@@ -137,8 +137,8 @@ class TestJobApplicationRetrieveAPIView:
             f"{job_application_list_url_path}{job_app1_pos1_co1_ws1_user2.id}/"
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["error"]["code"] == "access_denied"
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================
@@ -235,6 +235,7 @@ class TestNestedJobApplicationRetrieveAPIView:
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================

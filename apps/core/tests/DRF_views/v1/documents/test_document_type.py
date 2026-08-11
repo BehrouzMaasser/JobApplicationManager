@@ -113,8 +113,8 @@ class TestDocumentTypeRetrieveAPIView:
             f"{document_type_list_url_path}{document_type_user2.id}/"
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["error"]["code"] == "access_denied"
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================
@@ -261,8 +261,8 @@ class TestDocumentTypeUpdateAPIView:
             format="json",
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["error"]["code"] == "access_denied"
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
 
 
 # =========================================================
@@ -317,5 +317,5 @@ class TestDocumentTypeDeleteAPIView:
             f"{document_type_list_url_path}{document_type_user2.id}/"
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data["error"]["code"] == "access_denied"
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["error"]["code"] == "resource_not_found"
