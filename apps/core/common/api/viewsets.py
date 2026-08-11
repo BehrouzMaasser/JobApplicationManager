@@ -43,7 +43,6 @@ class BaseReadOnlyViewSet(
     Subclasses must configure:
 
         - ``selector_class``
-        - ``selector_lookup_field``
         - ``lookup_url_kwarg``
 
     and implement ``get_queryset()``.
@@ -57,7 +56,6 @@ class BaseReadOnlyViewSet(
     selector_class: type | None = None
 
     lookup_url_kwarg: str | None = None
-    selector_lookup_field: str = "obj_id"
 
     @property
     def selector(self):
@@ -83,18 +81,6 @@ class BaseReadOnlyViewSet(
 
         return self._require_attr("lookup_url_kwarg")
 
-    @property
-    def selector_lookup(self) -> str | ImproperlyConfigured:
-        """
-        Return the selector lookup field corresponding to the resource identifier.
-
-        Raises:
-            ImproperlyConfigured:
-                If ``selector_lookup_field`` has not been defined.
-        """
-
-        return self._require_attr("selector_lookup_field")
-
     def get_object(self):
         """
         Retrieve a single resource using the configured selector.
@@ -110,9 +96,7 @@ class BaseReadOnlyViewSet(
 
         obj = self.selector.get(
             user=self.request.user,
-            **{
-                self.selector_lookup: self.kwargs[self.lookup_url]
-            },
+            obj_id=self.kwargs[self.lookup_url],
         )
 
         self.check_object_permissions(self.request, obj)
