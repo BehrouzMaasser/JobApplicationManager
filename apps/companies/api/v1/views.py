@@ -104,7 +104,7 @@ class CompanyViewSet(BaseReadOnlyViewSet):
         Build selector filter object from query parameters.
         """
 
-        return self.selector.QueryFilter(
+        return CompanyQueryFilter(
             workspace_id=self.request.query_params.get("workspace_id"),
         )
 
@@ -415,7 +415,7 @@ class JobPositionViewSet(BaseReadOnlyViewSet):
     lookup_url_kwarg = "id"
 
     def get_queryset(self) -> QuerySet[JobPosition]:
-        filters = self.selector.QueryFilter(
+        filters = JobPositionQueryFilter(
             workspace_id=self.request.query_params.get("workspace_id"),
             company_id=self.request.query_params.get("company_id"),
         )
