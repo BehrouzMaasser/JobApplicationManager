@@ -136,6 +136,15 @@ class TestNestedJobPositionRetrieveAPIView:
             f"job-positions/{job_position1_user1.id}/"
         )
 
+    @pytest.fixture
+    def unknown_job_position_url(self, base_api_url_path, job_position1_user1):
+        return (
+            f"{base_api_url_path}workspaces/"
+            f"{job_position1_user1.company.workspace.workspace_id}/"
+            f"companies/{job_position1_user1.company.id}/"
+            f"job-positions/9999999999/"
+        )
+
     def test_requires_authentication(self, api_client, url):
         response = api_client.get(url)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -154,9 +163,9 @@ class TestNestedJobPositionRetrieveAPIView:
     def test_returns_404_for_unknown_job_position(
         self,
         authenticated_client,
-        url,
+        unknown_job_position_url,
     ):
-        response = authenticated_client.get(f"{url}999999/")
+        response = authenticated_client.get(unknown_job_position_url)
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.data["error"]["code"] == "resource_not_found"
 
@@ -277,6 +286,15 @@ class TestNestedJobPositionDeleteAPIView:
             f"job-positions/{job_position1_user1.id}/"
         )
 
+    @pytest.fixture
+    def unknown_job_position_url(self, base_api_url_path, job_position1_user1):
+        return (
+            f"{base_api_url_path}workspaces/"
+            f"{job_position1_user1.company.workspace.workspace_id}/"
+            f"companies/{job_position1_user1.company.id}/"
+            f"job-positions/9999999999/"
+        )
+
     def test_requires_authentication(self, api_client, url):
         response = api_client.delete(url)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -295,9 +313,9 @@ class TestNestedJobPositionDeleteAPIView:
     def test_delete_unknown_object(
         self,
         authenticated_client,
-        url,
+        unknown_job_position_url,
     ):
-        response = authenticated_client.delete(f"{url}999999/")
+        response = authenticated_client.delete(unknown_job_position_url)
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.data["error"]["code"] == "resource_not_found"
 
