@@ -234,7 +234,6 @@ def co_note1_co1_ws1_user1_context_with_id(db, co_note1_co1_ws1_user1):
 
 
 # Email Fixtures:
-
 @pytest.fixture
 def co_email1_co1_ws1_user1(db, co1_ws1_user1):
 
@@ -466,7 +465,6 @@ def job_site2(db):
 
 
 # Job Position Fixtures:
-
 @pytest.fixture
 def job_position1_user1(
         db,
@@ -685,8 +683,6 @@ def job_pos_user1_api_updated_valid_data(
         "requirements": [job_requirement2_user1.id],
         "benefits": [job_benefit1_user1.id],
     }
-
-
 
 
 # ============================================================================

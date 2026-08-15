@@ -1,7 +1,6 @@
 from django.utils import timezone
 
 from apps.applications.api.v1.serializers import JobApplicationSerializer
-from apps.documents.tests.conftest import *
 
 
 class TestJobApplicationSerializer:

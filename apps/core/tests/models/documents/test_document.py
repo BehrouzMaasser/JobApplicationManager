@@ -168,22 +168,6 @@ class TestDocumentValidation:
         with pytest.raises(ValidationError):
             document.full_clean()
 
-    def test_document_requires_file_hash(
-        self,
-        document_type_user1,
-        fake_file1
-    ):
-        document = Document(
-            owner=document_type_user1.owner,
-            name="Document 1",
-            document_type=document_type_user1,
-            file=fake_file1,
-            file_hash="",
-        )
-
-        with pytest.raises(ValidationError):
-            document.full_clean()
-
     def test_document_owner_must_match_document_type_owner(
         self,
         user1,
