@@ -52,17 +52,21 @@ from apps.companies.services.job_task_service import JobTaskService
 # Contexts
 from apps.core.common.contexts.contexts import (
     CompanyContext,
-    CompanyChildContext,
+    CompanyChildContext, EmptyContext, JobBenefitContext, JobTaskContext,
+    JobRequirementContext,
 )
 
 # Base ViewSets
 from apps.core.common.api.viewsets import (
     BaseReadOnlyViewSet,
     BaseContextServiceViewSet,
-    BaseIdServiceViewSet,
 )
-from apps.core.common.types.filters import CompanyQueryFilter, \
-    CompanyNoteQueryFilter, CompanyEmailQueryFilter, JobPositionQueryFilter
+from apps.core.common.types.filters import (
+    CompanyQueryFilter,
+    CompanyNoteQueryFilter,
+    CompanyEmailQueryFilter,
+    JobPositionQueryFilter
+)
 
 
 # =========================================================
@@ -82,7 +86,6 @@ class CompanyViewSet(BaseReadOnlyViewSet):
     serializer_class = CompanySerializer
 
     selector_class = CompanySelector
-    selector_lookup_field = "company_id"
 
     lookup_url_kwarg = "id"
 
@@ -101,7 +104,7 @@ class CompanyViewSet(BaseReadOnlyViewSet):
         Build selector filter object from query parameters.
         """
 
-        return self.selector.QueryFilter(
+        return CompanyQueryFilter(
             workspace_id=self.request.query_params.get("workspace_id"),
         )
 
@@ -123,7 +126,6 @@ class NestedCompanyViewSet(BaseContextServiceViewSet):
     write_serializer_class = CompanySerializer
 
     lookup_url_kwarg = "id"
-    selector_lookup_field = "company_id"
 
     def get_queryset(self) -> QuerySet[Company]:
         """
@@ -176,7 +178,6 @@ class CompanyNoteViewSet(BaseReadOnlyViewSet):
     serializer_class = CompanyNoteSerializer
 
     selector_class = CompanyNoteSelector
-    selector_lookup_field = "company_note_id"
 
     lookup_url_kwarg = "id"
 
@@ -209,7 +210,6 @@ class NestedCompanyNoteViewSet(BaseContextServiceViewSet):
     write_serializer_class = CompanyNoteSerializer
 
     lookup_url_kwarg = "id"
-    selector_lookup_field = "company_note_id"
 
     def get_queryset(self) -> QuerySet[CompanyNote]:
         return self.selector.list(
@@ -233,8 +233,8 @@ class NestedCompanyNoteViewSet(BaseContextServiceViewSet):
 
     def _get_queryset_filters(self) -> CompanyNoteQueryFilter:
         return CompanyNoteQueryFilter(
-            workspace_id=self.request.query_params.get("workspace_id"),
-            company_id=self.request.query_params.get("company_id"),
+            workspace_id=self.kwargs["workspace_id"],
+            company_id=self.kwargs["company_id"],
         )
 
 
@@ -250,7 +250,6 @@ class CompanyEmailViewSet(BaseReadOnlyViewSet):
     serializer_class = CompanyEmailSerializer
 
     selector_class = CompanyEmailSelector
-    selector_lookup_field = "company_email_id"
 
     lookup_url_kwarg = "id"
 
@@ -279,7 +278,6 @@ class NestedCompanyEmailViewSet(BaseContextServiceViewSet):
     write_serializer_class = CompanyEmailSerializer
 
     lookup_url_kwarg = "id"
-    selector_lookup_field = "company_email_id"
 
     def get_queryset(self) -> QuerySet[CompanyEmail]:
         return self.selector.list(
@@ -303,8 +301,8 @@ class NestedCompanyEmailViewSet(BaseContextServiceViewSet):
 
     def _get_queryset_filters(self) -> CompanyEmailQueryFilter:
         return CompanyEmailQueryFilter(
-            workspace_id=self.request.query_params.get("workspace_id"),
-            company_id=self.request.query_params.get("company_id"),
+            workspace_id=self.kwargs["workspace_id"],
+            company_id=self.kwargs["company_id"],
         )
 
 
@@ -312,7 +310,7 @@ class NestedCompanyEmailViewSet(BaseContextServiceViewSet):
 # Job Benefit
 # =========================================================
 
-class JobBenefitViewSet(BaseIdServiceViewSet):
+class JobBenefitViewSet(BaseContextServiceViewSet):
     """
     CRUD API for Job Benefits.
     """
@@ -324,8 +322,16 @@ class JobBenefitViewSet(BaseIdServiceViewSet):
     write_serializer_class = JobBenefitSerializer
 
     lookup_url_kwarg = "id"
-    selector_lookup_field = "job_benefit_id"
-    service_lookup_id = "job_benefit_id"
+
+    def get_create_context(self) -> EmptyContext:
+
+        return EmptyContext()
+
+    def get_update_context(self) -> JobBenefitContext:
+
+        return JobBenefitContext(
+            id=self.kwargs['id'],
+        )
 
     def get_queryset(self) -> QuerySet[JobBenefit]:
         return self.selector.list(user=self.request.user)
@@ -335,7 +341,7 @@ class JobBenefitViewSet(BaseIdServiceViewSet):
 # Job Task
 # =========================================================
 
-class JobTaskViewSet(BaseIdServiceViewSet):
+class JobTaskViewSet(BaseContextServiceViewSet):
     """
     CRUD API for Job Tasks.
     """
@@ -347,8 +353,16 @@ class JobTaskViewSet(BaseIdServiceViewSet):
     write_serializer_class = JobTaskSerializer
 
     lookup_url_kwarg = "id"
-    selector_lookup_field = "job_task_id"
-    service_lookup_id = "job_task_id"
+
+    def get_create_context(self) -> EmptyContext:
+
+        return EmptyContext()
+
+    def get_update_context(self) -> JobTaskContext:
+
+        return JobTaskContext(
+            id=self.kwargs['id'],
+        )
 
     def get_queryset(self) -> QuerySet[JobTask]:
         return self.selector.list(user=self.request.user)
@@ -358,7 +372,7 @@ class JobTaskViewSet(BaseIdServiceViewSet):
 # Job Requirement
 # =========================================================
 
-class JobRequirementViewSet(BaseIdServiceViewSet):
+class JobRequirementViewSet(BaseContextServiceViewSet):
     """
     CRUD API for Job Requirements.
     """
@@ -370,8 +384,16 @@ class JobRequirementViewSet(BaseIdServiceViewSet):
     write_serializer_class = JobRequirementSerializer
 
     lookup_url_kwarg = "id"
-    selector_lookup_field = "job_requirement_id"
-    service_lookup_id = "job_requirement_id"
+
+    def get_create_context(self) -> EmptyContext:
+
+        return EmptyContext()
+
+    def get_update_context(self) -> JobRequirementContext:
+
+        return JobRequirementContext(
+            id=self.kwargs['id'],
+        )
 
     def get_queryset(self) -> QuerySet[JobRequirement]:
         return self.selector.list(user=self.request.user)
@@ -389,12 +411,11 @@ class JobPositionViewSet(BaseReadOnlyViewSet):
     serializer_class = JobPositionSerializer
 
     selector_class = JobPositionSelector
-    selector_lookup_field = "job_position_id"
 
     lookup_url_kwarg = "id"
 
     def get_queryset(self) -> QuerySet[JobPosition]:
-        filters = self.selector.QueryFilter(
+        filters = JobPositionQueryFilter(
             workspace_id=self.request.query_params.get("workspace_id"),
             company_id=self.request.query_params.get("company_id"),
         )
@@ -417,7 +438,6 @@ class NestedJobPositionViewSet(BaseContextServiceViewSet):
     write_serializer_class = JobPositionSerializer
 
     lookup_url_kwarg = "id"
-    selector_lookup_field = "job_position_id"
 
     def get_queryset(self) -> QuerySet[JobPosition]:
         return self.selector.list(

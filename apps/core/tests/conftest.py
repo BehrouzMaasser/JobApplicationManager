@@ -1,6 +1,7 @@
 import pytest
 
 from django.contrib.auth import get_user_model
+from rest_framework.test import APIClient
 
 from apps.companies.models import (
     JobPosition,
@@ -104,6 +105,18 @@ def co1_ws1_user1(db, workspace1_user1):
         name="co1",
         workspace=workspace1_user1,
     )
+
+
+@pytest.fixture
+def co1_ws1_user1_api_v1_valid_data():
+
+    return {"name": "Company 1", "website": "https://www.google.com"}
+
+
+@pytest.fixture
+def co1_ws1_user1_updated_api_v1_valid_data():
+
+    return {"name": "Company 1 Updated", "website": "https://www.updatedgoogle.com"}
 
 
 @pytest.fixture
@@ -230,6 +243,18 @@ def co_email1_co1_ws1_user1(db, co1_ws1_user1):
         title="Title1",
         email="email1@gmail.com",
     )
+
+
+@pytest.fixture
+def co_email1_co1_ws1_user1_api_v1_valid_data():
+
+    return {"title": "Title", "email": "email1@gmail.com"}
+
+
+@pytest.fixture
+def co_email1_co1_ws1_user1_updated_api_v1_valid_data():
+
+    return {"title": "Title Updated", "email": "updatedemail1@gmail.com"}
 
 
 @pytest.fixture
@@ -804,6 +829,15 @@ def job_application1_valid_data(status1, email1_co1_ws1_user1):
 
 
 @pytest.fixture
+def job_application1_valid_view_data(status1, email1_co1_ws1_user1):
+
+    return {
+        "status": status1.pk,
+        "emails": [email1_co1_ws1_user1.pk],
+    }
+
+
+@pytest.fixture
 def job_application1_api_valid_data(status1, email1_co1_ws1_user1):
 
     return {
@@ -821,6 +855,19 @@ def job_application1_valid_data_updated(
     return {
         "status": status2,
         "emails": [email1_co1_ws1_user1, email2_co1_ws1_user1],
+    }
+
+
+@pytest.fixture
+def job_application1_valid_view_data_updated(
+        status2,
+        email1_co1_ws1_user1,
+        email2_co1_ws1_user1,
+):
+
+    return {
+        "status": status2.pk,
+        "emails": [email1_co1_ws1_user1.pk, email2_co1_ws1_user1.pk],
     }
 
 

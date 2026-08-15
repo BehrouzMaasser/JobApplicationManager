@@ -25,9 +25,6 @@ class ViewExceptionHandlerMixin:
         except ResourceNotFoundError as exc:
             raise Http404(exc.message)
 
-        except AccessDeniedError as exc:
-            raise PermissionDenied(exc.message)
-
         except (DomainInvariantViolationError, InfrastructureViolationError) as exc:
             logger.exception(exc)
-            raise
+            raise Http404("Something went wrong.")

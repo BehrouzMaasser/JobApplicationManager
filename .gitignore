@@ -36,3 +36,6 @@ __MACOSX/
 
 # Ruff
 .ruff_cache/
+
+# Aider
+.aider*
