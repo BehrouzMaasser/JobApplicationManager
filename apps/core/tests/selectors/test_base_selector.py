@@ -5,15 +5,15 @@ import pytest
 
 from apps.core.common.selectors.base_selector import BaseSelector
 from apps.core.exceptions.exceptions import (
-    InfraStructureViolationError,
+    InfrastructureViolationError,
     ResourceNotFoundError,
 )
 from apps.workspaces.models import Workspace
 
 
-pytest_plugins = [
-    "apps.workspaces.tests.conftest",
-]
+# pytest_plugins = [
+#     "apps.workspaces.tests.conftest",
+# ]
 
 
 class DummyWorkspaceSelector(BaseSelector[Workspace]):
@@ -205,7 +205,7 @@ class TestBaseSelectorGet:
             side_effect=RuntimeError("boom"),
         ):
 
-            with pytest.raises(InfraStructureViolationError):
+            with pytest.raises(InfrastructureViolationError):
 
                 DummyWorkspaceSelector.get(
                     user=workspace1_user1.owner,
