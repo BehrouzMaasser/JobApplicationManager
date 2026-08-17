@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from apps.core.exceptions.exceptions import (
     ResourceNotFoundError,
     AccessDeniedError,
-    BusinessRuleViolationError
+    BusinessRuleViolationError, InfrastructureViolationError
 )
 
 
@@ -24,6 +24,26 @@ def test_resource_not_found_error():
         "error": {
             "code": "resource_not_found",
             "message": "Resource Company not found",
+            "details": {},
+        }
+    }
+
+
+def test_infrastructure_error():
+
+    exc = InfrastructureViolationError("bad_uuid")
+
+    response = api_exception_handler(
+        exc,
+        context={},
+    )
+
+    assert response.status_code == 500
+
+    assert response.data == {
+        "error": {
+            "code": "incompatible_request/bad_inside_code_implementation",
+            "message": "An unexpected error occurred, contact admin.",
             "details": {},
         }
     }
