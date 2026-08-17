@@ -86,7 +86,7 @@ class BaseSelector(ABC, Generic[DjangoModel]):
             ResourceNotFoundError:
                 If no accessible resource matches the given identifier.
 
-            InfraStructureViolationError:
+            InfrastructureViolationError:
                 If an unexpected database error occurs during retrieval.
         """
 
