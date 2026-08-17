@@ -12,6 +12,7 @@ from apps.core.exceptions.exceptions import (
     ResourceNotFoundError,
     AccessDeniedError,
     BusinessRuleViolationError, DomainInvariantViolationError,
+    InfrastructureViolationError,
 )
 
 
@@ -48,6 +49,14 @@ def api_exception_handler(exc, context):
         return _error_response(
             code="internal_server_error",
             message="An unexpected error occurred.",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    if isinstance(exc, InfrastructureViolationError):
+        logger.exception(exc)
+        return _error_response(
+            code="incompatible_request/bad_inside_code_implementation",
+            message="An unexpected error occurred, contact admin.",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
