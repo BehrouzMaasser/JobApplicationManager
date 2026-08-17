@@ -56,6 +56,15 @@ class DocumentService(BaseService[Document]):
                 messages=["Please upload a file for this document."]
             )
 
+        if Document.objects.filter(
+                owner=user,
+                file_hash=instance.file_hash,
+        ).exists():
+            raise BusinessRuleViolationError(
+                fields=["file"],
+                messages=["The uploaded file already exists."]
+            )
+
     @classmethod
     def _resolve_create_dependencies(
             cls,
