@@ -88,8 +88,6 @@ class BaseReadOnlyViewSet(
         The lookup value is extracted from the request URL and passed to the
         selector together with the authenticated user.
 
-        Object-level permissions are evaluated before the resource is returned.
-
         Returns:
             The selected domain object.
         """
@@ -98,8 +96,6 @@ class BaseReadOnlyViewSet(
             user=self.request.user,
             obj_id=self.kwargs[self.lookup_url],
         )
-
-        self.check_object_permissions(self.request, obj)
 
         return obj
 
