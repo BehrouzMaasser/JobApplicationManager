@@ -1,162 +1,97 @@
-# Job Application Tracker
+# Job Application Manager
 
-A Django-based platform for managing job search activities across multiple workspaces.
+A Django-based application for organizing and managing job-search activities.
 
-The project was designed to support both server-rendered web views and REST API endpoints while maintaining a shared domain layer through dedicated service and selector patterns.
+The project supports both server-rendered web views and a REST API while sharing a common Application Layer built around **Services** and **Selectors**.
+
+The project began as a learning project and evolved into a structured backend application focused on separation of concerns, domain ownership, testability, and maintainability.
+
+---
 
 ## Features
 
-- User authentication and authorization
-- Workspace-based organization
-- Company management
-- Job position tracking
-- Job application tracking
-- Document management
-- Company contact management
-- Notes and application history
-- REST API support
-- Automated testing
+- User authentication.
+- Workspace-based organization.
+- Company management.
+- Job-position management.
+- Job-application tracking.
+- Application statuses and notes.
+- Company contacts and notes.
+- Job requirements, tasks, and benefits.
+- Document and document-type management.
+- Server-rendered Django views.
+- Django REST Framework API.
+- JWT authentication for the REST API.
+- Automated testing.
+- Ownership-aware data access.
 
-## Architecture Highlights
+---
 
-This project intentionally avoids placing business logic inside views, serializers, or forms.
+## Architecture
 
-Instead, it follows a layered architecture:
-
-```text
-HTTP Request
-      │
-      ▼
- View / API
-      │
-      ▼
- Service Layer
-      │
-      ▼
-    Models
-```
-
-Read operations are separated into dedicated selectors:
+The application follows a layered architecture.
 
 ```text
-HTTP Request
-      │
-      ▼
- View / API
-      │
-      ▼
-   Selector
-      │
-      ▼
-   Database
+Presentation Layer
+    │
+    ├── Django Views
+    ├── Forms
+    ├── DRF ViewSets
+    └── Serializers
+    │
+    ▼
+Application Layer
+    │
+    ├── Selectors ── reads
+    └── Services  ── writes
+    │
+    ▼
+Persistence Layer
+    │
+    ├── Django Models
+    └── Database
 ```
 
-### Architectural Goals
+### Selectors
 
-- Centralize business logic
-- Avoid duplicated validation
-- Share domain logic between Web and API interfaces
-- Improve maintainability
-- Improve testability
-- Enforce ownership boundaries consistently
+Selectors own read operations.
 
-### Security and Ownership
+They are responsible for:
 
-The application enforces ownership boundaries throughout the domain.
+- Resource retrieval.
+- Ownership-aware access.
+- Filtering.
+- Reusable query logic.
+- Query optimization where appropriate.
 
-Authenticated users can only access resources that belong to their workspaces.
+### Services
 
-Ownership validation is enforced through selectors and services, ensuring consistent authorization behavior across both web views and REST API endpoints.
+Services own write operations and domain behavior.
 
-## Architectural Decisions
+They are responsible for:
 
-### Why Services?
+- Create operations.
+- Update operations.
+- Delete operations.
+- Business rules.
+- Ownership validation.
+- Domain invariants.
+- Transaction boundaries.
+- Persistence coordination.
 
-Business rules are centralized in services so that
-both Django views and DRF endpoints share the same
-domain logic.
+### Presentation Layer
 
-### Why Selectors?
+Views and API ViewSets coordinate requests and responses.
 
-Selectors isolate query logic and prevent
-database access patterns from being duplicated
-across the application.
+Forms and Serializers handle transport-specific validation and representation.
 
-### Why Workspaces?
+The Presentation Layer should not become a second implementation of domain logic.
 
-Workspaces provide ownership boundaries,
-organizational separation, and future scalability.
+---
 
-## Authentication
+## Ownership Model
 
-The application supports authenticated access through Django's authentication system for web views and JWT system for REST API.
-
-### Web Application
-
-Users authenticate through the standard login flow provided by Django authentication.
-
-Authenticated users gain access only to resources they own.
-
-Visit `accounts/signup/` through browser to create an account.
-
-### REST API
-
-The REST API currently uses JWT system.
-
-API endpoints require an authenticated user and enforce ownership validation through the service and selector layers.
-
-### Authorization
-
-Authentication alone is not sufficient for access.
-
-Ownership validation is performed throughout the application to ensure users can only access resources belonging to their own workspaces.
-
-## Technology Stack
-
-- Python
-- Django
-- Django REST Framework
-- SQLite(Development) / PostgreSQL(Production)
-- Pytest
-- Coverage.py
-
-## Project Structure
-
-```text
-apps/
-├── accounts/
-├── applications/
-├── companies/
-├── documents/
-├── workspaces/
-└── core/
-```
-
-### Layer Overview
-
-#### Services
-
-Services are responsible for:
-
-- Create operations
-- Update operations
-- Delete operations
-- Business validation
-- Ownership validation
-- Transaction management
-
-#### Selectors
-
-Selectors are responsible for:
-
-- Read operations
-- Filtering
-- Ownership-aware queries
-- Query reuse
-
-### Workspace Ownership Model
-
-The application is built around workspace isolation.
+The main ownership hierarchy is:
 
 ```text
 User
@@ -170,105 +105,329 @@ User
             └── Job Application
 ```
 
-This structure provides:
+Other resources, including Documents, Document Types, Job Requirements, Job Tasks, and Job Benefits, are user-owned according to the domain model.
 
-- Data isolation
-- Organizational separation
-- Consistent permission boundaries
-- Future scalability opportunities
+Read access is enforced through ownership-aware Selectors.
+
+Write operations are protected by Services.
+
+A resource outside the caller's accessible ownership boundary is normally represented as **not found**, avoiding disclosure of another user's resource.
+
+---
+
+## Domain Invariants
+
+The project distinguishes between direct resource access and invalid domain composition.
+
+For example, Job Requirements, Job Tasks, and Job Benefits are user-owned reusable resources.
+
+If a user directly requests another user's requirement:
+
+```text
+Selector
+   ↓
+Resource not found
+   ↓
+HTTP 404
+```
+
+If an invalid requirement object reaches a Job Position write operation:
+
+```text
+Service
+   ↓
+Ownership/domain invariant check
+   ↓
+DomainInvariantViolationError
+   ↓
+HTTP 400
+```
+
+This distinction exists because the second case is not merely a resource lookup. It is validation of a domain invariant during a write operation.
+
+---
+
+## Error Handling
+
+The application uses a small set of application-level exception categories.
+
+| Exception | Meaning | Presentation |
+|---|---|---|
+| `ResourceNotFoundError` | Requested resource is outside the accessible/readable scope | HTTP 404 |
+| `BusinessRuleViolationError` | User operation violates an explicit business rule | HTTP 400 |
+| `DomainInvariantViolationError` | Application reaches invalid domain state | HTTP 400 |
+| `InfrastructureViolationError` | Infrastructure or unexpected implementation failure | HTTP 500 |
+
+The application intentionally does not use a separate `AccessDeniedError`.
+
+Internal exception details are not exposed to end users or API clients.
+
+---
+
+## Authentication
+
+### Web Application
+
+The web application uses Django's authentication system.
+
+Users can register through the application's signup flow and authenticate through the normal login flow.
+
+### REST API
+
+The REST API uses JWT authentication through Django REST Framework Simple JWT.
+
+Authentication endpoints:
+
+```text
+POST /api/v1/auth/
+POST /api/v1/auth/refresh/
+```
+
+Authenticated API requests use:
+
+```text
+Authorization: Bearer <access-token>
+```
+
+See `docs/rest_api.md` for the API documentation.
+
+---
+
+## REST API
+
+The API is versioned under:
+
+```text
+/api/v1/
+```
+
+Version 1 provides both flat resources and nested resource paths.
+
+Examples:
+
+```text
+/api/v1/workspaces/
+/api/v1/companies/
+/api/v1/job-positions/
+/api/v1/job-applications/
+/api/v1/documents/
+```
+
+Nested resources include workspace/company/job-position/application relationships where the parent context is useful.
+
+The API shares the same Services and Selectors as the web application.
+
+---
 
 ## Testing
 
-The project contains:
+The project uses pytest and pytest-django.
 
-- 581 automated tests
-- 94% code coverage
+Tests are organized around architectural responsibilities:
 
-Coverage includes:
+- Models.
+- Services.
+- Selectors.
+- Forms.
+- Serializers.
+- Django Views.
+- DRF ViewSets and API behavior.
+- Exception handling.
 
-- Models
-- Services
-- Selectors
-- Serializers
-- REST API endpoints
-- Business validation logic
+The project deliberately does not advertise a fixed test count or coverage percentage because both change as the codebase evolves.
 
-The service and selector layers are intentionally designed to support isolated and maintainable testing.
+Run the full suite:
+
+```bash
+pytest
+```
+
+Run with coverage:
+
+```bash
+pytest --cov=apps --cov-report=term-missing
+```
+
+Test quality is evaluated by whether tests verify meaningful documented behavior, not by test count alone.
+
+---
+
+## Project Structure
+
+```text
+apps/
+├── accounts/
+├── applications/
+├── companies/
+├── core/
+├── documents/
+├── testing/
+└── workspaces/
+
+config/
+├── api/
+└── ...
+
+docs/
+├── architecture.md
+├── architecture_layer_contracts/
+├── domain.md
+├── exceptions.md
+├── rest_api.md
+├── roadmap.md
+├── setup.md
+└── testing.md
+
+templates/
+static/
+media/
+requirements/
+```
+
+---
 
 ## Documentation
 
-Additional documentation is available in the `docs/` directory:
+The `docs/` directory contains the project's architectural and operational documentation.
 
-- Architecture
-- Domain Model
-- Testing Strategy
-- API Documentation
-- Roadmap
-- Setup
+### Architecture
 
-## Future Improvements
+`docs/architecture.md`
 
-Planned improvements include:
+High-level architectural structure and responsibilities.
 
-- Enhanced filtering and search
-- Improved error handling
-- REST API Version 2
-- Reporting and analytics
-- Additional workspace features
+### Architecture Contracts
 
-## Learning Goals
+`docs/architecture_layer_contracts/`
 
-This project was built as part of a continuous effort to learn:
+Detailed contracts for:
 
+- Models.
+- Query Filters.
+- Selectors.
+- Services.
+- Presentation Layer.
+- Presentation Layer checklist.
+
+These contracts define the intended boundaries that implementation and tests should satisfy.
+
+### Domain
+
+`docs/domain.md`
+
+Domain entities, relationships, ownership, and domain invariants.
+
+### REST API
+
+`docs/rest_api.md`
+
+API authentication, URL structure, ownership behavior, pagination, filtering, and exception handling.
+
+### Testing
+
+`docs/testing.md`
+
+Testing responsibilities and quality principles.
+
+### Setup
+
+`docs/setup.md`
+
+Local development and environment setup.
+
+### Roadmap
+
+`docs/roadmap.md`
+
+Future development ideas and infrastructure improvements.
+
+---
+
+## Technology Stack
+
+- Python
 - Django
 - Django REST Framework
-- Software architecture
-- Automated testing
-- API design
-- Maintainable backend development
+- Django REST Framework Simple JWT
+- django-filter
+- SQLite for the current default local configuration
+- PostgreSQL driver support for production deployment configuration
+- pytest
+- pytest-django
+- pytest-cov
 
-While the project began as a learning exercise, it has evolved into a production-oriented codebase focused on architectural consistency, testability, and long-term maintainability.
+---
 
-## Web View Screenshots
+## Screenshots
 
-### Login
+### Web Application
+
+#### Login
 
 ![Login Page](docs/images/login_page.png)
 
-### Signup
+#### Signup
 
 ![Signup Page](docs/images/signup_page.png)
 
-### Dashboard
+#### Dashboard
 
 ![Dashboard](docs/images/dashboard.png)
 
-### Workspaces
+#### Workspaces
 
 ![Workspaces](docs/images/workspaces.png)
 
-### Companies
+#### Companies
 
 ![Companies](docs/images/companies.png)
 
-### Applications
+#### Applications
 
 ![Applications](docs/images/applications.png)
 
-### Documents
+#### Documents
 
 ![Documents](docs/images/documents.png)
 
-## REST API Screenshots (Using Hoppscotch)
+### REST API
 
-### Workspaces
+#### Workspaces
 
-![Workspaces](docs/images/rest_workspaces.png)
+![Workspaces API](docs/images/rest_workspaces.png)
 
-### Companies
+#### Companies
 
-![Companies](docs/images/rest_companies.png)
+![Companies API](docs/images/rest_companies.png)
 
-### Applications
+#### Applications
 
-![Applications](docs/images/rest_applications.png)
+![Applications API](docs/images/rest_applications.png)
+
+---
+
+## Project Status
+
+The project is intended to be a completed, production-oriented learning project rather than a claim of being production-deployed infrastructure.
+
+The architecture, domain rules, exception semantics, and automated tests are documented so that the implementation can be audited against explicit contracts.
+
+Before deployment to a real production environment, infrastructure and operational concerns such as database configuration, secret management, HTTPS, static/media storage, logging, monitoring, backups, and deployment automation must still be addressed.
+
+---
+
+## Learning Goals
+
+This project was built to develop practical experience with:
+
+- Django.
+- Django REST Framework.
+- Backend architecture.
+- Domain modeling.
+- Service and Selector patterns.
+- API design.
+- Automated testing.
+- Ownership and data isolation.
+- Maintainable software structure.
+
+The project is intentionally documented as an engineering artifact: the goal is not only that the application works, but that its behavior and architectural decisions are explicit and testable.
