@@ -43,23 +43,6 @@ class ResourceNotFoundError(AppError):
         return self._message
 
 
-class AccessDeniedError(AppError):
-
-    def __init__(self, resource: str, message: str | None = None):
-
-        self.resource = resource
-        self._message = message
-
-        super().__init__(self._message)
-
-    @property
-    def message(self):
-
-        if self._message is None:
-            return f"Access to {self.resource} was denied"
-        return self._message
-
-
 class BusinessRuleViolationError(AppError):
 
     def __init__(

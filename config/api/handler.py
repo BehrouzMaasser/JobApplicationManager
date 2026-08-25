@@ -10,7 +10,6 @@ from rest_framework.views import exception_handler
 
 from apps.core.exceptions.exceptions import (
     ResourceNotFoundError,
-    AccessDeniedError,
     BusinessRuleViolationError, DomainInvariantViolationError,
     InfrastructureViolationError,
 )
@@ -47,15 +46,15 @@ def api_exception_handler(exc, context):
     if isinstance(exc, DomainInvariantViolationError):
         logger.exception(exc)
         return _error_response(
-            code="internal_server_error",
-            message="An unexpected error occurred.",
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            code="domain_error",
+            message="The submitted data could not be processed.",
+            status_code=status.HTTP_400_BAD_REQUEST,
         )
 
     if isinstance(exc, InfrastructureViolationError):
         logger.exception(exc)
         return _error_response(
-            code="incompatible_request/bad_inside_code_implementation",
+            code="internal_error",
             message="An unexpected error occurred, contact admin.",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
@@ -65,13 +64,6 @@ def api_exception_handler(exc, context):
             code="resource_not_found",
             message=exc.message,
             status_code=status.HTTP_404_NOT_FOUND,
-        )
-
-    if isinstance(exc, AccessDeniedError):
-        return _error_response(
-            code="access_denied",
-            message=exc.message,
-            status_code=status.HTTP_403_FORBIDDEN,
         )
 
     if isinstance(exc, BusinessRuleViolationError):

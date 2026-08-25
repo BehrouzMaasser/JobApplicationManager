@@ -2,12 +2,10 @@
 
 import logging
 
-from django.core.exceptions import PermissionDenied
-from django.http import Http404
+from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError
 
 from apps.core.exceptions.exceptions import (
     ResourceNotFoundError,
-    AccessDeniedError,
     DomainInvariantViolationError,
     InfrastructureViolationError,
 )
@@ -25,6 +23,14 @@ class ViewExceptionHandlerMixin:
         except ResourceNotFoundError as exc:
             raise Http404(exc.message)
 
-        except (DomainInvariantViolationError, InfrastructureViolationError) as exc:
+        except DomainInvariantViolationError as exc:
             logger.exception(exc)
-            raise Http404("Something went wrong.")
+            return HttpResponseBadRequest(
+                content="The submitted data could not be processed."
+            )
+
+        except InfrastructureViolationError as exc:
+            logger.exception(exc)
+            return HttpResponseServerError(
+                content="An unexpected error occurred, contact admin."
+            )
