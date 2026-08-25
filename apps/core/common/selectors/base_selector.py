@@ -87,7 +87,8 @@ class BaseSelector(ABC, Generic[DjangoModel]):
                 If no accessible resource matches the given identifier.
 
             InfrastructureViolationError:
-                If an unexpected database error occurs during retrieval.
+                If an unexpected infrastructure or runtime error occurs during
+                 retrieval.
         """
 
         try:
