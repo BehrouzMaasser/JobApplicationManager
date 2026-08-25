@@ -130,7 +130,6 @@ Models communicate invalid state using Django's `ValidationError`.
 The Model layer does not raise service-level exceptions such as:
 
 - `DomainInvariantViolationError`
-- `AccessDeniedError`
 - `ResourceNotFoundError`
 
 Those exceptions belong to higher architectural layers.

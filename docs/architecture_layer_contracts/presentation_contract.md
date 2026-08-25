@@ -252,9 +252,9 @@ Forms must not:
 
 - perform persistence;
 - implement business rules;
-- perform ownership verification;
+- perform ownership or authorization decisions;
 - invoke Services;
-- access unrelated domain objects.
+- retrieve arbitrary domain objects directly through the ORM.
 
 Cross-entity validation belongs to the Application Layer.
 
@@ -425,7 +425,7 @@ Presentation components should not modify models directly.
 
 ## 4.5 Forms and Serializers
 
-Forms and Serializers are responsible only for transport-specific validation.
+Forms and Serializers are responsible for transport-specific validation. Forms may also use access-scoped Selectors to restrict the choices presented to the user.
 
 They should validate:
 
@@ -437,7 +437,7 @@ They should validate:
 They should not perform:
 
 - business validation;
-- ownership verification;
+- ownership decisions;
 - persistence;
 - cross-entity consistency checks.
 
@@ -584,7 +584,8 @@ Presentation components should not implement business rules themselves.
 ## 5.5 Translate Application Exceptions
 
 Selectors and Services may raise application exceptions to indicate lookup
-failures, authorization failures, or business rule violations.
+failures, domain invariant violations, business rule violations, or infrastructure
+failures.
 
 The Presentation Layer is responsible for translating these exceptions into
 appropriate transport-specific responses.
@@ -942,7 +943,9 @@ Not allowed:
 This user owns this specific company.
 ```
 
-The second rule belongs to the Service Layer.
+Resource ownership is not enforced through DRF object-permission classes. Resource
+access is enforced by access-scoped Selectors, while write invariants are enforced
+by Services.
 
 ---
 
@@ -1215,10 +1218,10 @@ Validation failure
 HTTP 400 Bad Request
 
 
-Permission failure
+Resource access failure
         |
         v
-HTTP 403 Forbidden
+HTTP 404 Not Found
 
 
 Missing resource
@@ -1368,8 +1371,7 @@ presentation response.
 Typical examples include:
 
 - resource not found,
-- inaccessible resource,
-- unauthorized access.
+- inaccessible resource.
 
 Views should not attempt to recover by performing alternative queries.
 
@@ -1560,7 +1562,7 @@ Typical tests include:
 
 - validation errors are displayed correctly,
 - resource lookup failures produce the expected response,
-- permission failures are presented consistently,
+- inaccessible resources produce the expected 404 response,
 - unexpected exceptions do not expose internal implementation details.
 
 ---

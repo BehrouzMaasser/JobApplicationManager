@@ -4,7 +4,7 @@
 
 Job Application Tracker is a Django-based platform for managing job search activities across multiple workspaces.
 
-The application supports both server-rendered web views and REST API endpoints while maintaining a shared domain layer through dedicated service and selector patterns.
+The application supports both server-rendered web views and REST API endpoints while maintaining a shared application layer through dedicated service and selector patterns.
 
 The architecture emphasizes:
 
@@ -12,9 +12,9 @@ The architecture emphasizes:
 - Separation of read and write operations.
 - Workspace-based ownership boundaries.
 - Transactional domain operations.
-- Extensive automated testing.
+- Automated testing.
 
-This approach enables multiple interfaces to share the same business rules while reducing duplication and improving maintainability.
+Both the web interface and REST API use the same application-layer services and selectors so that domain behavior is not duplicated between transports.
 
 ---
 
@@ -22,12 +22,12 @@ This approach enables multiple interfaces to share the same business rules while
 
 The architecture is built around the following goals:
 
-- Centralize business rules in a single location.
-- Avoid duplicating validation logic across forms, serializers, views, and APIs.
-- Support both Django web views and Django REST Framework endpoints.
-- Enforce ownership and workspace isolation consistently.
-- Improve testability through clear separation of concerns.
-- Enable future expansion without requiring major architectural changes.
+- Centralize business rules in Services.
+- Keep read/query behavior in Selectors.
+- Keep transport-specific validation in Forms and Serializers.
+- Enforce ownership and resource isolation consistently.
+- Keep transaction boundaries inside Services.
+- Make business behavior independently testable.
 
 ---
 
@@ -35,9 +35,7 @@ The architecture is built around the following goals:
 
 ### Business Logic Lives in Services
 
-Business rules should not be implemented in views, forms, serializers, or API endpoints.
-
-Instead, all domain operations are routed through dedicated services.
+Business rules and write-side domain invariants are implemented in Services rather than in views, forms, serializers, or API endpoints.
 
 ```text
 View / API
@@ -47,22 +45,11 @@ View / API
  Model
 ```
 
-Services are responsible for:
+Services are responsible for creating, updating, deleting, validating write-side domain relationships and invariants, and coordinating transactions.
 
-- Object creation
-- Object updates
-- Object deletion
-- Ownership validation
-- Relationship validation
-- Transaction management
+### Reads Are Isolated in Selectors
 
-This ensures consistent behavior across both web and API interfaces.
-
----
-
-### Read Operations Are Isolated
-
-Read operations are handled through selectors.
+Read operations are handled through Selectors.
 
 ```text
 View / API
@@ -72,64 +59,43 @@ View / API
  Database
 ```
 
-Selectors are responsible for:
+Selectors own query construction, access-scoped retrieval, filtering, and query optimization.
 
-- Query construction
-- Ownership-aware lookups
-- Filtering
-- Query reuse
-- Query optimization
+A resource that cannot be retrieved through the caller's access-scoped selector is represented as `ResourceNotFoundError`, resulting in HTTP 404 at the presentation boundary.
 
-This prevents query duplication across multiple interfaces.
+### Ownership and Access
 
----
+Selectors enforce read access by restricting their accessible querysets. Services enforce ownership and aggregate relationships for objects supplied to write operations.
 
-### Workspace-Based Ownership
-
-Every major domain entity belongs directly or indirectly to a workspace.
+This distinction is intentional:
 
 ```text
-User
-  ↓
-Workspace
-  ↓
-Company
-  ↓
-Job Position
-  ↓
-Job Application
+Direct resource access
+    ↓
+Selector access scope
+    ↓
+ResourceNotFoundError
+    ↓
+404
+
+Related object supplied during a write
+    ↓
+Service invariant validation
+    ↓
+DomainInvariantViolationError
+    ↓
+400
 ```
 
-Workspaces provide:
+### Shared Application Layer
 
-- Ownership boundaries
-- Data isolation
-- Organizational separation
-- Scalability opportunities
-- Future multi-tenant capabilities
-
----
-
-### Shared Domain Layer
-
-Both the web application and REST API share the same services and selectors.
+Both the web application and REST API use the same Services and Selectors.
 
 ```text
-Web Views
-       \
-        → Services
-       /
-REST API
-
-
-Web Views
-       \
-        → Selectors
-       /
-REST API
+Web Views ───┐
+             ├──→ Services / Selectors
+REST API ────┘
 ```
-
-This eliminates duplicated business rules and reduces maintenance overhead.
 
 ---
 
@@ -137,42 +103,32 @@ This eliminates duplicated business rules and reduces maintenance overhead.
 
 ### Presentation Layer
 
-The presentation layer consists of:
-
-- Django Class-Based Views
-- Django Templates
-- Django REST Framework Views
-- Serializers
-- Forms
+The Presentation Layer consists of Django Views, DRF ViewSets, Forms, Serializers, and presentation mixins.
 
 Responsibilities:
 
-- Handle HTTP requests
-- Validate incoming data structure
-- Render responses
-- Delegate domain operations
+- Handle HTTP requests.
+- Validate transport-specific input.
+- Restrict presentation choices using access-scoped Selectors where necessary.
+- Delegate reads to Selectors.
+- Delegate writes to Services.
+- Translate application exceptions into HTTP responses.
 
-This layer should not contain business rules.
-
----
+It does not implement business rules or persistence workflows.
 
 ### Service Layer
 
-The service layer contains business logic and write operations.
+Services contain write-side application behavior.
 
 Responsibilities:
 
-- Create entities
-- Update entities
-- Delete entities
-- Validate business rules
-- Validate ownership
-- Coordinate related objects
-- Execute transactional operations
-
-Services act as the single source of truth for domain behavior.
-
----
+- Create, update, and delete entities.
+- Validate business rules.
+- Validate aggregate relationships.
+- Validate ownership of supplied related objects.
+- Enforce many-to-many invariants.
+- Manage transactions.
+- Delegate intrinsic model validation to models.
 
 ### Selector Layer
 
@@ -180,190 +136,87 @@ Selectors encapsulate read operations.
 
 Responsibilities:
 
-- Retrieve entities
-- Build reusable queries
-- Apply filters
-- Enforce ownership constraints
-- Centralize query logic
+- Retrieve entities.
+- Apply access-scoped querysets.
+- Apply reusable filters.
+- Optimize queries.
 
-Conceptually:
-
-```text
-Selectors = Reads
-
-Services = Writes
-```
-
-This separation improves maintainability and testability.
-
----
+Selectors do not mutate state or implement business workflows.
 
 ### Model Layer
 
-Models are responsible for:
+Models define persistence schema, database constraints, and intrinsic entity validation.
 
-- Database schema
-- Relationships
-- Constraints
-- Indexes
-
-Business logic is intentionally kept outside models whenever possible.
-
----
-
-## Request Lifecycle
-
-### Write Operations
-
-Create, update, and delete operations follow this flow:
-
-```text
-HTTP Request
-    ↓
-View / API Endpoint
-    ↓
-Form / Serializer Validation
-    ↓
-Service Layer
-    ↓
-Model Layer
-    ↓
-Database
-```
-
-Services perform all business validation and persistence.
-
----
-
-### Read Operations
-
-Read operations follow this flow:
-
-```text
-HTTP Request
-    ↓
-View / API Endpoint
-    ↓
-Selector Layer
-    ↓
-Database
-```
-
-Selectors are responsible for ownership-aware queries.
-
----
-
-## Context Objects
-
-Several services use context objects to group related identifiers and domain information.
-
-Examples include:
-
-- CompanyContext
-- CompanyChildContext
-- JobApplicationContext
-
-Benefits:
-
-- Explicit dependencies
-- Cleaner service interfaces
-- Improved readability
-- Easier testing
-
-Context objects reduce long parameter lists and provide a consistent way to pass domain context through the service layer.
+Models do not perform authorization or application workflows.
 
 ---
 
 ## Validation Strategy
 
-Validation occurs at multiple layers.
+Validation is intentionally distributed by responsibility:
 
 ### Forms and Serializers
 
-Responsible for:
+Validate transport-specific input such as field types, formatting, required input, and presentation-level constraints.
 
-- Field validation
-- Request validation
-- Input structure validation
+Forms may use access-scoped Selectors to ensure users are only offered resources they can access. They do not implement ownership rules themselves.
 
 ### Services
 
-Responsible for:
-
-- Ownership validation
-- Relationship validation
-- Business rules
-- Cross-model validation
+Validate business rules, aggregate relationships, supplied-object ownership, and write-side domain invariants.
 
 ### Models
 
-Responsible for:
+Validate intrinsic entity state and enforce database-level integrity.
 
-- Database constraints
-- Integrity guarantees
-- Schema-level validation
+---
 
-This layered approach ensures validation remains consistent across interfaces.
+## Exception Strategy
+
+The application uses the following application-level exception categories:
+
+- `ResourceNotFoundError` — the requested resource cannot be resolved through the caller's access-scoped selector.
+- `BusinessRuleViolationError` — a valid operation is rejected by a business rule.
+- `DomainInvariantViolationError` — supplied or resolved data violates a write-side domain invariant, including ownership of related objects supplied to a write operation.
+- `InfrastructureViolationError` — the current broad category for unexpected database, ORM, framework, or programming/infrastructure failures.
+
+There is no separate `AccessDeniedError`. Inaccessible resources are represented as `ResourceNotFoundError` and presented as HTTP 404.
 
 ---
 
 ## Transaction Management
 
-Write operations are executed through transactional services when appropriate.
+Public Service write operations execute within transaction boundaries. If a write operation fails, the transaction is rolled back so that partial state is not committed.
 
-The goal is simple:
-
-- Either the entire operation succeeds.
-- Or the entire operation fails.
-
-This prevents partial updates and helps maintain domain consistency.
-
----
-
-## Ownership Enforcement
-
-Ownership validation is a core architectural concern.
-
-Selectors and services enforce ownership boundaries before data is accessed or modified.
-
-Typical validations include:
-
-- Workspace ownership
-- Company ownership
-- Job position ownership
-- Job application ownership
-- Related object ownership
-
-This approach helps prevent unauthorized access and cross-workspace data leakage.
+Selectors do not manage transactions.
 
 ---
 
 ## Testing Strategy
 
-The project places significant emphasis on automated testing.
+Tests are organized around architectural responsibilities:
 
-Tests cover:
+- Models test intrinsic state, validation, and database constraints.
+- Selectors test retrieval, access isolation, filtering, and applicable exception translation.
+- Services test business rules, domain invariants, ownership validation, and transactional behavior.
+- Forms and Serializers test transport validation.
+- Views and ViewSets test orchestration and HTTP behavior.
+- Exception-handler tests verify application-to-HTTP translation.
 
-- Models
-- Services
-- Selectors
-- Forms
-- Views
-- API endpoints
-
-The layered architecture improves testability by allowing business logic, query logic, and presentation logic to be tested independently.
+Coverage is a useful metric but is not itself evidence that the architecture is correctly tested.
 
 ---
 
-## Future Improvements
+## Architectural Boundary
 
-Potential future improvements include:
+The intended dependency direction is:
 
-- Enhanced filtering and search capabilities
-- Improved error handling and user feedback
-- REST API Version 2
-- Additional reporting and analytics
-- Shared workspace functionality
-- Performance optimizations for larger datasets
+```text
+Presentation
+     ↓
+Application (Services / Selectors)
+     ↓
+Models / Database
+```
 
-The current architecture was designed to support these enhancements while minimizing large-scale refactoring.
+Lower layers remain independent of HTTP and presentation concerns.

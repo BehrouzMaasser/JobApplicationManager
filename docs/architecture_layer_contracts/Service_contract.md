@@ -375,13 +375,15 @@ exceptions to propagate outside the service layer.
 
 ## Selector Exceptions
 
-Services propagate exceptions raised by selectors, including:
+Services propagate exceptions raised by selectors, including
+`ResourceNotFoundError` when the target resource cannot be resolved through the
+caller's access-scoped selector.
 
-- Aggregate not found.
-- Access denied.
+A resource that is inaccessible to the caller is treated as not found. The
+architecture does not define a separate access-denied application exception.
 
-Services should not catch selector exceptions unless translating them
-into a more specific domain exception.
+Services should not catch selector exceptions unless translating them into a
+more specific domain exception.
 
 ---
 

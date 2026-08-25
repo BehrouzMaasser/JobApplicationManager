@@ -2,45 +2,45 @@
 
 ## Overview
 
-Job Application Tracker is designed around the process of organizing and managing job search activities.
+Job Application Tracker is a Django application for organizing and managing job-search activities.
 
-The domain is centered on a workspace-based ownership model that allows users to separate job searches into independent organizational units while maintaining consistent ownership and access boundaries.
+The domain is organized around **user ownership** and **workspace boundaries**. A workspace is the primary organizational boundary for the core job-search data.
 
-The primary business flow is:
+The central relationship is:
 
 ```text
-Workspace
-    ↓
-Company
-    ↓
-Job Position
-    ↓
-Job Application
+User
+  │
+  └── Workspace
+        │
+        └── Company
+              │
+              └── Job Position
+                    │
+                    └── Job Application
 ```
 
-Supporting entities such as documents, emails, notes, requirements, tasks, and benefits provide additional context throughout the job search process.
+Additional resources provide reusable or supporting information around this core flow.
 
 ---
 
 ## Workspace
 
-A workspace is the primary organizational and ownership boundary within the system.
+A workspace is the primary organizational and ownership boundary for job-search data.
 
-Each workspace belongs to a single user and acts as a container for job search activities.
+Each workspace belongs to one user.
 
 Examples:
 
 - Germany Job Search
 - Remote Opportunities
 - Backend Engineering Applications
-- Graduate Positions
 
 Responsibilities:
 
-- Organize job search activities.
-- Separate unrelated job searches.
-- Provide ownership boundaries.
-- Support future scalability and multi-tenant features.
+- Organize job-search activity.
+- Separate independent job searches.
+- Establish an ownership boundary for workspace-scoped resources.
 
 Relationship:
 
@@ -53,14 +53,14 @@ User
 
 ## Company
 
-A company represents an organization that may offer one or more job positions.
+A company represents an organization associated with one or more job positions.
 
 Each company belongs to a workspace.
 
 Responsibilities:
 
 - Store employer information.
-- Group related job positions.
+- Group job positions.
 - Store company contacts.
 - Store company-specific notes.
 
@@ -71,12 +71,7 @@ Workspace
   └── Company
 ```
 
-Attributes include:
-
-- Name
-- Website
-
-Related entities:
+Related resources:
 
 - Company Email
 - Company Note
@@ -86,18 +81,13 @@ Related entities:
 
 ## Company Email
 
-A company email represents a contact method associated with a company.
+A company email represents contact information associated with a company.
 
 Examples:
 
 - Recruiter
 - Hiring Manager
 - HR Department
-
-Responsibilities:
-
-- Store contact information.
-- Associate communications with applications.
 
 Relationship:
 
@@ -106,17 +96,17 @@ Company
   └── Company Email
 ```
 
-Company emails may be linked to one or more job applications.
+Company emails may also be associated with job applications.
 
 ---
 
 ## Company Note
 
-A company note stores user-defined information related to a company.
+A company note stores user-defined information associated with a company.
 
 Examples:
 
-- Interview experiences
+- Interview observations
 - Research findings
 - Salary information
 - Internal reminders
@@ -149,28 +139,20 @@ Company
 
 A company may contain multiple job positions.
 
-Job positions act as the bridge between companies and applications.
+Related resources include:
 
-Responsibilities:
-
-- Store role-specific information.
-- Track job posting details.
-- Define role requirements and expectations.
-
-Related entities:
-
-- Employment Types
-- Job Sites
-- Job Requirements
-- Job Tasks
-- Job Benefits
-- Job Applications
+- Employment Type
+- Job Site
+- Job Requirement
+- Job Task
+- Job Benefit
+- Job Application
 
 ---
 
 ## Employment Type
 
-Employment types classify the nature of a position.
+Employment types classify the nature of a job position.
 
 Examples:
 
@@ -179,7 +161,7 @@ Examples:
 - Internship
 - Contract
 
-Employment types are global reference data shared across positions.
+Employment types are shared reference data.
 
 Relationship:
 
@@ -193,7 +175,7 @@ Employment Type
 
 ## Job Site
 
-Job sites represent where a position was discovered or advertised.
+Job sites represent where a job position was discovered or advertised.
 
 Examples:
 
@@ -202,7 +184,7 @@ Examples:
 - StepStone
 - Company Website
 
-Job sites are global reference data shared across positions.
+Job sites are shared reference data.
 
 Relationship:
 
@@ -216,7 +198,7 @@ Job Position
 
 ## Job Requirement
 
-Job requirements represent skills, qualifications, or expectations associated with a position.
+A job requirement represents a skill, qualification, or expectation associated with a job position.
 
 Examples:
 
@@ -224,7 +206,7 @@ Examples:
 - Django
 - AWS Experience
 
-Requirements are user-owned reusable entities.
+Requirements are reusable user-owned resources.
 
 Relationship:
 
@@ -235,11 +217,27 @@ User
      Job Position
 ```
 
+### M2M Ownership Invariant
+
+When a requirement is assigned to a job position, the service layer verifies that the requirement belongs to the same user performing the operation.
+
+This is deliberately treated as a **domain invariant**, not as a resource-access failure.
+
+There is an important distinction:
+
+1. **Direct access to a requirement**  
+   A user attempting to retrieve another user's requirement receives the normal resource-not-found behavior from the Selector.
+
+2. **Using a requirement while modifying a job position**  
+   The requirement is supplied as part of a write operation. The Service must verify that the supplied domain object satisfies the ownership invariant. If it does not, the operation fails as a domain invariant violation.
+
+The same distinction applies to Job Tasks and Job Benefits.
+
 ---
 
 ## Job Task
 
-Job tasks represent responsibilities associated with a position.
+A job task represents a responsibility associated with a job position.
 
 Examples:
 
@@ -247,7 +245,7 @@ Examples:
 - Maintain Infrastructure
 - Write Automated Tests
 
-Tasks are user-owned reusable entities.
+Tasks are reusable user-owned resources.
 
 Relationship:
 
@@ -258,11 +256,13 @@ User
      Job Position
 ```
 
+Task ownership is verified by Services when tasks are assigned during a job-position write operation.
+
 ---
 
 ## Job Benefit
 
-Job benefits represent advantages or incentives associated with a position.
+A job benefit represents an advantage or incentive associated with a job position.
 
 Examples:
 
@@ -270,7 +270,7 @@ Examples:
 - Health Insurance
 - Relocation Assistance
 
-Benefits are user-owned reusable entities.
+Benefits are reusable user-owned resources.
 
 Relationship:
 
@@ -281,51 +281,48 @@ User
      Job Position
 ```
 
+Benefit ownership is verified by Services when benefits are assigned during a job-position write operation.
+
 ---
 
 ## Job Application
 
-A job application represents a user's application to a specific job position.
+A job application represents an application to a specific job position.
 
-This is one of the central entities within the domain.
+It is one of the central domain entities.
 
 Relationship:
 
 ```text
 Workspace
-      ↓
+    ↓
+Company
+    ↓
 Job Position
-      ↓
+    ↓
 Job Application
 ```
 
-Each application belongs to:
+An application is associated with:
 
 - A user
 - A workspace
 - A job position
-- A status
+- An application status
 
-Responsibilities:
+Responsibilities include:
 
-- Track application progress.
-- Associate supporting documents.
-- Associate company contacts.
-- Store application notes.
-- Record application dates.
-
-Related entities:
-
-- Application Status
-- Documents
-- Company Emails
-- Job Application Notes
+- Tracking application progress.
+- Recording application dates.
+- Associating supporting documents.
+- Associating company contacts.
+- Storing application-specific notes.
 
 ---
 
 ## Application Status
 
-Application statuses represent the current state of a job application.
+Application statuses represent the current state or category of a job application.
 
 Examples:
 
@@ -335,31 +332,20 @@ Examples:
 - Offer
 - Rejected
 
-The platform intentionally does not enforce a fixed workflow.
-
-Different companies follow different hiring processes, and users may define workflows that fit their individual needs.
-
-Statuses provide categorization without imposing a rigid progression model.
-
-Relationship:
-
-```text
-Application Status
-         ↓
-   Job Application
-```
+The domain does not impose a universal hiring workflow. Statuses provide state classification without requiring every user or company to follow the same progression.
 
 ---
 
 ## Job Application Note
 
-Application notes store information specific to a particular application.
+An application note stores information specific to a particular job application.
 
 Examples:
 
 - Interview feedback
 - Recruiter discussions
-- Follow-up reminders
+- Follow-up information
+- Preparation notes
 
 Relationship:
 
@@ -373,7 +359,7 @@ Job Application Note
 
 ## Document Type
 
-Document types categorize uploaded documents.
+A document type categorizes user documents.
 
 Examples:
 
@@ -382,7 +368,7 @@ Examples:
 - Portfolio
 - Certificate
 
-Document types are user-owned entities.
+Document types are user-owned resources.
 
 Relationship:
 
@@ -395,7 +381,7 @@ User
 
 ## Document
 
-Documents represent files uploaded by users.
+A document represents a file uploaded by a user.
 
 Examples:
 
@@ -403,11 +389,12 @@ Examples:
 - Cover Letter
 - Portfolio
 
-Responsibilities:
+Responsibilities include:
 
-- Store application materials.
-- Prevent duplicate file storage.
-- Support document reuse across applications.
+- Storing application materials.
+- Associating documents with applications.
+- Supporting document reuse.
+- Preventing duplicate files for the same user through file identity/hash rules.
 
 Relationship:
 
@@ -418,13 +405,9 @@ User
      Job Application
 ```
 
-The system calculates file hashes to identify identical files and avoid unnecessary duplication.
-
 ---
 
 ## Ownership Model
-
-Ownership is enforced throughout the domain.
 
 The primary ownership hierarchy is:
 
@@ -440,32 +423,34 @@ User
             └── Job Application
 ```
 
-Additional user-owned resources include:
+Other user-owned resources include:
 
 ```text
-Document Type
 Document
+Document Type
 Job Requirement
 Job Task
 Job Benefit
 ```
 
-Ownership validation is enforced by the service and selector layers to prevent cross-workspace access and maintain data integrity.
+Selectors enforce read-side ownership boundaries. Services enforce ownership and domain invariants during write operations.
+
+A resource that is not accessible through the user's ownership boundary is normally treated as **not found**, rather than exposing the existence of another user's resource.
 
 ---
 
 ## Domain Philosophy
 
-The domain model is designed around three principles:
+The domain is built around three principles:
 
 ### Ownership
 
-Every entity must belong to a clearly defined owner or ownership boundary.
+Every resource has a clear owner or ownership boundary.
 
 ### Reusability
 
-Documents, requirements, benefits, tasks, and contacts can be reused across multiple parts of the system.
+Resources such as documents, requirements, tasks, benefits, and contacts can be reused where the domain permits it.
 
 ### Flexibility
 
-The platform avoids enforcing rigid hiring workflows because recruitment processes vary significantly between organizations and industries.
+The application avoids imposing a universal recruitment workflow. Users can organize application statuses and job-search data according to their own process.

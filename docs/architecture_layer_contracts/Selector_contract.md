@@ -2,9 +2,9 @@
 
 Selectors are responsible for retrieving persisted domain objects from the database.
 
-They encapsulate query logic, enforce read access control, and translate
-database exceptions into domain-level exceptions. Selectors are strictly
-read-only and must never contain business logic or modify application state.
+They encapsulate query logic and enforce read access through access-scoped
+querysets. Selectors are strictly read-only and must never contain business
+logic or modify application state.
 
 
 Models define and enforce the integrity of persisted data.
@@ -113,14 +113,21 @@ Filters must never perform business decisions.
 
 ## S-07. Exception Translation
 
-Selectors translate persistence-layer exceptions into domain exceptions.
+Selectors translate persistence-layer failures into application-level exceptions
+when the selector explicitly handles those failures.
 
 Typical translations include:
 
-- missing resource → `ResourceNotFoundError`
-- unexpected database failure → `InfrastructureViolationError`
+- an inaccessible or missing requested resource → `ResourceNotFoundError`
+- an unexpected persistence failure that is intentionally caught →
+  `InfrastructureViolationError`
 
-Database-specific exceptions must not leak outside the selector layer.
+A selector is not required to wrap every ORM operation in a generic exception
+handler. Normal queryset construction and filtering do not require exception
+translation merely because they access the database.
+
+Database-specific exceptions that are intentionally handled by the selector
+must not leak outside the selector layer.
 
 ---
 
@@ -213,7 +220,7 @@ requirements.
 ## G-01. Inherit from `BaseSelector`
 
 All selectors should inherit from `BaseSelector` to ensure a consistent public
-API, centralized exception handling, and shared ownership enforcement.
+API, a consistent public API and shared read-access enforcement.
 
 ---
 

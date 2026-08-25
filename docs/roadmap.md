@@ -1,65 +1,40 @@
 # Roadmap
 
-## Short-Term
+The current project scope is considered complete after the final
+architecture, documentation, implementation, and test audit.
 
-### Error Handling
+The following items are intentionally deferred and are not required
+for the current project milestone.
 
-Design a consistent error handling strategy for:
+## Deferred Features
 
-- Services
-- Web views
-- REST API endpoints
-
-### Testing Refactor
-
-Improve the organization and maintainability of the test suite.
-
-### Project Cleanup
-
-Review project structure and remove technical debt introduced during rapid development.
-
-### Documentation
-
-Continue improving developer and architecture documentation.
-
-## Medium-Term
-
-### Authentication
-
-Expand authentication capabilities and API authentication workflows.
-
-### Search Functionality
-
-Provide advanced search capabilities across companies, positions, and applications.
-
-### Document Categorization
-
-Improve document organization and management.
-
----
-
-## Long-Term
-
-### REST API Version 2
-
-Introduce flatter resource paths and improved usability.
+### REST API V2
+- Flatter resource paths
+- Improved client usability
 
 ### Shared Workspaces
-
-Support collaboration between multiple users.
+- Multiple users per workspace
+- Collaboration and permissions
 
 ### Reporting and Analytics
+- Job-search statistics
+- Application outcome analysis
 
-Provide insights into job search activity and outcomes.
+### Search
+- Advanced company search
+- Position search
+- Application search
 
----
+### Document Categorization
+- Enhanced document organization
 
-## Infrastructure
+## Future Infrastructure
 
-### Docker Deployment
+### Docker
+Containerized deployment.
 
-Containerize the application for consistent local and production environments.
+### CI/CD
+Automated testing and deployment.
 
-### Continuous Integration / Continuous Deployment
-
-Automate testing and deployment workflows.
+These items are future extensions, not incomplete requirements of the
+current project.
