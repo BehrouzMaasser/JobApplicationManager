@@ -15,6 +15,7 @@ from apps.core.common.contexts.contexts import (
 
 from apps.core.exceptions.exceptions import (
     DomainInvariantViolationError,
+    InfrastructureViolationError,
 )
 
 
@@ -383,4 +384,90 @@ class TestCompanyNoteRemove:
 
             CompanyNote.objects.get(
                 id=note_id
+            )
+
+
+class TestCompanyNoteServiceInfrastructure:
+
+    def test_create_translates_unexpected_exception(
+        self,
+        co1_child_context_ws1_user1_no_id,
+        co1_ws1_user1,
+        monkeypatch,
+    ):
+
+        def raise_error(*args, **kwargs):
+            raise RuntimeError("database exploded")
+
+        monkeypatch.setattr(
+            CompanyNoteService,
+            "_save",
+            raise_error,
+        )
+
+        with pytest.raises(InfrastructureViolationError):
+            CompanyNoteService.create(
+                user=co1_ws1_user1.workspace.owner,
+                context=co1_child_context_ws1_user1_no_id,
+                validated_data={
+                    "title": "Note",
+                    "content": "content",
+                },
+            )
+
+    def test_update_translates_unexpected_exception(
+        self,
+        co_note1_co1_ws1_user1,
+        co_note1_co1_ws1_user1_context_with_id,
+        monkeypatch,
+    ):
+
+        def raise_error(*args, **kwargs):
+            raise RuntimeError("database exploded")
+
+        monkeypatch.setattr(
+            CompanyNoteService,
+            "_save",
+            raise_error,
+        )
+
+        with pytest.raises(InfrastructureViolationError):
+            CompanyNoteService.update(
+                user=(
+                    co_note1_co1_ws1_user1
+                    .company
+                    .workspace
+                    .owner
+                ),
+                context=co_note1_co1_ws1_user1_context_with_id,
+                validated_data={
+                    "title": "Updated",
+                },
+            )
+
+    def test_remove_translates_unexpected_exception(
+        self,
+        co_note1_co1_ws1_user1,
+        co_note1_co1_ws1_user1_context_with_id,
+        monkeypatch,
+    ):
+
+        def raise_error(*args, **kwargs):
+            raise RuntimeError("delete failed")
+
+        monkeypatch.setattr(
+            CompanyNoteService,
+            "_resolve_instance",
+            raise_error,
+        )
+
+        with pytest.raises(InfrastructureViolationError):
+            CompanyNoteService.remove(
+                user=(
+                    co_note1_co1_ws1_user1
+                    .company
+                    .workspace
+                    .owner
+                ),
+                context=co_note1_co1_ws1_user1_context_with_id,
             )
