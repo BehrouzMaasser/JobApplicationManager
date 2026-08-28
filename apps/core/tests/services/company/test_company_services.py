@@ -14,6 +14,8 @@ from apps.core.common.contexts.contexts import (
 
 from apps.core.exceptions.exceptions import (
     DomainInvariantViolationError,
+    ResourceNotFoundError,
+    InfrastructureViolationError,
 )
 
 
@@ -156,7 +158,7 @@ class TestCompanyCreate:
         co1_ws1_user1_valid_data,
     ):
 
-        with pytest.raises(Exception):
+        with pytest.raises(ResourceNotFoundError):
 
             CompanyService.create(
                 user=user1,
@@ -381,3 +383,87 @@ class TestValidateResolvedInstance:
             instance=co1_ws1_user1,
             context=context,
         )
+
+
+class TestCompanyServiceInfrastructure:
+
+    def test_create_translates_unexpected_exception(
+        self,
+        workspace1_user1,
+        monkeypatch,
+    ):
+
+        def raise_error(*args, **kwargs):
+            raise RuntimeError("database exploded")
+
+        monkeypatch.setattr(
+            CompanyService,
+            "_save",
+            raise_error,
+        )
+
+        with pytest.raises(
+            InfrastructureViolationError
+        ):
+            CompanyService.create(
+                user=workspace1_user1,
+                context=CompanyContext(
+                    workspace_id=workspace1_user1.workspace_id
+                ),
+                validated_data={
+                    "name": "Company X",
+                },
+            )
+
+    def test_update_translates_unexpected_exception(
+        self,
+        user1,
+        co1_ws1_user1,
+        monkeypatch,
+    ):
+
+        def raise_error(*args, **kwargs):
+            raise RuntimeError("database exploded")
+
+        monkeypatch.setattr(
+            CompanyService,
+            "_save",
+            raise_error,
+        )
+
+        with pytest.raises(InfrastructureViolationError):
+            CompanyService.update(
+                user=user1,
+                context=CompanyContext(
+                    id=co1_ws1_user1.id,
+                    workspace_id=co1_ws1_user1.workspace.workspace_id,
+                ),
+                validated_data={
+                    "name": "New Name",
+                },
+            )
+
+    def test_remove_translates_unexpected_exception(
+        self,
+        user1,
+        co1_ws1_user1,
+        monkeypatch,
+    ):
+
+        def raise_error(*args, **kwargs):
+            raise RuntimeError("delete failed")
+
+        monkeypatch.setattr(
+            CompanyService,
+            "_resolve_instance",
+            raise_error,
+        )
+
+        with pytest.raises(InfrastructureViolationError):
+            CompanyService.remove(
+                user=user1,
+                context=CompanyContext(
+                    id=co1_ws1_user1.id,
+                    workspace_id=co1_ws1_user1.workspace.workspace_id,
+                ),
+            )
