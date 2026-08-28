@@ -240,3 +240,54 @@ class TestWorkspaceServiceInfrastructure:
                     "name": "Workspace",
                 },
             )
+
+    def test_update_translates_unexpected_exception(
+        self,
+        user1,
+        workspace1_user1,
+        monkeypatch,
+    ):
+
+        def raise_error(*args, **kwargs):
+            raise RuntimeError("database exploded")
+
+        monkeypatch.setattr(
+            WorkspaceService,
+            "_save",
+            raise_error,
+        )
+
+        with pytest.raises(InfrastructureViolationError):
+            WorkspaceService.update(
+                user=user1,
+                context=WorkspaceContext(
+                    id=workspace1_user1.workspace_id
+                ),
+                validated_data={
+                    "name": "New Name",
+                },
+            )
+
+    def test_remove_translates_unexpected_exception(
+        self,
+        user1,
+        workspace1_user1,
+        monkeypatch,
+    ):
+
+        def raise_error(*args, **kwargs):
+            raise RuntimeError("delete failed")
+
+        monkeypatch.setattr(
+            WorkspaceService,
+            "_resolve_instance",
+            raise_error,
+        )
+
+        with pytest.raises(InfrastructureViolationError):
+            WorkspaceService.remove(
+                user=user1,
+                context=WorkspaceContext(
+                    id=workspace1_user1.workspace_id
+                ),
+            )
