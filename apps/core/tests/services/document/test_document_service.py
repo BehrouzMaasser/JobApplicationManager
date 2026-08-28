@@ -350,3 +350,44 @@ class TestDocumentInfrastructure:
                     context=DocumentContext(),
                     validated_data=doc1_user1_valid_data,
                 )
+
+    def test_update_translates_unexpected_exception(
+        self,
+        doc1_user1,
+    ):
+        """
+        Ensure unexpected runtime errors during update are translated into
+        InfrastructureViolationError by the BaseService wrapper.
+        """
+
+        with patch.object(
+            DocumentService,
+            "_save",
+            side_effect=RuntimeError("update failed"),
+        ):
+            with pytest.raises(InfrastructureViolationError):
+                DocumentService.update(
+                    user=doc1_user1.owner,
+                    context=DocumentContext(id=doc1_user1.id),
+                    validated_data={"name": "Won't matter"},
+                )
+
+    def test_remove_translates_unexpected_exception(
+        self,
+        doc1_user1,
+    ):
+        """
+        Ensure unexpected runtime errors during remove are translated into
+        InfrastructureViolationError by the BaseService wrapper.
+        """
+
+        with patch.object(
+            DocumentService,
+            "_resolve_instance",
+            side_effect=RuntimeError("delete failed"),
+        ):
+            with pytest.raises(InfrastructureViolationError):
+                DocumentService.remove(
+                    user=doc1_user1.owner,
+                    context=DocumentContext(id=doc1_user1.id),
+                )
