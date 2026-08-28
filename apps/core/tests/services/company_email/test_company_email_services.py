@@ -15,6 +15,7 @@ from apps.core.common.contexts.contexts import (
 
 from apps.core.exceptions.exceptions import (
     DomainInvariantViolationError,
+    InfrastructureViolationError,
 )
 
 
@@ -386,4 +387,90 @@ class TestCompanyEmailRemove:
 
             CompanyEmail.objects.get(
                 id=email_id
+            )
+
+
+class TestCompanyEmailServiceInfrastructure:
+
+    def test_create_translates_unexpected_exception(
+        self,
+        co1_child_context_ws1_user1_no_id,
+        co1_ws1_user1,
+        monkeypatch,
+    ):
+
+        def raise_error(*args, **kwargs):
+            raise RuntimeError("database exploded")
+
+        monkeypatch.setattr(
+            CompanyEmailService,
+            "_save",
+            raise_error,
+        )
+
+        with pytest.raises(InfrastructureViolationError):
+            CompanyEmailService.create(
+                user=co1_ws1_user1.workspace.owner,
+                context=co1_child_context_ws1_user1_no_id,
+                validated_data={
+                    "title": "Email",
+                    "email": "e@example.com",
+                },
+            )
+
+    def test_update_translates_unexpected_exception(
+        self,
+        co_email1_co1_ws1_user1,
+        co_email1_co1_ws1_user1_context_with_id,
+        monkeypatch,
+    ):
+
+        def raise_error(*args, **kwargs):
+            raise RuntimeError("database exploded")
+
+        monkeypatch.setattr(
+            CompanyEmailService,
+            "_save",
+            raise_error,
+        )
+
+        with pytest.raises(InfrastructureViolationError):
+            CompanyEmailService.update(
+                user=(
+                    co_email1_co1_ws1_user1
+                    .company
+                    .workspace
+                    .owner
+                ),
+                context=co_email1_co1_ws1_user1_context_with_id,
+                validated_data={
+                    "title": "Updated",
+                },
+            )
+
+    def test_remove_translates_unexpected_exception(
+        self,
+        co_email1_co1_ws1_user1,
+        co_email1_co1_ws1_user1_context_with_id,
+        monkeypatch,
+    ):
+
+        def raise_error(*args, **kwargs):
+            raise RuntimeError("delete failed")
+
+        monkeypatch.setattr(
+            CompanyEmailService,
+            "_resolve_instance",
+            raise_error,
+        )
+
+        with pytest.raises(InfrastructureViolationError):
+            CompanyEmailService.remove(
+                user=(
+                    co_email1_co1_ws1_user1
+                    .company
+                    .workspace
+                    .owner
+                ),
+                context=co_email1_co1_ws1_user1_context_with_id,
             )
