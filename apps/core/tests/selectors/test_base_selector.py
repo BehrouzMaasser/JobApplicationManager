@@ -252,3 +252,25 @@ class TestBaseSelectorList:
         )
 
         assert filtered is queryset
+
+    def test_list_calls_apply_filters_when_filters_provided(
+            self,
+            workspace1_user1,
+            workspace2_user1,
+    ):
+
+        queryset = DummyWorkspaceSelector.base_queryset()
+
+        with patch.object(
+            DummyWorkspaceSelector,
+            "apply_filters",
+            return_value=queryset.filter(pk=workspace1_user1.pk),
+        ) as mock_apply:
+
+            result = DummyWorkspaceSelector.list(
+                user=workspace1_user1.owner,
+                filters={"dummy": "value"},
+            )
+
+            mock_apply.assert_called_once()
+            assert list(result) == [workspace1_user1]

@@ -100,3 +100,25 @@ def test_django_validation_error():
             },
         }
     }
+
+
+def test_business_rule_violation_error_single_field():
+
+    exc = BusinessRuleViolationError(
+        fields=["emails"],
+        messages=["Emails should belong to current company"],
+    )
+
+    response = api_exception_handler(exc, context={})
+
+    assert response.status_code == 400
+
+    assert response.data == {
+        "error": {
+            "code": "business_rule_violation",
+            "message": "Business rule violated",
+            "details": {
+                "emails": "Emails should belong to current company"
+            }
+        }
+    }
