@@ -4,6 +4,10 @@ import pytest
 
 from django.core.exceptions import ValidationError
 
+from apps.core.exceptions.exceptions import (
+    InfrastructureViolationError,
+)
+
 from apps.core.common.contexts.contexts import (
     EmptyContext,
     DocumentTypeContext,
@@ -301,3 +305,72 @@ class TestValidateResolvedInstance:
                 id=document_type_user1.id
             ),
         )
+
+
+class TestDocumentTypeServiceInfrastructure:
+
+    def test_create_translates_unexpected_exception(
+        self,
+        user1,
+        doc_type1_user1_valid_data,
+        monkeypatch,
+    ):
+
+        def raise_error(*args, **kwargs):
+            raise RuntimeError("database exploded")
+
+        monkeypatch.setattr(
+            DocumentTypeService,
+            "_save",
+            raise_error,
+        )
+
+        with pytest.raises(InfrastructureViolationError):
+            DocumentTypeService.create(
+                user=user1,
+                context=EMPTY_CONTEXT,
+                validated_data=doc_type1_user1_valid_data,
+            )
+
+    def test_update_translates_unexpected_exception(
+        self,
+        document_type_user1,
+        monkeypatch,
+    ):
+
+        def raise_error(*args, **kwargs):
+            raise RuntimeError("update failed")
+
+        monkeypatch.setattr(
+            DocumentTypeService,
+            "_save",
+            raise_error,
+        )
+
+        with pytest.raises(InfrastructureViolationError):
+            DocumentTypeService.update(
+                user=document_type_user1.owner,
+                context=DocumentTypeContext(id=document_type_user1.id),
+                validated_data={"name": "Won't matter"},
+            )
+
+    def test_remove_translates_unexpected_exception(
+        self,
+        document_type_user1,
+        monkeypatch,
+    ):
+
+        def raise_error(*args, **kwargs):
+            raise RuntimeError("delete failed")
+
+        monkeypatch.setattr(
+            DocumentTypeService,
+            "_resolve_instance",
+            raise_error,
+        )
+
+        with pytest.raises(InfrastructureViolationError):
+            DocumentTypeService.remove(
+                user=document_type_user1.owner,
+                context=DocumentTypeContext(id=document_type_user1.id),
+            )

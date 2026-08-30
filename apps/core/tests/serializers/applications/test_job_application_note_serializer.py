@@ -1,4 +1,8 @@
+import pytest
+
 from apps.applications.api.v1.serializers import JobApplicationNoteSerializer
+
+pytestmark = pytest.mark.django_db
 
 
 class TestJobApplicationNoteSerializer:
@@ -119,3 +123,14 @@ class TestJobApplicationNoteSerializer:
         serializer = JobApplicationNoteSerializer(data=data)
 
         assert serializer.is_valid(), serializer.errors
+
+    def test_serialization_outputs_fields(self, app_note1):
+        """
+        Verify serializer produces expected output for a saved instance.
+        """
+        serializer = JobApplicationNoteSerializer(instance=app_note1)
+        data = serializer.data
+
+        assert data["id"] == app_note1.id
+        assert data["title"] == app_note1.title
+        assert data["content"] == app_note1.content

@@ -1,11 +1,15 @@
 import pytest
+from unittest.mock import patch
 
 from apps.applications.selectors.application_note_selector import (
     JobApplicationNoteSelector,
 )
 from apps.core.common.types.filters import JobApplicationNoteQueryFilter
 
-from apps.core.exceptions.exceptions import ResourceNotFoundError
+from apps.core.exceptions.exceptions import (
+    ResourceNotFoundError,
+    InfrastructureViolationError,
+)
 
 
 @pytest.mark.django_db
@@ -254,3 +258,17 @@ class TestJobApplicationNoteSelectorGet:
                 user=user1,
                 obj_id=app_note1_user2.pk,
             )
+
+    def test_get_translates_unexpected_exception_to_infrastructure_error(
+        self,
+        user1,
+    ):
+        """
+        If an unexpected exception occurs while resolving the accessible queryset,
+        BaseSelector.get should translate it into InfrastructureViolationError.
+        """
+        with patch.object(
+            JobApplicationNoteSelector, "accessible_queryset", side_effect=Exception("boom")
+        ):
+            with pytest.raises(InfrastructureViolationError):
+                JobApplicationNoteSelector.get(user=user1, obj_id=1)

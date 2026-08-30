@@ -201,7 +201,7 @@ class TestCompanyEmailCreateView:
 
         assert response.status_code == 404
 
-    def test_create_with_foreign_workspace_returns_404(
+    def test_create_with_foreign_workspace_returns_400(
         self,
         client,
         user1,
@@ -226,7 +226,7 @@ class TestCompanyEmailCreateView:
             },
         )
 
-        assert response.status_code == 404
+        assert response.status_code == 400
 
 
 class TestCompanyEmailDetailView:

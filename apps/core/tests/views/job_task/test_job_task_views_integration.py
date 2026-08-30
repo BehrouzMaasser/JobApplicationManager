@@ -1,3 +1,8 @@
+# Job Task integration tests audit:
+# - Added a duplicate-create integration assertion to ensure the web form
+#   surface reflects the same business validation as the API (no duplicate
+#   tasks can be created for the same user).
+# - Kept changes minimal and consistent with existing test style.
 import pytest
 
 from django.urls import reverse
@@ -110,6 +115,36 @@ class TestJobTaskCreateView:
             user=user1,
             title="New Task",
         ).exists()
+
+    def test_duplicate_submission_shows_form_errors(
+        self,
+        client,
+        user1,
+        job_task1_user1,
+    ):
+        """
+        Submitting a create form with the same title/description for the same
+        user should render the form with errors and not create a duplicate.
+        """
+        client.force_login(user1)
+
+        response = client.post(
+            reverse("job-task-create-web"),
+            {
+                "title": job_task1_user1.title,
+                "description": job_task1_user1.description,
+            },
+        )
+
+        assert response.status_code == 200
+
+        assert response.context["form"].errors
+
+        # Ensure no duplicate was created
+        assert JobTask.objects.filter(
+            user=user1,
+            title=job_task1_user1.title
+        ).count() == 1
 
     def test_invalid_submission_renders_form_errors(
         self,

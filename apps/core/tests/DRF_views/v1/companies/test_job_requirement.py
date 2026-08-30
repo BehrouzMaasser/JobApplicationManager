@@ -126,6 +126,24 @@ class TestJobRequirementCreateAPIView:
 
         assert JobRequirement.objects.filter(pk=response.data["id"]).exists()
 
+    def test_creating_duplicate_returns_400(
+        self,
+        authenticated_client,
+        url,
+        job_requirement1_user1,
+        job_requirement1_user1_valid_data,
+    ):
+        """
+        Attempting to create a JobRequirement with the same title/description for the
+        same user should be rejected by the API (form/service validation).
+        """
+        payload = job_requirement1_user1_valid_data.copy()
+        payload["title"] = job_requirement1_user1.title
+        payload["description"] = job_requirement1_user1.description
+
+        response = authenticated_client.post(url, payload, format="json")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
     def test_invalid_payload_rejected(
         self,
         authenticated_client,

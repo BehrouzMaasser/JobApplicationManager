@@ -149,7 +149,7 @@ class TestJobApplicationCreateView:
 
         assert response.status_code == 302
 
-    def test_create_invalid_company_id_returns_404(
+    def test_create_invalid_company_id_returns_400(
         self,
         client,
         user1,
@@ -177,9 +177,9 @@ class TestJobApplicationCreateView:
             },
         )
 
-        assert response.status_code == 404
+        assert response.status_code == 400
 
-    def test_create_invalid_workspace_id_returns_404(
+    def test_create_invalid_workspace_id_returns_400(
         self,
         client,
         user1,
@@ -203,7 +203,7 @@ class TestJobApplicationCreateView:
             },
         )
 
-        assert response.status_code == 404
+        assert response.status_code == 400
 
 
 class TestJobApplicationDetailView:

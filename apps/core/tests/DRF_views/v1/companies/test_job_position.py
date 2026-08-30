@@ -100,6 +100,23 @@ class TestNestedJobPositionCreateAPIView:
         response = authenticated_client.post(url, {}, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+    def test_rejects_foreign_m2m_owner(
+        self,
+        authenticated_client,
+        url,
+        job_pos_user1_api_valid_data,
+        job_benefit1_user2,
+    ):
+        """
+        Submitting a many-to-many related object (benefit) owned by another user
+        should be rejected by the create endpoint with a 400 response.
+        """
+        payload = job_pos_user1_api_valid_data.copy()
+        payload["benefits"] = [job_benefit1_user2.id]
+
+        response = authenticated_client.post(url, payload, format="json")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
     def test_cannot_create_in_foreign_company(
         self,
         authenticated_client,

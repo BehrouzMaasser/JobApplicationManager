@@ -198,6 +198,28 @@ class TestNestedJobApplicationCreateAPIView:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+    def test_rejects_foreign_email_ownership(
+        self,
+        authenticated_client,
+        create_job_application_url_path,
+        job_application1_api_valid_data,
+        co_email1_co1_ws1_user2,
+    ):
+        """
+        Posting an email that exists in the database but is owned by another user
+        should be rejected by the create flow (service-level ownership validation).
+        """
+        payload = job_application1_api_valid_data.copy()
+        payload["emails"] = [co_email1_co1_ws1_user2.id]
+
+        response = authenticated_client.post(
+            create_job_application_url_path,
+            payload,
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
 
 # =========================================================
 # NESTED RETRIEVE

@@ -123,3 +123,20 @@ class TestJobApplicationSerializer:
         serializer = JobApplicationSerializer(data=data)
 
         assert serializer.is_valid(), serializer.errors
+
+    def test_rejects_non_list_emails_and_documents(self, status1):
+        """
+        Ensure that scalar/non-list input for list fields is rejected.
+        This guards against accidental client payloads like "emails": "123".
+        """
+        data = {
+            "status": status1.pk,
+            "emails": "not-a-list",
+            "documents": "not-a-list",
+        }
+
+        serializer = JobApplicationSerializer(data=data)
+
+        assert not serializer.is_valid()
+        assert "emails" in serializer.errors
+        assert "documents" in serializer.errors

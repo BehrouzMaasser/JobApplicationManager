@@ -58,7 +58,12 @@ class TestJobApplicationNoteListAPIView:
         authenticated_client,
         job_application_note_list_url_path,
         app_note1,
+        app_note1_user2,
     ):
+        """
+        Ensure the list endpoint returns notes accessible to the current user
+        and does not leak notes owned by other users.
+        """
         response = authenticated_client.get(job_application_note_list_url_path)
 
         assert response.status_code == status.HTTP_200_OK
@@ -68,6 +73,8 @@ class TestJobApplicationNoteListAPIView:
         }
 
         assert app_note1.id in returned_ids
+        # The fixture app_note1_user2 belongs to a different user and must not be returned
+        assert app_note1_user2.id not in returned_ids
 
     def test_list_pagination_structure(
         self,
@@ -143,7 +150,12 @@ class TestNestedJobApplicationNoteCreateAPIView:
         authenticated_client,
         create_job_application_note_url_path,
         app_note1_valid_data,
+        job_application1,
     ):
+        """
+        Ensure nested create succeeds and that the created note is associated
+        with the nested job application implied by the URL.
+        """
         response = authenticated_client.post(
             create_job_application_note_url_path,
             app_note1_valid_data,
@@ -155,6 +167,10 @@ class TestNestedJobApplicationNoteCreateAPIView:
         assert JobApplicationNote.objects.filter(
             pk=response.data["id"]
         ).exists()
+
+        # Validate persisted object's relation to the nested job application
+        created = JobApplicationNote.objects.get(pk=response.data["id"])
+        assert created.job_application == job_application1
 
         assert response.data["title"] == app_note1_valid_data["title"]
         assert response.data["content"] == app_note1_valid_data["content"]

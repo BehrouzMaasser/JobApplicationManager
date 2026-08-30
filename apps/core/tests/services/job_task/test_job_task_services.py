@@ -1,6 +1,5 @@
-from unittest.mock import patch
-
 import pytest
+from unittest.mock import patch
 
 from apps.companies.models import JobTask
 from apps.companies.services.job_task_service import (

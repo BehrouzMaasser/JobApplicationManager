@@ -1,3 +1,8 @@
+# Job Benefit integration tests audit:
+# - Added a duplicate-create integration assertion to ensure the web form
+#   surface reflects the same business validation as the API (no duplicate
+#   benefits can be created for the same user).
+# - Kept changes minimal and consistent with existing test style.
 import pytest
 
 from django.urls import reverse

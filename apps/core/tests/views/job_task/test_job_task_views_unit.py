@@ -1,3 +1,5 @@
+# Job Task unit view tests audit:
+# - Verified view-to-service/selector interactions and exception translation.
 import uuid
 from unittest.mock import ANY, Mock, patch
 
