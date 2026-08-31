@@ -1,381 +1,840 @@
-# REST API Documentation
+# REST API
 
-## Overview
+## 1. Overview
 
-The project exposes a REST API built with Django REST Framework.
+The project provides a versioned REST API built with Django REST Framework.
 
-The API shares the same Application Layer as the server-rendered web application:
-
-```text
-REST API
-   │
-   ├── Selectors ── reads
-   │
-   └── Services ── writes
-```
-
-This keeps domain behavior independent of the transport mechanism.
-
-The current API is versioned under:
+The current API version is **V1** and is available under:
 
 ```text
 /api/v1/
 ```
 
----
+The API provides two ways to access resources:
 
-## Authentication
+1. **Flat endpoints** — used for general resource access. Every resource exposes flat `list` and `retrieve` endpoints. Some resources also expose write operations.
+2. **Nested endpoints** — used for resources whose operations are performed in the context of a parent resource. These endpoints expose the full CRUD lifecycle for those resources.
 
-The REST API uses JWT authentication through `djangorestframework-simplejwt`.
-
-API authentication is configured globally with:
-
-- `JWTAuthentication`
-- `IsAuthenticated`
-
-Therefore, API endpoints require an authenticated user unless an endpoint explicitly defines different behavior.
-
-### Obtain Tokens
-
-The token endpoint is:
-
-```text
-POST /api/v1/auth/
-```
-
-Request body:
-
-```json
-{
-  "email": "your-email@domain",
-  "password": "your-password"
-}
-```
-
-The response contains an access token and a refresh token.
-
-Example shape:
-
-```json
-{
-  "refresh": "<refresh-token>",
-  "access": "<access-token>"
-}
-```
-
-Use the access token for authenticated API requests:
-
-```text
-Authorization: Bearer <access-token>
-```
-
-### Refresh an Access Token
-
-The refresh endpoint is:
-
-```text
-POST /api/v1/auth/refresh/
-```
-
-Request body:
-
-```json
-{
-  "refresh": "<refresh-token>"
-}
-```
-
-The API returns a new access token.
-
-The configured token lifetimes are:
-
-- Access token: 1 day
-- Refresh token: 1 day
+The API is authenticated. Requests must be made by an authenticated user, and resources are restricted to the user's accessible data.
 
 ---
 
-## URL Structure
+# 2. API conventions
 
-Version 1 exposes both **flat** and **nested** resources.
+## 2.1 Base URL
 
-### Flat Resources
-
-The following resources are registered through DRF's `DefaultRouter`:
+All V1 endpoints start with:
 
 ```text
-/api/v1/workspaces/
-/api/v1/companies/
-/api/v1/company-notes/
-/api/v1/company-emails/
-/api/v1/job-benefits/
-/api/v1/job-tasks/
-/api/v1/job-requirements/
-/api/v1/job-positions/
-/api/v1/job-applications/
-/api/v1/job-application-notes/
-/api/v1/document-types/
-/api/v1/documents/
+/api/v1/
 ```
 
-The standard ViewSet actions are exposed according to the router configuration, including list, retrieve, create, update, partial update, and destroy where implemented by the corresponding ViewSet.
+For example:
 
-### Nested Resources
-
-Some resources also expose nested URLs so that their parent ownership context is explicit.
-
-Companies:
-
-```text
-/api/v1/workspaces/{workspace_id}/companies/
-/api/v1/workspaces/{workspace_id}/companies/{id}/
+```http
+GET /api/v1/companies/
 ```
 
-Company notes:
+---
 
-```text
-/api/v1/workspaces/{workspace_id}/companies/{company_id}/company-notes/
-/api/v1/workspaces/{workspace_id}/companies/{company_id}/company-notes/{id}/
+## 2.2 HTTP methods
+
+The API uses standard HTTP methods:
+
+| Method   | Purpose                                |
+| -------- | -------------------------------------- |
+| `GET`    | Retrieve a list or individual resource |
+| `POST`   | Create a resource                      |
+| `PUT`    | Replace/update a resource              |
+| `PATCH`  | Partially update a resource            |
+| `DELETE` | Delete a resource                      |
+
+The available methods depend on the endpoint.
+
+---
+
+## 2.3 List vs. detail endpoints
+
+A collection endpoint does not contain a resource ID:
+
+```http
+GET /api/v1/companies/
 ```
 
-Company emails:
+A detail endpoint contains the resource ID:
 
-```text
-/api/v1/workspaces/{workspace_id}/companies/{company_id}/company-emails/
-/api/v1/workspaces/{workspace_id}/companies/{company_id}/company-emails/{id}/
+```http
+GET /api/v1/companies/{company_id}/
 ```
 
-Job positions:
+The same distinction applies to nested endpoints.
 
-```text
-/api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/
-/api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{id}/
+Collection:
+
+```http
+GET /api/v1/workspaces/{workspace_id}/companies/
 ```
 
-Job applications:
+Detail:
 
-```text
+```http
+GET /api/v1/workspaces/{workspace_id}/companies/{company_id}/
+```
+
+---
+
+# 3. Flat endpoints
+
+Flat endpoints provide direct access to resources without requiring their parent resources in the URL.
+
+Every resource has flat `list` and `retrieve` endpoints.
+
+Some resources also support create, update, partial update, and delete operations through their flat endpoint.
+
+## 3.1 Flat endpoint rules
+
+Use a flat endpoint when:
+
+* you already know the resource ID and want to retrieve it;
+* you want to list resources without expressing a parent relationship in the URL;
+* you want to use the available query-parameter filters;
+* the resource supports flat write operations.
+
+Flat endpoints do **not** all provide full CRUD.
+
+---
+
+# 4. Flat API reference
+
+| Resource             | Collection endpoint              | Detail endpoint                       | Available methods                       |
+| -------------------- | -------------------------------- | ------------------------------------- | --------------------------------------- |
+| Workspace            | `/api/v1/workspaces/`            | `/api/v1/workspaces/{id}/`            | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` |
+| Company              | `/api/v1/companies/`             | `/api/v1/companies/{id}/`             | `GET`                                   |
+| Company Note         | `/api/v1/company-notes/`         | `/api/v1/company-notes/{id}/`         | `GET`                                   |
+| Company Email        | `/api/v1/company-emails/`        | `/api/v1/company-emails/{id}/`        | `GET`                                   |
+| Job Benefit          | `/api/v1/job-benefits/`          | `/api/v1/job-benefits/{id}/`          | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` |
+| Job Task             | `/api/v1/job-tasks/`             | `/api/v1/job-tasks/{id}/`             | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` |
+| Job Requirement      | `/api/v1/job-requirements/`      | `/api/v1/job-requirements/{id}/`      | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` |
+| Job Position         | `/api/v1/job-positions/`         | `/api/v1/job-positions/{id}/`         | `GET`                                   |
+| Job Application      | `/api/v1/job-applications/`      | `/api/v1/job-applications/{id}/`      | `GET`                                   |
+| Job Application Note | `/api/v1/job-application-notes/` | `/api/v1/job-application-notes/{id}/` | `GET`                                   |
+| Document Type        | `/api/v1/document-types/`        | `/api/v1/document-types/{id}/`        | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` |
+| Document             | `/api/v1/documents/`             | `/api/v1/documents/{id}/`             | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` |
+
+Resources that only expose `GET` through their flat endpoints use nested endpoints for their write operations.
+
+---
+
+# 5. Nested endpoints
+
+Nested endpoints represent a resource in the context of its parent resource.
+
+They are used when the relationship between resources is important to the operation.
+
+For example, a company belongs to a workspace.
+
+Instead of creating a company through:
+
+```http
+POST /api/v1/companies/
+```
+
+the API creates it through:
+
+```http
+POST /api/v1/workspaces/{workspace_id}/companies/
+```
+
+The parent resource is therefore part of the URL.
+
+Nested endpoints provide the full CRUD lifecycle for the resources listed below.
+
+---
+
+# 6. Nested API reference
+
+## 6.1 Companies
+
+Companies belong to a workspace.
+
+### Collection
+
+```http
+GET    /api/v1/workspaces/{workspace_id}/companies/
+POST   /api/v1/workspaces/{workspace_id}/companies/
+```
+
+### Detail
+
+```http
+GET    /api/v1/workspaces/{workspace_id}/companies/{company_id}/
+PUT    /api/v1/workspaces/{workspace_id}/companies/{company_id}/
+PATCH  /api/v1/workspaces/{workspace_id}/companies/{company_id}/
+DELETE /api/v1/workspaces/{workspace_id}/companies/{company_id}/
+```
+
+---
+
+## 6.2 Company Notes
+
+Company notes belong to a company.
+
+### Collection
+
+```http
+GET    /api/v1/workspaces/{workspace_id}/companies/{company_id}/company-notes/
+POST   /api/v1/workspaces/{workspace_id}/companies/{company_id}/company-notes/
+```
+
+### Detail
+
+```http
+GET    /api/v1/workspaces/{workspace_id}/companies/{company_id}/company-notes/{id}/
+PUT    /api/v1/workspaces/{workspace_id}/companies/{company_id}/company-notes/{id}/
+PATCH  /api/v1/workspaces/{workspace_id}/companies/{company_id}/company-notes/{id}/
+DELETE /api/v1/workspaces/{workspace_id}/companies/{company_id}/company-notes/{id}/
+```
+
+---
+
+## 6.3 Company Emails
+
+Company emails belong to a company.
+
+### Collection
+
+```http
+GET    /api/v1/workspaces/{workspace_id}/companies/{company_id}/company-emails/
+POST   /api/v1/workspaces/{workspace_id}/companies/{company_id}/company-emails/
+```
+
+### Detail
+
+```http
+GET    /api/v1/workspaces/{workspace_id}/companies/{company_id}/company-emails/{id}/
+PUT    /api/v1/workspaces/{workspace_id}/companies/{company_id}/company-emails/{id}/
+PATCH  /api/v1/workspaces/{workspace_id}/companies/{company_id}/company-emails/{id}/
+DELETE /api/v1/workspaces/{workspace_id}/companies/{company_id}/company-emails/{id}/
+```
+
+---
+
+## 6.4 Job Positions
+
+Job positions belong to a company.
+
+### Collection
+
+```http
+GET    /api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/
+POST   /api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/
+```
+
+### Detail
+
+```http
+GET    /api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{id}/
+PUT    /api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{id}/
+PATCH  /api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{id}/
+DELETE /api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{id}/
+```
+
+---
+
+## 6.5 Job Applications
+
+Job applications belong to a job position.
+
+### Collection
+
+```http
+GET
 /api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{job_position_id}/job-applications/
+
+POST
+/api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{job_position_id}/job-applications/
+```
+
+### Detail
+
+```http
+GET
+/api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{job_position_id}/job-applications/{id}/
+
+PUT
+/api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{job_position_id}/job-applications/{id}/
+
+PATCH
+/api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{job_position_id}/job-applications/{id}/
+
+DELETE
 /api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{job_position_id}/job-applications/{id}/
 ```
 
-Job application notes:
+---
 
-```text
+## 6.6 Job Application Notes
+
+Job application notes belong to a job application.
+
+### Collection
+
+```http
+GET
 /api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{job_position_id}/job-applications/{job_application_id}/job-application-notes/
+
+POST
+/api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{job_position_id}/job-applications/{job_application_id}/job-application-notes/
+```
+
+### Detail
+
+```http
+GET
+/api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{job_position_id}/job-applications/{job_application_id}/job-application-notes/{id}/
+
+PUT
+/api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{job_position_id}/job-applications/{job_application_id}/job-application-notes/{id}/
+
+PATCH
+/api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{job_position_id}/job-applications/{job_application_id}/job-application-notes/{id}/
+
+DELETE
 /api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{job_position_id}/job-applications/{job_application_id}/job-application-notes/{id}/
 ```
 
-Nested endpoints are primarily useful when the parent relationship is part of the operation's context.
+---
+
+# 7. Choosing between flat and nested endpoints
+
+The API provides both flat and nested access intentionally.
+
+A useful rule is:
+
+```text
+Need to read a resource?
+    ↓
+Use the flat endpoint.
+
+Need to list resources within a known parent?
+    ↓
+Use the nested endpoint.
+
+Need to create/update/delete a resource that is managed
+through a parent?
+    ↓
+Use the nested endpoint.
+
+Need to create/update/delete a resource with its own
+top-level API lifecycle?
+    ↓
+Use its flat endpoint.
+```
+
+For example, to retrieve a company:
+
+```http
+GET /api/v1/companies/{company_id}/
+```
+
+To retrieve companies belonging to a particular workspace:
+
+```http
+GET /api/v1/workspaces/{workspace_id}/companies/
+```
+
+To create a company in a workspace:
+
+```http
+POST /api/v1/workspaces/{workspace_id}/companies/
+```
+
+To update that company:
+
+```http
+PATCH /api/v1/workspaces/{workspace_id}/companies/{company_id}/
+```
 
 ---
 
-## Ownership and Access
+# 8. Filtering
 
-Authentication establishes the identity of the caller. Application-layer components enforce ownership boundaries.
+Filtering is available on selected **flat list endpoints**.
 
-Selectors are responsible for read-side ownership-aware retrieval.
+Filters are supplied as query parameters:
 
-Services are responsible for ownership validation and domain invariants during write operations.
+```text
+/api/v1/<resource>/?<parameter>=<value>
+```
 
-The API intentionally does not expose a separate `AccessDeniedError` application exception.
+Filtering is performed by the API's selector/query-filter layer.
 
-When a user attempts to retrieve a resource outside their accessible ownership boundary, the application treats the resource as unavailable and returns the normal resource-not-found response.
+The supported parameters are endpoint-specific.
+
+---
+
+## 8.1 Company filters
+
+```http
+GET /api/v1/companies/?workspace_id={workspace_id}
+```
+
+Supported parameter:
+
+| Parameter      | Description                       |
+| -------------- | --------------------------------- |
+| `workspace_id` | Restrict companies to a workspace |
+
+---
+
+## 8.2 Company Note filters
+
+```http
+GET /api/v1/company-notes/?workspace_id={workspace_id}&company_id={company_id}
+```
+
+Supported parameters:
+
+| Parameter      | Description                   |
+| -------------- | ----------------------------- |
+| `workspace_id` | Restrict notes to a workspace |
+| `company_id`   | Restrict notes to a company   |
+
+Parameters can be combined.
+
+---
+
+## 8.3 Company Email filters
+
+```http
+GET /api/v1/company-emails/?workspace_id={workspace_id}&company_id={company_id}
+```
+
+Supported parameters:
+
+| Parameter      | Description                    |
+| -------------- | ------------------------------ |
+| `workspace_id` | Restrict emails to a workspace |
+| `company_id`   | Restrict emails to a company   |
+
+---
+
+## 8.4 Job Position filters
+
+```http
+GET /api/v1/job-positions/?workspace_id={workspace_id}&company_id={company_id}
+```
+
+Supported parameters:
+
+| Parameter      | Description                       |
+| -------------- | --------------------------------- |
+| `workspace_id` | Restrict positions to a workspace |
+| `company_id`   | Restrict positions to a company   |
+
+---
+
+## 8.5 Job Application filters
+
+Job applications support several filters:
+
+```http
+GET /api/v1/job-applications/
+    ?workspace_id={workspace_id}
+    &company_id={company_id}
+    &job_position_id={job_position_id}
+    &status_id={status_id}
+    &date_applied={date}
+```
+
+Supported parameters:
+
+| Parameter         | Description                               |
+| ----------------- | ----------------------------------------- |
+| `workspace_id`    | Restrict applications to a workspace      |
+| `company_id`      | Restrict applications to a company        |
+| `job_position_id` | Restrict applications to a job position   |
+| `status_id`       | Restrict applications to a status         |
+| `date_applied`    | Restrict applications by application date |
+
+Multiple filters can be combined.
+
+For example:
+
+```http
+GET /api/v1/job-applications/?workspace_id=1&status_id=2
+```
+
+returns applications matching both conditions.
+
+---
+
+## 8.6 Job Application Note filters
+
+```http
+GET /api/v1/job-application-notes/
+    ?workspace_id={workspace_id}
+    &company_id={company_id}
+    &job_position_id={job_position_id}
+    &job_application_id={job_application_id}
+```
+
+Supported parameters:
+
+| Parameter            | Description                         |
+| -------------------- | ----------------------------------- |
+| `workspace_id`       | Restrict notes to a workspace       |
+| `company_id`         | Restrict notes to a company         |
+| `job_position_id`    | Restrict notes to a job position    |
+| `job_application_id` | Restrict notes to a job application |
+
+---
+
+## 8.7 Document filters
+
+Documents can be filtered by document type:
+
+```http
+GET /api/v1/documents/?document_type={document_type_id}
+```
+
+Supported parameter:
+
+| Parameter       | Description                           |
+| --------------- | ------------------------------------- |
+| `document_type` | Restrict documents to a document type |
+
+---
+
+# 9. Nested URLs as contextual scoping
+
+A nested URL does more than provide a different URL format. It expresses the parent-child context of the requested operation.
+
+For example:
+
+```http
+GET /api/v1/workspaces/10/companies/20/job-positions/
+```
+
+means:
+
+> List job positions associated with company `20` in workspace `10`.
+
+Similarly:
+
+```http
+POST /api/v1/workspaces/10/companies/20/job-positions/
+```
+
+means:
+
+> Create a job position in company `20` within workspace `10`.
+
+The same parent context is used for updates and deletes:
+
+```http
+PATCH /api/v1/workspaces/10/companies/20/job-positions/30/
+DELETE /api/v1/workspaces/10/companies/20/job-positions/30/
+```
+
+This makes nested URLs the preferred interface for CRUD operations on child resources.
+
+---
+
+# 9.1 Nested detail endpoints and resource lookup
+
+Nested detail endpoints contain the complete parent hierarchy in the URL. However, the parent identifiers are not used as additional lookup conditions when retrieving an individual resource.
+
+For example:
+
+```http
+GET /api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{job_position_id}/
+```
+
+The `job_position_id` identifies the resource to retrieve.
+
+The API retrieves the resource using its own ID together with the authenticated user's resource ownership. The `workspace_id` and `company_id` in the URL do not independently determine whether the resource is returned.
+
+Therefore, a nested detail URL should be understood as:
+
+```text
+parent hierarchy + resource ID
+            ↓
+      identify the operation
+```
+
+rather than:
+
+```text
+parent hierarchy + resource ID
+            ↓
+require the resource to match every parent ID
+```
+
+This differs from nested collection endpoints.
+
+For a nested collection:
+
+```http
+GET /api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/
+```
+
+the parent identifiers are used to scope the collection to job positions belonging to that workspace and company.
+
+The distinction is:
+
+| Operation             | How the parent IDs are used                                          |
+| --------------------- | -------------------------------------------------------------------- |
+| Nested list           | Parent IDs scope the returned collection                             |
+| Nested create         | Parent IDs establish the parent context for creation                 |
+| Nested update         | Parent IDs provide the context used by the update operation          |
+| Nested partial update | Parent IDs provide the context used by the update operation          |
+| Nested delete         | Parent IDs provide the context used by the delete operation          |
+| Nested retrieve       | Resource is looked up by its own ID and authenticated-user ownership |
+
+Consequently, clients should use the canonical parent hierarchy when constructing nested URLs, but should not treat the parent IDs in a nested detail URL as additional lookup filters for the individual resource.
+
+---
+
+# 10. Resource hierarchy
+
+The main resource hierarchy exposed by the nested API is:
+
+```text
+Workspace
+└── Company
+    ├── Company Note
+    ├── Company Email
+    └── Job Position
+        └── Job Application
+            └── Job Application Note
+```
+
+This hierarchy determines the nested URL structure.
 
 For example:
 
 ```text
-User A requests User B's company
-             ↓
-        Selector lookup
-             ↓
-       Resource not found
-             ↓
-        HTTP 404
+Workspace
+    ↓
+Company
+    ↓
+Job Position
+    ↓
+Job Application
+    ↓
+Job Application Note
 ```
 
-This avoids revealing whether another user's resource exists.
-
-### M2M Ownership During Writes
-
-For resources such as Job Requirements, Job Tasks, and Job Benefits, there is an additional domain invariant.
-
-The API may receive identifiers for these resources as part of a Job Position write operation. The Service verifies that the supplied objects belong to the current user before assigning them.
-
-This is different from direct resource access:
+becomes:
 
 ```text
-Direct GET of another user's requirement
-        → 404 Not Found
-
-Using another user's requirement in a job-position write
-        → Domain invariant violation
-        → HTTP 400
+/api/v1/workspaces/{workspace_id}
+/companies/{company_id}
+/job-positions/{job_position_id}
+/job-applications/{job_application_id}
+/job-application-notes/
 ```
-
-The distinction is intentional and documented in the domain and Service contracts.
 
 ---
 
-## Request Validation
+# 11. Resources without nested CRUD
 
-Serializers are responsible for transport-level validation, including:
+The following resources have independent API lifecycles and therefore expose their CRUD operations directly through flat endpoints:
 
-- Required fields
-- Field types
-- Formatting
-- Transport-specific constraints
-- Deserialization
+* Workspace
+* Job Benefit
+* Job Task
+* Job Requirement
+* Document Type
+* Document
 
-They do not own domain business rules or ownership enforcement.
+For example:
 
-After serializer validation succeeds, write operations are delegated to Services.
+```http
+POST   /api/v1/job-benefits/
+GET    /api/v1/job-benefits/{id}/
+PATCH  /api/v1/job-benefits/{id}/
+DELETE /api/v1/job-benefits/{id}/
+```
+
+These resources do not require a parent identifier in the URL for their CRUD operations.
 
 ---
 
-## API Error Handling
+# 12. Resources with nested CRUD
 
-The project uses a custom DRF exception handler.
+The following resources use nested endpoints for create, update, partial update, and delete:
 
-Application exceptions are translated into a consistent API envelope.
+* Company
+* Company Note
+* Company Email
+* Job Position
+* Job Application
+* Job Application Note
 
-### Resource Not Found
+Their flat endpoints remain available for `GET` list/retrieve operations.
 
-```json
-{
-  "error": {
-    "code": "resource_not_found",
-    "message": "...",
-    "details": {}
-  }
-}
+For example, a job position can be retrieved through:
+
+```http
+GET /api/v1/job-positions/{id}/
 ```
 
-Status:
+but its CRUD operations are performed through:
+
+```http
+POST   /api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/
+GET    /api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{id}/
+PUT    /api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{id}/
+PATCH  /api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{id}/
+DELETE /api/v1/workspaces/{workspace_id}/companies/{company_id}/job-positions/{id}/
+```
+
+---
+
+# 13. Practical usage examples
+
+## Retrieve a resource
+
+If the resource ID is already known:
+
+```http
+GET /api/v1/companies/{company_id}/
+```
+
+---
+
+## List all accessible resources
+
+```http
+GET /api/v1/companies/
+```
+
+The response contains the companies accessible to the authenticated user.
+
+---
+
+## List resources within a parent
+
+If the parent is known, use the nested collection endpoint:
+
+```http
+GET /api/v1/workspaces/{workspace_id}/companies/
+```
+
+---
+
+## Create a child resource
+
+Use the nested collection endpoint:
+
+```http
+POST /api/v1/workspaces/{workspace_id}/companies/
+```
+
+with the resource representation in the request body.
+
+---
+
+## Update a child resource
+
+Use the nested detail endpoint:
+
+```http
+PATCH /api/v1/workspaces/{workspace_id}/companies/{company_id}/
+```
+
+---
+
+## Delete a child resource
+
+Use the nested detail endpoint:
+
+```http
+DELETE /api/v1/workspaces/{workspace_id}/companies/{company_id}/
+```
+
+---
+
+## Filter a flat list
+
+Add supported query parameters:
+
+```http
+GET /api/v1/job-applications/?status_id={status_id}
+```
+
+Multiple supported filters can be combined:
+
+```http
+GET /api/v1/job-applications/?workspace_id={workspace_id}&status_id={status_id}
+```
+
+---
+
+# 14. Summary
+
+The V1 API follows two complementary access patterns.
+
+### Flat endpoints
 
 ```text
-404 Not Found
+/api/v1/<resource>/
+/api/v1/<resource>/{id}/
 ```
 
-### Business Rule Violation
+Use these for general resource access.
 
-Business-rule failures are returned as HTTP 400 responses.
-
-The response preserves the service-provided message and details.
-
-### Domain Invariant Violation
-
-Domain invariant failures are treated as bad requests at the API boundary.
-
-Status:
+All resources support:
 
 ```text
-400 Bad Request
+GET collection
+GET detail
 ```
 
-The response does not expose internal implementation details.
-
-### Infrastructure Failure
-
-Infrastructure failures are translated into a generic HTTP 500 response.
-
-Internal details are logged server-side rather than exposed to the client.
-
-### Django Validation Errors
-
-Django `ValidationError` instances are translated into a 400 response containing validation details.
-
-### DRF Framework Exceptions
-
-Exceptions not handled by the application's custom mappings are passed to DRF's standard exception handler and then normalized into the project's API error envelope.
-
----
-
-## Pagination
-
-The API uses the project's configured default pagination class.
-
-The configured page size is:
+Some resources additionally support:
 
 ```text
-20
+POST
+PUT
+PATCH
+DELETE
 ```
 
-Paginated responses follow the standard project pagination representation.
+Selected flat collection endpoints support query-parameter filtering.
 
-Example shape:
-
-```json
-{
-  "count": 1,
-  "next": null,
-  "previous": null,
-  "results": []
-}
-```
-
----
-
-## Filtering
-
-The API enables Django Filter's REST framework backend globally.
-
-Endpoint-specific filtering depends on the corresponding ViewSet and selector implementation.
-
-Transport-level filtering should remain presentation-oriented. Domain-specific filtering belongs in the Application Layer.
-
----
-
-## Example
-
-### Retrieve Workspaces
+### Nested endpoints
 
 ```text
-GET /api/v1/workspaces/
+/api/v1/<parent>/{parent_id}/<child>/
+/api/v1/<parent>/{parent_id}/<child>/{child_id}/
 ```
 
-A successful response has the general shape:
+Use these when operating on resources that are managed within a parent context.
 
-```json
-{
-  "count": 1,
-  "next": null,
-  "previous": null,
-  "results": [
-    {
-      "id": 5,
-      "owner": 1,
-      "workspace_id": "ca97ec00-beb0-4c5e-9ea7-0425ba752a19",
-      "name": "German Jobs",
-      "created_at": "2026-06-04T00:29:39.803263Z",
-      "updated_at": "2026-06-04T00:29:39.803283Z"
-    }
-  ]
-}
+Nested CRUD resources support:
+
+```text
+GET
+POST
+PUT
+PATCH
+DELETE
 ```
 
-The exact serialized fields are defined by the corresponding serializer and may evolve with the API version.
+The parent hierarchy is represented directly in the URL and is used to scope the operation.
 
----
+In short:
 
-## API Versioning
+```text
+Flat API
+    → general read access
+    → optional query-parameter filtering
+    → direct CRUD for independent resources
 
-The current API is Version 1.
-
-Version 1 intentionally contains both flat and nested resource access.
-
-A future Version 2 may simplify resource paths or otherwise improve client ergonomics. Such changes should preserve the same ownership and domain guarantees.
-
-The existence of a future Version 2 is not a current implementation requirement.
-
----
-
-## Design Principles
-
-The API follows these principles:
-
-1. Authentication identifies the caller.
-2. Selectors own read-side retrieval and ownership filtering.
-3. Services own writes and domain behavior.
-4. Serializers handle transport validation and representation.
-5. Application exceptions are translated consistently at the API boundary.
-6. Internal implementation details are not exposed to clients.
+Nested API
+    → parent-contextual access
+    → parent-scoped collection operations
+    → CRUD for child resources
+```
